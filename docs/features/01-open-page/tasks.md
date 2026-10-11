@@ -34,7 +34,7 @@ Verified elsewhere: restoring a saved configuration on open, and the unsaved-cha
   - Zustand.
   - Folders per global plan §2 (`app/`, `editor/`, `state/`).
   - **Verify:** the health response shows in a styled shadcn Card, and the Query devtools list the health query.
-- [ ] **S4 – API libraries**
+- [x] **S4 – API libraries**
   - `.env.example` (`API_PORT`, `WEB_ORIGIN`, `DB_PATH`) and env loading.
   - CORS limited to `WEB_ORIGIN`.
   - A zod validation pipe, with `zod` added to core.
@@ -70,6 +70,11 @@ Verified elsewhere: restoring a saved configuration on open, and the unsaved-cha
 - S2: Vitest pinned to 4.x. Vitest 5 requires Node 22.12+, which conflicts with "Node 20+".
 - S2: Smoke tests dropped. Per `CLAUDE.md`, tests only cover code where our logic can be wrong. Vitest is wired in core and api with `passWithNoTests`, so `pnpm test` passes until the first real tests land.
 - S3: Tailwind v4 via `@tailwindcss/vite`, so there's no `tailwind.config`. shadcn (new-york, neutral) uses `@/` → `src/`, and its `cn` helper comes from shadcn's `cn` package, not clsx + tailwind-merge. `App.tsx` moved to `app/`. `state/store.ts` holds only `url` for now (used in S5).
+- S4: `better-sqlite3` pinned to 12.x. 13.x requires Node 22+, which conflicts with "Node 20+".
+- S4: Env is loaded with Node's built-in `process.loadEnvFile` (no dotenv), so `engines` is now `>=20.12`. `.env.example` lives in `apps/api/` because the api reads `.env` from its own working directory. Values are validated with zod and default to the `.env.example` values, so a fresh clone runs without a `.env`. An invalid value stops startup.
+- S4: CORS takes `[WEB_ORIGIN]`, not a plain string. With a string, `cors` sends that origin to every caller, which would fail the Verify.
+- S4: `ZodValidationPipe` is applied per route (`@Body(new ZodValidationPipe(schema))`). Its 400 uses `code: 'INVALID_REQUEST'`; the global plan doesn't name a code for bad request bodies.
+- S4: The web app still calls `http://localhost:3001`, so if `API_PORT` changes, the web stops reaching the api. Follow-up: a Vite `/api` proxy or a `VITE_API_URL`.
 
 ---
 

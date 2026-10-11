@@ -3,7 +3,7 @@
   "private": true,
   "packageManager": "pnpm@10.20.0",
   "engines": {
-    "node": ">=20"
+    "node": ">=20.12"
   },
   "scripts": {
     "predev": "pnpm --filter @ax/core build",
@@ -18,6 +18,7 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "@nestjs/core",
+      "better-sqlite3",
       "esbuild"
     ]
   },
