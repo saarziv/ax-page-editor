@@ -9,13 +9,13 @@ async function fetchHealth(): Promise<unknown> {
   return response.json() as Promise<unknown>;
 }
 
-async function fetchSnapshot(url: string): Promise<PageTree> {
-  const response = await fetch(`${API_URL}/snapshot`, {
+async function fetchPageTree(url: string): Promise<PageTree> {
+  const response = await fetch(`${API_URL}/page-tree`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ url }),
   });
-  if (!response.ok) throw new Error(`POST ${API_URL}/snapshot for ${url} failed with ${response.status}`);
+  if (!response.ok) throw new Error(`POST ${API_URL}/page-tree for ${url} failed with ${response.status}`);
   return pageTreeSchema.parse(await response.json());
 }
 
@@ -23,10 +23,10 @@ export function useHealthQuery() {
   return useQuery({ queryKey: ['health'], queryFn: fetchHealth });
 }
 
-export function useSnapshot(url: string) {
+export function usePageTree(url: string) {
   return useQuery({
-    queryKey: ['snapshot', url],
-    queryFn: () => fetchSnapshot(url),
+    queryKey: ['page-tree', url],
+    queryFn: () => fetchPageTree(url),
     // A refetch could swap the tree under the user's draft, so only refetch on explicit request.
     staleTime: Infinity,
     retry: 3,
