@@ -53,7 +53,7 @@ How a request flows:
 
 - [x] **S1 – Rename:** `/api/snapshot` → `/api/page-tree` (controller, route, `useSnapshot` → `usePageTree`). Still returns the stub page.
   - **Verify:** open any URL in the app and see "Stub page". `curl -X POST localhost:3001/api/page-tree -d '{"url":"x"}' -H 'content-type: application/json'` returns the stub tree. The e2e smoke test passes.
-- [ ] **S2 – `normalizeUrl` + the error response:** tests first (spec AC `example.com/page/?utm_source=x` → `example.com/page`, host case, fragment, query order, root slash, `sample:` passthrough, invalid → `INVALID_URL`). The endpoint normalizes the URL, and a `FetchError` becomes `{ code, message }` with a matching HTTP status.
+- [x] **S2 – `normalizeUrl` + the error response:** tests first (spec AC `example.com/page/?utm_source=x` → `example.com/page`, host case, fragment, query order, root slash, `sample:` passthrough, invalid → `INVALID_URL`). The endpoint normalizes the URL, and a `FetchError` becomes `{ code, message }` with a matching HTTP status.
   - **Verify:** curl `{"url":"HTTPS://Example.com/page/?utm_source=x#top"}` → the stub tree's `url` is `https://example.com/page`. Curl `{"url":"ftp://x"}` → 400 `{ "code": "INVALID_URL", ... }`.
 - [ ] **S3 – `clean`:** tests first (whitelist → kind, unwrap `div`/`span`, drop scripts/styles/`on*`/`javascript:` hrefs, prune empty nodes, keep images with `src`, resolve relative URLs, collapse whitespace, ids = `kind:nth` selector paths, deterministic, title from `<title>`).
   - **Verify:** `pnpm test` passes the `clean` suite.
@@ -63,6 +63,10 @@ How a request flows:
   - **Verify:** curl `https://example.com` → its real tree. `http://localhost:5173` → `BLOCKED`. A PDF URL → `NOT_HTML`. `https://no-such-host.invalid` → `UNREACHABLE`.
 
 **Done when:** every Verify passes; `pnpm test`, `pnpm typecheck` and `pnpm e2e` pass.
+
+**Deviations:**
+
+- A URL without a scheme gets `https://` (spec AC `example.com/page`) → plan.md §3.6
 
 ---
 

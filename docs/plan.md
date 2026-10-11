@@ -139,7 +139,7 @@ Both first built in 02. The formats for `annotation` and `forwarded` nodes are d
 - **`renderHtml(tree)`:** semantic HTML, everything text-escaped.
 
 ### 3.6 Utilities
-- `normalizeUrl`: lowercase scheme and host, drop the fragment, drop `utm_*` / `fbclid` / `gclid`, strip the trailing slash except on root, sort the query. `sample:` URLs pass through (see 01). First built in 01.
+- `normalizeUrl`: assume `https://` when no scheme is given, lowercase scheme and host, drop the fragment, drop `utm_*` / `fbclid` / `gclid`, strip the trailing slash except on root, sort the query. `sample:` URLs pass through (see 01). First built in 01.
 - `estimateTokens(text) = ceil(chars / 4)`.
 - **zod schemas** for `Config` and `Modification`. They're the single source of the TS types and are used by both api validation and web.
 

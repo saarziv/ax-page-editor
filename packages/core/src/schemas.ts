@@ -47,3 +47,8 @@ export const pageTreeSchema = z.object({
 });
 
 export type PageTree = z.infer<typeof pageTreeSchema>;
+
+// Why a page couldn't be loaded. The api sends it as `{ code, message }`; the web maps it to the spec's plain-language messages.
+export const fetchErrorCodeSchema = z.enum(['INVALID_URL', 'BLOCKED', 'NOT_HTML', 'TOO_LARGE', 'TIMEOUT', 'UNREACHABLE']);
+
+export type FetchErrorCode = z.infer<typeof fetchErrorCodeSchema>;
