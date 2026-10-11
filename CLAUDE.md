@@ -20,6 +20,8 @@ Every fact lives in exactly one place: what and why in the specs and `spec-decis
 - Define every step together with its **Verify** action (something the dev runs or sees). A step is done only when it passes.
 - Order tasks outside-in: what the user sees first gets built first.
 - Detail a task's steps only right before it starts.
+- Keep a `## Roadmap` at the top of `tasks.md`: one line per task with the spec ACs it covers (`Covers: AC1, AC3`). Every AC must appear in at least one line.
+- A task points to the plan section it implements; it never restates the plan.
 
 **Workflow**
 

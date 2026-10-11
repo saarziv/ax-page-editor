@@ -45,13 +45,13 @@ Start screen                              Editor
 
 ## Acceptance criteria
 
-- Given a valid public URL, when the user opens it, then its clean tree appears in the left panel.
-- Given the editor is open, then the right panel shows the Hide, Context and Forward controls, disabled.
-- Given `example.com/page/?utm_source=x`, when opened, then it normalizes to `example.com/page`.
-- Given a page is loading, then the preview shows a spinner, not the previous page.
-- Given the editor is open, when the user enters another URL in the top bar and opens it, then that page replaces the current one.
-- Given any failure in the table below, then the user sees that plain-language message on screen (not a toast), and no error code.
-- Given "Try a sample" is clicked, then the demo page opens without any network fetch.
+- **AC1** Given a valid public URL, when the user opens it, then its clean tree appears in the left panel.
+- **AC2** Given the editor is open, then the right panel shows the Hide, Context and Forward controls, disabled.
+- **AC3** Given `example.com/page/?utm_source=x`, when opened, then it normalizes to `example.com/page`.
+- **AC4** Given a page is loading, then the preview shows a spinner, not the previous page.
+- **AC5** Given the editor is open, when the user enters another URL in the top bar and opens it, then that page replaces the current one.
+- **AC6** Given any failure in the table below, then the user sees that plain-language message on screen (not a toast), and no error code.
+- **AC7** Given "Try a sample" is clicked, then the demo page opens without any network fetch.
 
 ## Edge cases
 

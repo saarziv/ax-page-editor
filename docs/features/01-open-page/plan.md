@@ -35,6 +35,4 @@ The demo lives in `/samples/demo.html` and is addressed as `sample:demo`. The en
 
 ## Tests
 
-- `clean`: whitelisting, unwrapping, pruning, URL resolution, determinism (clean twice gives an identical tree).
-- `normalizeUrl`: tracking params, trailing slash, host case, fragment, query order, `sample:` passthrough (spec AC: `?utm_source=x`).
-- SafeFetch (API): blocks private IPs and redirects to them, with DNS mocked; size, timeout and content-type limits.
+Unit tests for `clean`, `normalizeUrl` and SafeFetch (DNS mocked). The cases are listed per step in `tasks.md`.
