@@ -31,7 +31,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 **Goal:** the editor shows the spec's layout, and the preview shows a mock page returned by the BE.
 
-- [ ] **S1 – Shell layout (no BE call):** top bar with URL field + Open, preview panel on the left, disabled Hide / Context / Forward controls on the right.
+- [x] **S1 – Shell layout (no BE call):** top bar with URL field + Open, preview panel on the left, disabled Hide / Context / Forward controls on the right.
   - **Verify:** open any URL from the start screen and see the three areas.
 - [ ] **S2 – Mock page from the BE:** `POST /api/snapshot` returns a short mock page tree of an imaginary website (from the `clean` stub). The left panel renders it.
   - **Verify:** open any URL and see the mock page in the left panel.
