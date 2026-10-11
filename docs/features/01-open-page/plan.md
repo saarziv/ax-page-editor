@@ -17,12 +17,12 @@ First built here (contracts in the global plan):
 
 | Method | Path | In | Out |
 |---|---|---|---|
-| POST | `/api/snapshot` | `{ url }` | `PageTree` (url = normalized final URL) |
+| POST | `/api/page-tree` | `{ url }` | `PageTree` (url = normalized final URL) |
 
-- **Snapshot:** `normalizeUrl` → SafeFetch (or the demo loader) → `clean`. A `FetchError` is returned as `{ code, message }`.
+- **Page tree:** `normalizeUrl` → SafeFetch (or the demo loader) → `clean`. A `FetchError` is returned as `{ code, message }`.
 
 ### Demo page
-The demo lives in `/samples/demo.html` and is addressed as `sample:demo`. Snapshot loads it from disk instead of fetching, because SafeFetch would correctly block `localhost`. `normalizeUrl` passes `sample:` through. Its links point to real public URLs.
+The demo lives in `/samples/demo.html` and is addressed as `sample:demo`. The endpoint loads it from disk instead of fetching, because SafeFetch would correctly block `localhost`. `normalizeUrl` passes `sample:` through. Its links point to real public URLs.
 
 ## Web
 
@@ -30,7 +30,7 @@ The demo lives in `/samples/demo.html` and is addressed as `sample:demo`. Snapsh
 - **Editor shell:** TopBar (URL field + Open), Preview (left), Inspector (right).
 - **Preview:** a basic recursive React renderer, one element per `PageNode.kind`. Links render without navigation. 02 extends it into the full preview.
 - **Inspector:** the Hide, Context and Forward controls, rendered disabled. 02 connects them to the selection.
-- **Loading:** `useSnapshot(url)` pending state drives the preview's spinner.
+- **Loading:** `usePageTree(url)` pending state drives the preview's spinner.
 - **Error mapping:** `FetchError.code` → the spec's edge-case messages, shown as an on-screen state. `TIMEOUT` / `UNREACHABLE` get a Retry button, which refetches.
 
 ## Tests

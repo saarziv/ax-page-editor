@@ -10,7 +10,7 @@ Where a shared piece is first built by a feature, that's noted as "first built i
 
 ```
 ┌──────────── apps/web (React) ────────────┐        ┌────────────── apps/api (NestJS) ──────────────┐
-│ Start screen · Editor · Markdown view    │  HTTP  │ /api/snapshot   /api/forward   /api/configs   │
+│ Start screen · Editor · Markdown view    │  HTTP  │ /api/page-tree  /api/forward   /api/configs   │
 │                                          │ ─────► │ /agentView                                     │
 │ TanStack Query (server data)             │        │                                                │
 │ Zustand (draft modifications, UI)        │        │ SafeFetch ─► clean ─► (config) ─► transform    │
@@ -43,7 +43,7 @@ apps/
     state/          store.ts (Zustand), queries.ts (TanStack Query), derived.ts
   api/src/
     fetch/          SafeFetchService
-    page/           snapshot + forward controllers/services, demo loader
+    page/           page-tree + forward controllers/services, demo loader
     config/         controller, ConfigRepository (SQLite)
     agent-view/     controller + service
 packages/
@@ -172,7 +172,7 @@ Details live in the owning feature's plan.
 
 | Method | Path | Owner |
 |---|---|---|
-| POST | `/api/snapshot` | 01 Open a page |
+| POST | `/api/page-tree` | 01 Open a page |
 | POST | `/api/forward` | 04 Forward a link |
 | GET | `/api/configs?url=` | 05 Save & review changes |
 | PUT | `/api/configs` | 05 Save & review changes |
@@ -188,7 +188,7 @@ Details live in the owning feature's plan.
 ### 5.1 State
 
 **Server data (TanStack Query):**
-- `useSnapshot(url)`
+- `usePageTree(url)`
 - `useConfig(url)`
 - `useForward(href)` (see 04)
 

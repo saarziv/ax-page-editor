@@ -27,16 +27,42 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 
 
-## T02 – Editor shell
+## T02 – Editor shell ✓
 
-**Goal:** the editor shows the spec's layout, and the preview shows a mock page returned by the BE.
+**Goal:** the editor shows the spec's layout.
 
 - [x] **S1 – Shell layout (no BE call):** top bar with URL field + Open, preview panel on the left, disabled Hide / Context / Forward controls on the right.
   - **Verify:** open any URL from the start screen and see the three areas.
-- [ ] **S2 – Mock page from the BE:** `POST /api/snapshot` returns a short mock page tree of an imaginary website (from the `clean` stub). The left panel renders it.
-  - **Verify:** open any URL and see the mock page in the left panel.
 
-**Done when:** both Verify actions pass, and `pnpm test` and `pnpm typecheck` pass.
+**Done when:** S1's Verify passes, and `pnpm test` and `pnpm typecheck` pass.
+
+---
+
+## T03 – Page tree endpoint (backend)
+
+**Goal:** `POST /api/page-tree` with `{ url }` returns the real clean page as `{ url, title, root }`, or `{ code, message }` when it fails. Backend only: the web keeps showing just the title and URL. The tree renderer and the plain-language error screens come in the next task.
+
+How a request flows:
+
+1. `normalizeUrl(url)`: canonical URL (lowercase host, no fragment, no `utm_*`, no trailing slash). A non-http(s) or unparseable URL fails with `INVALID_URL`.
+2. Get the HTML:
+   - `sample:demo` → read `samples/demo.html` from disk (the **demo loader**: the bundled "Try a sample" page, loaded without any network).
+   - anything else → `SafeFetchService.fetchHtml(url)`, which returns `{ finalUrl, html }` or throws a `FetchError`.
+3. `clean(html, finalUrl)` → `PageTree`, with `url` = the normalized final URL.
+4. Any `FetchError` → an HTTP error with body `{ code, message }`, where `code` is one of `INVALID_URL | BLOCKED | NOT_HTML | TOO_LARGE | TIMEOUT | UNREACHABLE`.
+
+- [ ] **S1 – Rename:** `/api/snapshot` → `/api/page-tree` (controller, route, `useSnapshot` → `usePageTree`). Still returns the stub page.
+  - **Verify:** open any URL in the app and see "Stub page". `curl -X POST localhost:3001/api/page-tree -d '{"url":"x"}' -H 'content-type: application/json'` returns the stub tree. The e2e smoke test passes.
+- [ ] **S2 – `normalizeUrl` + the error response:** tests first (spec AC `example.com/page/?utm_source=x` → `example.com/page`, host case, fragment, query order, root slash, `sample:` passthrough, invalid → `INVALID_URL`). The endpoint normalizes the URL, and a `FetchError` becomes `{ code, message }` with a matching HTTP status.
+  - **Verify:** curl `{"url":"HTTPS://Example.com/page/?utm_source=x#top"}` → the stub tree's `url` is `https://example.com/page`. Curl `{"url":"ftp://x"}` → 400 `{ "code": "INVALID_URL", ... }`.
+- [ ] **S3 – `clean`:** tests first (whitelist → kind, unwrap `div`/`span`, drop scripts/styles/`on*`/`javascript:` hrefs, prune empty nodes, keep images with `src`, resolve relative URLs, collapse whitespace, ids = `kind:nth` selector paths, deterministic, title from `<title>`).
+  - **Verify:** `pnpm test` passes the `clean` suite.
+- [ ] **S4 – Demo page + loader:** write `samples/demo.html` (cookie banner, chart image, form, links to real public URLs). `sample:demo` is read from disk and cleaned.
+  - **Verify:** curl `{"url":"sample:demo"}` returns a tree with the demo's title, headings, the image, the form and absolute links, and no script content. In the app, "Try a sample" shows the demo's title.
+- [ ] **S5 – `SafeFetchService`:** tests first, with DNS mocked: blocks private/loopback/link-local/reserved IPs (v4 + v6), re-checks every redirect hop (max 5), 10s timeout, 3 MB cap, `text/html` only. Each failure is a typed `FetchError`.
+  - **Verify:** curl `https://example.com` → its real tree. `http://localhost:5173` → `BLOCKED`. A PDF URL → `NOT_HTML`. `https://no-such-host.invalid` → `UNREACHABLE`.
+
+**Done when:** every Verify passes; `pnpm test`, `pnpm typecheck` and `pnpm e2e` pass.
 
 ---
 
