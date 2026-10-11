@@ -28,7 +28,7 @@ Verified elsewhere: restoring a saved configuration on open, and the unsaved-cha
   - ESLint flat config: typescript-eslint, `no-explicit-any` as an error, and react-hooks rules for web.
   - Root `test`, `typecheck`, `lint` and `build` scripts.
   - **Verify:** `pnpm test && pnpm typecheck && pnpm lint && pnpm build` all pass.
-- [ ] **S3 – Web libraries**
+- [x] **S3 – Web libraries**
   - Tailwind + shadcn/ui (Button, Input, Card).
   - TanStack Query provider and devtools, with the health call moved to `useQuery`.
   - Zustand.
@@ -69,6 +69,7 @@ Verified elsewhere: restoring a saved configuration on open, and the unsaved-cha
 
 - S2: Vitest pinned to 4.x. Vitest 5 requires Node 22.12+, which conflicts with "Node 20+".
 - S2: Smoke tests dropped. Per `CLAUDE.md`, tests only cover code where our logic can be wrong. Vitest is wired in core and api with `passWithNoTests`, so `pnpm test` passes until the first real tests land.
+- S3: Tailwind v4 via `@tailwindcss/vite`, so there's no `tailwind.config`. shadcn (new-york, neutral) uses `@/` → `src/`, and its `cn` helper comes from shadcn's `cn` package, not clsx + tailwind-merge. `App.tsx` moved to `app/`. `state/store.ts` holds only `url` for now (used in S5).
 
 ---
 
