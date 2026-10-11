@@ -53,8 +53,59 @@ function convertImage(image: Element, context: ConvertContext): DraftNode[] {
   const src = resolveUrl(DomUtils.getAttributeValue(image, 'src'), context.baseUrl);
   // An image with no source shows nothing.
   if (src === undefined) return [];
+  if (isDecorative(image)) return [];
   const alt = collapseWhitespace(DomUtils.getAttributeValue(image, 'alt') ?? '').trim();
-  return [{ kind: 'image', tag: image.name, attrs: alt ? { src, alt } : { src }, children: [] }];
+  return [{ kind: 'image', tag: image.name, attrs: { src, ...(alt ? { alt } : {}), ...readImageSize(image) }, children: [] }];
+}
+
+// These are HTML's own "skip this" signals: screen readers and agents that read the accessibility
+// tree never see such an image, so an agent gets nothing from it. A *missing* alt is different:
+// the author said nothing, so the image may matter and is kept.
+function isDecorative(image: Element): boolean {
+  const alt = DomUtils.getAttributeValue(image, 'alt');
+  const role = DomUtils.getAttributeValue(image, 'role')?.trim().toLowerCase();
+  return (
+    (alt !== undefined && alt.trim() === '') ||
+    DomUtils.getAttributeValue(image, 'aria-hidden')?.trim().toLowerCase() === 'true' ||
+    role === 'presentation' ||
+    role === 'none'
+  );
+}
+
+// Our only way to know a logo is small: stylesheets never reach us, so without this the preview
+// draws an SVG at its natural size. Agents ignore it.
+function readImageSize(image: Element): { width?: number; height?: number } {
+  const declaredStyle = parseInlineStyle(DomUtils.getAttributeValue(image, 'style'));
+  const size: { width?: number; height?: number } = {};
+  for (const dimension of ['width', 'height'] as const) {
+    // As in the browser, the inline style wins over the attribute.
+    const pixels =
+      toPixels(declaredStyle.get(dimension)) ?? toPixels(DomUtils.getAttributeValue(image, dimension));
+    if (pixels !== undefined) size[dimension] = pixels;
+  }
+  return size;
+}
+
+function parseInlineStyle(style: string | undefined): Map<string, string> {
+  const declarations = new Map<string, string>();
+  for (const declaration of (style ?? '').split(';')) {
+    const colonIndex = declaration.indexOf(':');
+    if (colonIndex === -1) continue;
+    declarations.set(declaration.slice(0, colonIndex).trim().toLowerCase(), declaration.slice(colonIndex + 1).trim());
+  }
+  return declarations;
+}
+
+// em/rem depend on the page's font size, which we don't have; 16px is the browser default.
+const PIXELS_PER_UNIT: Record<string, number> = { '': 1, px: 1, em: 16, rem: 16 };
+const LENGTH = /^(\d+(?:\.\d+)?)\s*(px|em|rem)?$/i;
+
+/** `50`, `50px`, `8.75em` → pixels. `100%`, `auto` and anything else → undefined. */
+function toPixels(length: string | undefined): number | undefined {
+  const match = LENGTH.exec(length?.trim() ?? '');
+  if (!match?.[1]) return undefined;
+  const pixels = Math.round(Number(match[1]) * (PIXELS_PER_UNIT[(match[2] ?? '').toLowerCase()] ?? 1));
+  return pixels > 0 ? pixels : undefined;
 }
 
 /** Fields are leaves: an agent needs to know a field exists and what it's for, not its options. */
@@ -69,7 +120,13 @@ function convertFormControl(control: Element, context: ConvertContext): DraftNod
     }
   }
   const label = findFieldLabel(control, context.labelTextById);
-  return [{ kind: 'field', tag: control.name, ...(label ? { attrs: { label } } : {}), children: [] }];
+  const attrs: NodeAttrs = {
+    ...(label ? { label } : {}),
+    // A checkbox and a text box are both `field`s; without the type the preview can't tell them apart.
+    // A missing type means text, as in the browser.
+    ...(control.name === 'input' ? { inputType: inputType || 'text' } : {}),
+  };
+  return [{ kind: 'field', tag: control.name, ...(Object.keys(attrs).length > 0 ? { attrs } : {}), children: [] }];
 }
 
 function elementDraft(

@@ -55,16 +55,30 @@ The demo lives in `/samples/demo.html` and is addressed as `sample:demo`. The en
 
 Example: `paragraph[text "Read our ", link "terms", text " before you subscribe."]` becomes `<p>Read our <span>terms</span> before you subscribe.</p>`, one sentence on one line. Only `text` and `link` are inline, which is all it takes to keep sentences whole.
 
-**Straightforward:** each kind becomes the element you'd expect. Headings become `h1`–`h6` by `level`. Paragraphs, lists, quotes and code become `p`, `ul`/`li`, `blockquote` and `pre`. Tables get visible cell borders (header cells are already plain cells, so the header row looks like the rest). Images become `img` with `src` and `alt`.
+**Straightforward:** each kind becomes the element you'd expect. Headings become `h1`–`h6` by `level`. Paragraphs, lists, quotes and code become `p`, `ul`/`li`, `blockquote` and `pre`. Tables get visible cell borders (header cells are already plain cells, so the header row looks like the rest). Images become `img` with `src`, `alt` and their `width`/`height` when known.
 
 **Deliberate choices** (the preview is for looking, not using):
 - **Links are styled spans with the address as a hover title, not `<a href>`.** Clicking can't leave the editor. In 02, a click selects instead.
 - **Forms are a plain bordered box, not `<form>`.** Nothing can submit.
-- **Fields show their `label` above an empty, disabled box.** `clean` already dropped values and options.
+- **Fields are drawn by `inputType`.** A checkbox or radio is a small disabled checkbox or radio with its `label` beside it. Any other field shows its `label` above an empty, disabled box. `clean` already dropped values and options.
 - **Buttons are `type="button"` with no handler.**
 - **Images use `referrerPolicy="no-referrer"`.** Otherwise every preview shows up in the publisher's logs as a visit from the editor.
+- **Images are drawn at the size the page gives them, and capped in height.** The page's stylesheets never reach us, so without a size a logo is drawn at its natural size and fills the screen. When the tag itself carries a size (global plan §3.2), the preview uses it. The cap is the fallback for images with no size, and it also keeps a sized image from growing past the panel.
 - **Regions (`header`, `nav`, `main`, `aside`, `footer`, `section`, …) are plain `div`s.** Real landmark tags would mix with the editor's own for screen readers. 02 adds visible labels.
 - **`annotation` and `forwarded` draw nothing yet.** The `switch` on `kind` is exhaustive, so when 03 and 04 add them, TypeScript points to the spot.
+
+#### Refinements from real pages
+
+Real sites surface things the demo didn't. The preview should still show exactly what an agent gets, but without misleading the publisher. Each refinement fixes either what `clean` keeps (global plan §3.2) or how the preview draws it (above).
+
+Example, from Wikipedia's header:
+- `<input type="checkbox" aria-label="Main menu">` used to show as an empty grey text box. It is now the field `{ label: "Main menu", inputType: "checkbox" }`, drawn as a small checkbox labelled "Main menu".
+- `<img src="enwiki-25.svg" alt="" aria-hidden="true">` (the globe icon) used to fill the viewport. It is decorative, so it's now dropped.
+- `<img alt="Wikipedia" style="width: 8.75em; height: 1.375em">` (the wordmark) is real content, so it stays. It used to be drawn at the SVG's natural size. It now carries `{ width: 140, height: 22 }` and is drawn at about the size it has on the real site.
+- `<div>Main menu</div>`, the menu buttons, and `<div>Navigation</div>` used to run together on one line. Each loose text is now its own paragraph, so they sit on separate lines, as in a browser or lynx.
+- `<label for="…">Main menu</label>` next to its checkbox used to show "Main menu" twice. The label's text is the field's label already, so it's dropped. The demo's "Work email" and "Company size" had the same problem.
+
+**Reference:** `lynx -dump <url>` reads a page the same way we do (no JavaScript, no CSS, source order, nothing hidden). Our order and line breaks should match it. It prints image alt text and `[ ]` / `(BUTTON)` markers where we draw the real thing.
 
 **How it looks:** a plain document in the editor's own font and colors, the same for every site, because the page's CSS never arrives (D2). A cookie banner that floats on the real site appears as a normal paragraph in its place, because that's where an agent reads it.
 

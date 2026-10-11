@@ -8,6 +8,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 - [x] T02 – Editor shell · Covers: AC2
 - [x] T03 – Demo page in the preview · Covers: AC3, AC7
 - [ ] T04 – Real pages, loading and errors · Covers: AC1, AC4, AC5, AC6
+- [ ] T05 – Preview fixes · Covers: AC1
 
 ---
 
@@ -119,7 +120,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 **Implements:** `plan.md` → Web → Loading and Error mapping, and API → Page tree (SafeFetch, global plan §4.1).
 
-- [ ] **S1 – Load real pages into the preview**
+- [x] **S1 – Load real pages into the preview**
 
   The server now fetches the real URL through `SafeFetchService` and cleans it, so any website shows in the preview, not just the demo. This first version only covers the basics: http(s) only, a 10s timeout, HTML only, a 3 MB cap, and normal redirect-following (rules: global `plan.md` §4.1, and `plan.md` → Fetching a real page). The private-address guard comes in S2, and errors still show as plain text until S4. If a real site looks wrong in the preview, add it as a follow-up instead of fixing `clean` in this step.
 
@@ -132,7 +133,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
      - a site that doesn't exist, or that answers 404, gives `UNREACHABLE`
      - after a redirect, the tree's `url` is the final address, normalized
   2. Open `https://en.wikipedia.org/wiki/Web_page` in the app. You see the "Web page" heading, many section headings and paragraphs, images, and links inside sentences that don't break them apart. No CSS or script text.
-  3. Open `https://developer.mozilla.org/en-US/docs/Web/HTML/Element/p`. It redirects, and the editor shows the final address, `.../Reference/Elements/p`.
+  3. Open `https://developer.mozilla.org/en-US/docs/Web/HTML/Element/p`. It redirects: the grey address line under the page title in the preview shows `.../Reference/Elements/p`. The top bar keeps what you typed.
   4. Open 2–3 real sites you know (a blog post, a news article). The preview reads like the page's content, with no code or CSS showing.
   5. `pnpm e2e` passes. The e2e tests that expected "Stub page" now open the sample instead, so they don't depend on the internet.
 
@@ -175,10 +176,82 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 ---
 
+## T05 – Preview fixes
+
+**Goal:** the preview shows exactly what an agent gets, without misleading the publisher. Real sites surface things the demo didn't. For example, checkboxes and radio buttons show as empty text boxes, and decorative logos fill the screen. Each refinement either changes what `clean` keeps or how the preview draws it, but never hides real content. New refinements found on real pages are added here as steps.
+
+**Implements:** global `plan.md` §3.2, and `plan.md` → Preview rendering (including Refinements from real pages).
+
+- [x] **S1 – Checkboxes, radios and decorative images**
+
+  On Wikipedia, the hidden checkboxes that open the "Main menu" and "Appearance" menus show as long empty grey bars, because the tree records that a field exists but not what kind it is. Now `clean` also records an input's type (`inputType`), and the preview draws checkboxes and radio buttons as small disabled checkboxes and radios with their label beside them.
+
+  The globe logo fills the screen, but the page marks it as decoration (`alt=""`). `clean` now drops images the page marks as decorative, with a code comment saying why: agents skip them too. Images that are real content, like the "Wikipedia" wordmark, stay, but the preview caps their height. The page's CSS sized them, and we never get it.
+
+  **Verify:**
+  1. `pnpm test` passes. The new `clean` tests check that:
+     - an image with `alt=""`, `aria-hidden="true"` or `role="presentation"` is dropped
+     - an image with no `alt` at all is kept (missing isn't the same as empty)
+     - `<input type="checkbox">` and `type="radio"` record their `inputType`, and an input with no type records `text`
+  2. Open `https://en.wikipedia.org/wiki/Web_page`:
+     - the globe icon is gone
+     - "Main menu" and "Appearance" show as small checkboxes, not grey bars
+     - the menu toggles ("Personal tools", "Tools", "94 languages"…) are checkboxes too
+     - the wordmark is no taller than the cap
+  3. Click "Try a sample": the demo still looks exactly as T03 S4 describes, and `pnpm e2e` passes.
+
+- [x] **S2 – Images at the size the page gives them**
+
+  The "WIKIPEDIA 25" logo still fills the screen in the preview, while on the real page it's a small logo in the corner. The page sets its size with CSS on the tag itself (`style="width: 8.75em"`), which `clean` never read, so the preview drew the SVG at its natural size. A smaller height cap alone wouldn't fix it, because a cap small enough for logos makes charts unreadable. Now `clean` keeps the size written on the tag, in pixels, and the preview draws the image at that size. Images with no size keep the S1 cap (rules: global `plan.md` §3.2 → Image size, and `plan.md` → Preview rendering).
+
+  **Verify:**
+  1. `pnpm test` passes. The new `clean` tests check that:
+     - `width="50" height="50"` gives `{ width: 50, height: 50 }`
+     - `style="width: 8.75em; height: 1.375em"` gives `{ width: 140, height: 22 }`, and `rem` and `px` work too
+     - the style wins over the attributes: `width="300" style="width: 100px"` gives `width: 100`
+     - sizes we can't turn into pixels are left out: `width="100%"` and `style="width: auto"` give no `width`
+  2. Open `https://en.wikipedia.org/wiki/Web_page`. The "WIKIPEDIA 25" wordmark and the "25 years of the free encyclopedia" tagline are small, about the size they are on the real page.
+  3. Click "Try a sample": the chart image looks as before, and `pnpm e2e` passes.
+
+- [ ] **S3 – Keep line breaks where block wrappers were unwrapped**
+
+  `clean` throws away wrapper `div`s and keeps their content, but it also threw away the line break the `div` made. So on Wikipedia, "Main menu", the "move to sidebar" and "hide" buttons, and "Navigation" all run together on one line, while lynx and the browser show three lines. This matters beyond looks, because the Markdown output would glue them together too. Now an unwrapped block wrapper leaves a boundary, and loose text on either side of it becomes its own paragraph. Text that's the whole content of its parent, like `<li><div>One</div></li>`, is left alone (rules: global `plan.md` §3.2 → Block boundaries are kept).
+
+  **Verify:**
+  1. `pnpm test` passes. The new `clean` tests check that:
+     - `<div>A</div><div>B</div>` gives two paragraphs "A" and "B", not one text "AB" or "A B"
+     - `<div>Main menu</div><div><button>hide</button></div><div>Navigation</div>` gives paragraph, button, paragraph
+     - `<div>Read <a>terms</a> now</div><p>Next</p>` keeps the sentence whole in one paragraph: [text, link, text]
+     - `<li><div>One</div></li>` is still listItem "One", and `<p>Hello <span>big</span> world</p>` is still one paragraph
+     - the existing test still holds: wrapping a paragraph in extra `div`s doesn't change its address
+  2. Open Wikipedia next to `lynx -dump https://en.wikipedia.org/wiki/Web_page`. "Main menu", the two buttons and "Navigation" are on separate lines, as in lynx.
+  3. Click "Try a sample": the demo looks as before, and `pnpm e2e` passes.
+
+- [ ] **S4 – Say a field's name once**
+
+  A `<label>` names its field, and `clean` already copies that name onto the field. But the label element's own text also stayed in the tree as loose text, so the name shows twice. On Wikipedia every menu checkbox ("Main menu", "Appearance", "Toggle the table of contents", "94 languages"…) appears twice, where lynx shows it once. The demo's form shows "Work email" and "Company size" twice too. Now a label whose text is already its field's label is dropped. A label that says something different, because `aria-label` won, stays, so nothing is lost (rules: global `plan.md` §3.2 → Fields). This doesn't need the `aria-hidden` follow-up: it applies whether or not the label is hidden.
+
+  **Verify:**
+  1. `pnpm test` passes. The new `clean` tests check that:
+     - `<label for="e">Email</label><input id="e">` gives just the field labelled "Email", with no loose "Email" text
+     - `<label>City <input></label>` gives just the field labelled "City"
+     - `<label for="e">Email</label><input id="e" aria-label="Your email">` keeps the text "Email" and the field labelled "Your email"
+     - a `label` that points at no field keeps its text
+  2. Open Wikipedia: each menu checkbox shows its name once, next to the box, like `[ ] Main menu` in lynx.
+  3. Click "Try a sample": the form shows "Work email" and "Company size" once each, above their boxes, and `pnpm e2e` passes.
+
+**Done when:** the preview of Wikipedia has no misleading text boxes, no screen-filling images, and no names said twice, and its order and line breaks match `lynx -dump`. The sample is unchanged except that its form labels show once. `pnpm test`, `typecheck` and `e2e` pass.
+
+**Deviations:**
+
+- Wikipedia's Small / Standard / Large radios are built by JavaScript, so they're not in the tree; Verify now checks the menu checkboxes instead → this file, T05 S1
+
+---
+
 ## Follow-ups
 
 - The web app hardcodes `http://localhost:3001`, so changing `API_PORT` breaks it. Fix: a Vite `/api` proxy or `VITE_API_URL`. (From T01 S4)
 - Playwright starting the servers itself (no `pnpm dev` running) hasn't been exercised yet. (From T01 S6)
 - Recent pages list on the start screen (pages with a saved configuration and their change counts). The `GET /api/configs` stub from T01 exists for it. Needs 05.
 - "Built with JavaScript" banner when a page's visible text is nearly empty.
-
+- `aria-hidden` on elements other than images (e.g. whole menus): should `clean` drop them too? It would hide much more than decoration, so it needs its own look. (From T05 S1)

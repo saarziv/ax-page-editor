@@ -9,14 +9,24 @@ Why the spec is the way it is. Each entry: the decision, why, and what was rejec
 - **Why:** That's what agents see. A JavaScript-built page that comes back empty is a real finding worth showing the publisher, not hiding.
 - **Rejected:** Headless browser rendering. Inaccurate to agents and heavier.
 
-### D2. Preview = clean semantic page with the editor's own styling
+### D2. Preview = clean semantic page with the editor's own styling, plus a Markdown view of the literal output
 
-- **Why:**
+The preview is where the publisher works. The **Page | Markdown** toggle shows the exact Markdown an agent receives (D5). Both draw the same clean tree with the same `clean` and `transform`, so they can differ in looks but never in content.
+
+- **Why a clean page, not the site's design:**
   - The assignment asks for the preview "as it would be served to an agent after modification", and agents don't see CSS.
   - Inserting notes, forwarded content and markers into an arbitrary site's layout breaks things: overlap, positioning, menus hidden by CSS.
   - A consistent reading layout is reliable and safe.
   - Publishers recognize their page by its content, and "Open original" covers comparison.
-- **Rejected:** The original page in a frame with its CSS. It shows the human page, not the agent one, and modifications break layouts.
+- **Why a rendered page to edit on, not just the Markdown:**
+  - Every modification starts with clicking an element. In the preview each element is one clickable thing. In Markdown a click lands on a line of text, and mapping it back to its element is unreliable.
+  - Hidden elements must stay visible to be undone (D4). In the Markdown they're gone, so there's nothing left to click.
+  - Notes, forwards and hidden parts need visible markers where they sit. In Markdown they'd be just more text.
+  - Publishers aren't developers (D3). A table and an image are easier to scan than `| Plan | Price |` and `![Customer growth](…)`.
+- **Why still show the Markdown:** it's what the agent actually reads, so the publisher can check the literal result, copy it, and compare it with other tools.
+- **Rejected:**
+  - The original page in a frame with its CSS. It shows the human page, not the agent one, and modifications break layouts.
+  - Markdown as the only view. It's the true output, but a poor surface for selecting, undoing and seeing modifications.
 
 
 

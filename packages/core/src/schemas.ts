@@ -15,7 +15,7 @@ export type PageNode = {
   kind: z.infer<typeof nodeKindSchema>;
   tag: string;
   text?: string;
-  attrs?: { href?: string; src?: string; alt?: string; level?: number; label?: string };
+  attrs?: { href?: string; src?: string; alt?: string; level?: number; label?: string; inputType?: string; width?: number; height?: number };
   children?: PageNode[];
 };
 
@@ -34,6 +34,9 @@ export const pageNodeSchema: z.ZodType<PageNode> = z.lazy(() =>
         alt: z.string().optional(),
         level: z.number().optional(),
         label: z.string().optional(),
+        inputType: z.string().optional(),
+        width: z.number().optional(),
+        height: z.number().optional(),
       })
       .optional(),
     children: z.array(pageNodeSchema).optional(),

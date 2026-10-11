@@ -31,7 +31,18 @@ export function PreviewNode({ node }: { node: PageNode }) {
 
     case 'image':
       // no-referrer keeps every preview out of the publisher's logs as a visit from the editor.
-      return <img src={node.attrs?.src} alt={node.attrs?.alt ?? ''} referrerPolicy="no-referrer" className="my-3 max-w-full" />;
+      // Drawn at the size the tag gave it. The cap covers images with no size, which would
+      // otherwise show at their natural size; object-contain keeps a capped image from stretching.
+      return (
+        <img
+          src={node.attrs?.src}
+          alt={node.attrs?.alt ?? ''}
+          width={node.attrs?.width}
+          height={node.attrs?.height}
+          referrerPolicy="no-referrer"
+          className="my-3 max-h-64 max-w-full object-contain"
+        />
+      );
 
     case 'list':
       return <ul className="my-2 list-disc pl-6">{content}</ul>;
@@ -53,13 +64,24 @@ export function PreviewNode({ node }: { node: PageNode }) {
       // A plain box, not a <form>, so nothing can ever submit.
       return <div className="my-3 flex max-w-md flex-col gap-3 rounded-md border p-4">{content}</div>;
 
-    case 'field':
+    case 'field': {
+      const inputType = node.attrs?.inputType;
+      // A checkbox drawn as a text box would mislead the publisher about what the page offers.
+      if (inputType === 'checkbox' || inputType === 'radio') {
+        return (
+          <label className="flex w-fit items-center gap-2 text-sm">
+            <input type={inputType} disabled />
+            {node.attrs?.label}
+          </label>
+        );
+      }
       return (
         <label className="flex flex-col gap-1 text-sm">
           {node.attrs?.label}
           <input disabled className="h-8 rounded-md border bg-muted" />
         </label>
       );
+    }
 
     case 'button':
       return (

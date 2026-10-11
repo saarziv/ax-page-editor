@@ -106,19 +106,22 @@ Every consumer must clean identically, or saved selectors break (D11). So these 
 | `h1`–`h6` | heading | `level` |
 | `p`, `figcaption` | paragraph | |
 | `a` with `href` (without: unwrapped) | link | `href` |
-| `img` with `src` (without: dropped) | image | `src`, `alt` |
+| `img` with `src` (without, or decorative: dropped) | image | `src`, `alt`, `width`, `height` |
 | `ul`, `ol` · `li` | list · listItem | |
 | `table` · `tr` · `td`, `th` | table · row · cell | |
 | `form` | form | |
-| `input` (not hidden/submit/button), `select`, `textarea` | field | `label` |
+| `input` (not hidden/submit/button), `select`, `textarea` | field | `label`, `inputType` (`input` only) |
 | `button`, `input[type=submit\|button]` | button | |
 | `blockquote` | quote | |
 | `pre` | code | |
 | `section`, `article`, `nav`, `header`, `footer`, `aside`, `main`, `figure` | same name | |
 
-- **Fields** are leaves, and their contents (`option`, `textarea` text) are ignored. `label` is the first of: `aria-label`, the `label[for]` text, the wrapping `label`'s text, `placeholder`, `name`.
+- **Fields** are leaves, and their contents (`option`, `textarea` text) are ignored. `label` is the first of: `aria-label`, the `label[for]` text, the wrapping `label`'s text, `placeholder`, `name`. `inputType` is the input's `type`, lowercased, `text` when missing, so a checkbox isn't mistaken for a text box. A `label` element whose text is already its field's `label` (it points at the field with `for`, or wraps it) is dropped, so the name isn't said twice. A label whose text differs, e.g. `aria-label` won, stays as text.
+- **Decorative images** are dropped: `alt=""`, `aria-hidden="true"`, or `role="presentation"`/`"none"`. These are HTML's own "skip this" signals, which screen readers and accessibility-tree agents already honor. A *missing* `alt` is not a signal, so that image is kept.
+- **Image size** is the size the page itself gives the tag, in pixels: from inline `style` (`width:`/`height:` in `px`, or `em`/`rem` counted as 16px), else the `width`/`height` attributes, as in the browser where CSS wins. Anything else (`%`, `auto`, stylesheet rules) is left out. Agents ignore it; it only keeps the preview's proportions honest, e.g. `style="width: 8.75em"` → `width: 140`.
 - **Root:** `{ id: '', kind: 'page', tag: 'body' }`. It isn't a selector step, so its children start the path (`main:1`).
 - **Text:** collapse whitespace runs to one space, and trim at the edges of each element. Adjacent text left by unwrapping is merged. An element whose only content is text keeps it in `text`, with no children. Mixed content becomes `text` children: `<p>Read <a>terms</a> now</p>` → paragraph[text, link, text].
+- **Block boundaries are kept.** Unwrapping a block-level wrapper (`div`, `dl`, `dt`, `dd`, `details`, `summary`, `fieldset`, `legend`, `address`, `center`) leaves a boundary, so its text never merges with the text around it. In a node whose content has a boundary or a block child, each run of inline nodes (`text`, `link`) becomes a `paragraph`. A node whose whole content is one inline run is unchanged, so `<li><div>One</div></li>` is still listItem "One". Example: `<div>Main menu</div><div><button>hide</button></div><div>Navigation</div>` → paragraph "Main menu", button, paragraph "Navigation", where before it was one line, "Main menu hide Navigation".
 - **Prune** nodes with no text and no meaningful children, including whitespace-only text. Images (with `src`) and fields are kept even though they have no text.
 - **Resolve** `href`/`src` against `baseUrl`. A `javascript:` href, or one that can't be resolved (a relative link on a `sample:` page), counts as no href, so the link is unwrapped.
 - **Ids** are assigned last, over the pruned tree (§3.3), so unwrapping and pruning never shift an `nth`. Text nodes get ids too.

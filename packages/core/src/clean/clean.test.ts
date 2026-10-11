@@ -46,6 +46,54 @@ describe('clean', () => {
     });
   });
 
+  describe('image size', () => {
+    function imageAttrs(imgAttributes: string) {
+      return cleanBody(`<img src="/logo.svg" alt="Logo" ${imgAttributes}>`)[0]?.attrs;
+    }
+
+    it('keeps the width and height attributes, in pixels', () => {
+      expect(imageAttrs('width="50" height="50"')).toMatchObject({ width: 50, height: 50 });
+      expect(imageAttrs('width="50px"')).toMatchObject({ width: 50 });
+    });
+
+    it('reads width and height from the inline style, counting em and rem as 16px', () => {
+      expect(imageAttrs('style="width: 8.75em; height: 1.375em"')).toMatchObject({ width: 140, height: 22 });
+      expect(imageAttrs('style="WIDTH:2rem;height:10px"')).toMatchObject({ width: 32, height: 10 });
+    });
+
+    it('lets the style win over the attributes, as in the browser', () => {
+      expect(imageAttrs('width="300" height="40" style="width: 100px"')).toMatchObject({ width: 100, height: 40 });
+    });
+
+    it('leaves out sizes it cannot turn into pixels', () => {
+      const attrs = imageAttrs('width="100%" style="height: auto; max-width: 20px"');
+      expect(attrs).not.toHaveProperty('width');
+      expect(attrs).not.toHaveProperty('height');
+    });
+  });
+
+  describe('decorative images are dropped', () => {
+    it('drops an image the page marks as decoration', () => {
+      for (const decoration of ['alt=""', 'aria-hidden="true"', 'role="presentation"', 'role="none"']) {
+        expect(cleanBody(`<p>Hi</p><img src="/logo.svg" ${decoration}>`), decoration).toHaveLength(1);
+      }
+    });
+
+    it('keeps an image with no alt at all, since missing is not the same as empty', () => {
+      expect(cleanBody('<img src="/chart.png">')).toEqual([
+        { id: 'image:1', kind: 'image', tag: 'img', attrs: { src: 'https://site.com/chart.png' } },
+      ]);
+    });
+
+    it('treats a whitespace-only alt as empty', () => {
+      expect(cleanBody('<p>Hi</p><img src="/logo.svg" alt="  ">')).toHaveLength(1);
+    });
+
+    it('keeps an image that is explicitly not hidden', () => {
+      expect(cleanBody('<img src="/chart.png" alt="Chart" aria-hidden="false">')).toHaveLength(1);
+    });
+  });
+
   describe('wrappers disappear, their content stays', () => {
     it('unwraps divs and spans', () => {
       expect(cleanBody('<div><span><p>Hi</p></span></div>')).toEqual([
@@ -158,6 +206,20 @@ describe('clean', () => {
         ?.children?.filter((node) => node.kind === 'field')
         .map((field) => field.attrs?.label);
       expect(labels).toEqual(['Your email', 'Phone', 'City', 'Zip', 'e', undefined]);
+    });
+
+    it('records the type of an input, so a checkbox is not drawn as a text box', () => {
+      const [form] = cleanBody(
+        '<form><input type="checkbox" aria-label="Main menu"><input type="Radio" name="size">' +
+          '<input name="q"><input type="email" name="e"><select name="plan"></select></form>',
+      );
+      expect(form?.children?.map((field) => field.attrs)).toEqual([
+        { label: 'Main menu', inputType: 'checkbox' },
+        { label: 'size', inputType: 'radio' },
+        { label: 'q', inputType: 'text' },
+        { label: 'e', inputType: 'email' },
+        { label: 'plan' },
+      ]);
     });
   });
 

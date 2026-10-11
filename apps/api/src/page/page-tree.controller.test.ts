@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { PageNode } from '@ax/core';
 import { FetchError } from '../fetch/fetch-error.js';
+import type { SafeFetchService } from '../fetch/safe-fetch.service.js';
 import { PageTreeController } from './page-tree.controller.js';
 import { PageTreeService } from './page-tree.service.js';
 
-const controller = new PageTreeController(new PageTreeService());
+// Echoes the requested url back, so these tests never touch the network.
+const echoSafeFetch = {
+  fetchHtml: (url: string) => Promise.resolve({ finalUrl: url, html: '<h1>Page</h1>' }),
+} as unknown as SafeFetchService;
+const controller = new PageTreeController(new PageTreeService(echoSafeFetch));
 
 function flatten(node: PageNode): PageNode[] {
   return [node, ...(node.children ?? []).flatMap(flatten)];
