@@ -64,7 +64,7 @@ This task is backend only. The app keeps showing just the page title for now. Dr
   1. Send `HTTPS://Example.com/page/?utm_source=x#top` and you get back `https://example.com/page`.
   2. Send `ftp://x` and you get an `INVALID_URL` error.
 
-- [ ] **S3 – Clean a page into a tree, and add the demo page**
+- [x] **S3 – Clean a page into a tree, and add the demo page**
 
   This is the heart of the product: turning messy HTML into a clean tree of meaningful parts (headings, paragraphs, links, images, forms…). Scripts, styles and empty wrapper `div`s are thrown away. Every part gets an address like `main:1>paragraph:2`, which is how saved changes find it again later. The exact rules are in `plan.md` §3.2, and each rule gets its own test, written first.
 
@@ -102,6 +102,10 @@ This task is backend only. The app keeps showing just the page title for now. Dr
 **Deviations:**
 
 - A URL without a scheme gets `https://` (spec AC3) → plan.md §3.6
+- Fields survive pruning like images; whitespace-only text is pruned → plan.md §3.2
+- Unresolvable hrefs (e.g. relative on `sample:`) unwrap the link like `javascript:` → plan.md §3.2
+- core depends on `domhandler` directly for DOM types and guards → plan.md §2
+- `clean.ts` split into a `clean/` folder, one file per pipeline step → plan.md §2
 
 ---
 

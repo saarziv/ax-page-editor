@@ -4,11 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useEditorStore } from '@/state/store';
 
-const SAMPLES = [
-  { label: 'Article', url: 'sample:article' },
-  { label: 'Product', url: 'sample:product' },
-  { label: 'Pricing', url: 'sample:pricing' },
-];
+// Served from disk by the api (samples/demo.html), so it opens without any network fetch.
+const DEMO_URL = 'sample:demo';
 
 export function StartScreen() {
   const setUrl = useEditorStore((state) => state.setUrl);
@@ -36,14 +33,9 @@ export function StartScreen() {
             />
             <Button type="submit">Open</Button>
           </form>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Or try a sample:</span>
-            {SAMPLES.map((sample) => (
-              <Button key={sample.url} variant="outline" size="sm" onClick={() => setUrl(sample.url)}>
-                {sample.label}
-              </Button>
-            ))}
-          </div>
+          <Button variant="link" className="px-0" onClick={() => setUrl(DEMO_URL)}>
+            Try a sample
+          </Button>
           {/* Recent row stays hidden: GET /api/configs returns [] until 05. */}
         </CardContent>
       </Card>

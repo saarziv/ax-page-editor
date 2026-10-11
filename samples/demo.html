@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Acme Analytics – Pricing</title>
+    <style>
+      body { font-family: sans-serif; }
+      .cookie-banner { position: fixed; bottom: 0; }
+    </style>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+    </script>
+  </head>
+  <body>
+    <aside class="cookie-banner">
+      <p>We use cookies to improve your experience. By continuing you agree to our cookie policy.</p>
+      <button onclick="acceptCookies()">Accept all</button>
+    </aside>
+
+    <header>
+      <nav>
+        <ul>
+          <li><a href="https://example.com/">Home</a></li>
+          <li><a href="https://example.com/pricing">Pricing</a></li>
+          <li><a href="https://example.com/blog">Blog</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <div class="hero">
+        <h1>Analytics that scale with you</h1>
+        <p>Plans start at <strong>$9 per month</strong>. Every plan includes unlimited dashboards and a 14-day free trial.</p>
+      </div>
+
+      <h2>Customer growth</h2>
+      <figure>
+        <img
+          src="https://dummyimage.com/640x320/eeeeee/333333.png&amp;text=Customer+growth+chart"
+          alt="Customer growth"
+        />
+        <figcaption>Customers per month, January to September 2026.</figcaption>
+      </figure>
+
+      <section>
+        <h2>Plans</h2>
+        <table>
+          <tr><th>Plan</th><th>Price</th><th>Seats</th></tr>
+          <tr><td>Starter</td><td>$9 / month</td><td>3</td></tr>
+          <tr><td>Pro</td><td>$49 / month</td><td>20</td></tr>
+        </table>
+        <p>
+          Read our <a href="https://www.iana.org/help/example-domains">terms of service</a> and the
+          <a href="https://en.wikipedia.org/wiki/Web_analytics">guide to web analytics</a> before you subscribe.
+        </p>
+      </section>
+
+      <section>
+        <h2>Talk to sales</h2>
+        <form action="https://example.com/contact" method="post">
+          <input type="hidden" name="csrf" value="do-not-show" />
+          <label for="email">Work email</label>
+          <input id="email" type="email" name="email" />
+          <label>Company size
+            <select name="size">
+              <option>1–10</option>
+              <option>11–100</option>
+              <option>100+</option>
+            </select>
+          </label>
+          <textarea name="message" placeholder="How can we help?"></textarea>
+          <button type="submit">Request a demo</button>
+        </form>
+      </section>
+    </main>
+
+    <footer>
+      <p>© 2026 Acme Analytics. <a href="https://example.com/privacy">Privacy</a></p>
+    </footer>
+
+    <script>
+      function acceptCookies() { document.querySelector('.cookie-banner').remove(); }
+    </script>
+  </body>
+</html>

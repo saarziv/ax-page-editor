@@ -5,6 +5,7 @@ export const nodeKindSchema = z.enum([
   'table', 'row', 'cell', 'form', 'field', 'button', 'quote', 'code',
   'section', 'article', 'nav', 'header', 'footer', 'aside', 'main', 'figure',
   'text',
+  'page', // the root only
   // Inserted by transform, never produced by clean.
   'annotation', 'forwarded',
 ]);
@@ -43,7 +44,6 @@ export const pageTreeSchema = z.object({
   url: z.string(),
   title: z.string(),
   root: pageNodeSchema,
-  isNearlyEmpty: z.boolean(),
 });
 
 export type PageTree = z.infer<typeof pageTreeSchema>;

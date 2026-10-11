@@ -32,7 +32,7 @@ Where a shared piece is first built by a feature, that's noted as "first built i
 - pnpm workspaces, Node >=20.12 (built-in `.env` loading), TypeScript strict everywhere.
 - **web:** Vite + React + TS, Tailwind + shadcn/ui, TanStack Query, Zustand.
 - **api:** NestJS, better-sqlite3.
-- **core:** pure TS, depends only on `htmlparser2` (parsing) and `zod`.
+- **core:** pure TS, depends only on `htmlparser2` (parsing), `domhandler` (its DOM types and guards) and `zod`.
 - **Tests:** Vitest (core, api), Playwright (2 flows).
 
 ```
@@ -48,7 +48,7 @@ apps/
     agent-view/     controller + service
 packages/
   core/src/
-    types.ts  schemas.ts  clean.ts  selector.ts  resolve.ts
+    types.ts  schemas.ts  clean/  selector.ts  resolve.ts
     transform.ts  render-markdown.ts  render-html.ts  url.ts  tokens.ts
 samples/            demo.html
 docs/
@@ -119,8 +119,8 @@ Every consumer must clean identically, or saved selectors break (D11). So these 
 - **Fields** are leaves, and their contents (`option`, `textarea` text) are ignored. `label` is the first of: `aria-label`, the `label[for]` text, the wrapping `label`'s text, `placeholder`, `name`.
 - **Root:** `{ id: '', kind: 'page', tag: 'body' }`. It isn't a selector step, so its children start the path (`main:1`).
 - **Text:** collapse whitespace runs to one space, and trim at the edges of each element. Adjacent text left by unwrapping is merged. An element whose only content is text keeps it in `text`, with no children. Mixed content becomes `text` children: `<p>Read <a>terms</a> now</p>` → paragraph[text, link, text].
-- **Prune** nodes with no text and no meaningful children. Images are kept if they have `src`.
-- **Resolve** `href`/`src` against `baseUrl`. Drop `javascript:` links' href.
+- **Prune** nodes with no text and no meaningful children, including whitespace-only text. Images (with `src`) and fields are kept even though they have no text.
+- **Resolve** `href`/`src` against `baseUrl`. A `javascript:` href, or one that can't be resolved (a relative link on a `sample:` page), counts as no href, so the link is unwrapped.
 - **Ids** are assigned last, over the pruned tree (§3.3), so unwrapping and pruning never shift an `nth`. Text nodes get ids too.
 - **Title:** `<title>`, else the first heading's text, else `baseUrl`.
 - **Deterministic:** the same HTML always produces the same tree. Required for targeting.
