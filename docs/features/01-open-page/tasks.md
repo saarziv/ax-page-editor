@@ -80,12 +80,12 @@ The friendly error screens and the loading spinner come in T04. Until then, erro
   2. Send `sample:demo` to the endpoint. You get back the demo as a clean tree: its title, headings, image, form and links are all there, and no script code.
   3. In the app, click "Try a sample" and you see the demo's title.
 
-- [ ] **S4 – Draw the clean tree in the preview**
+- [x] **S4 – Draw the clean tree in the preview**
 
   Until now the preview only showed the page title. Now it draws the whole tree as a basic readable page: one React element per node kind, called recursively, with no `dangerouslySetInnerHTML` and no iframe (rules: `plan.md` → Web → Preview rendering). This is the first time you can *see* what `clean` produces, so the demo page is the main check: what's on screen is exactly what an agent will read. Real URLs still show the fake page until S5.
 
-  **How the demo should look** (click "Try a sample"). Plain and unstyled, like a document, in the app's own font. From top to bottom:
-  1. **Cookie text** in a normal paragraph at the top (not floating at the bottom of the screen), followed by an "Accept all" button. It stays: hiding it is the publisher's job in 03.
+  **How the demo should look** (click "Try a sample"). Plain and unstyled, like a document, in the app's own font. A small header line shows the page title and URL, and below it, from top to bottom:
+  1. **Cookie text** in a normal paragraph at the top, followed by an "Accept all" button. It's first because it's first in the HTML. The real page floats it at the bottom with CSS, which agents never see. It stays: hiding it is the publisher's job in 03.
   2. **Navigation:** a bulleted list of three links, Home, Pricing and Blog.
   3. **"Analytics that scale with you"** as the largest heading, then a paragraph starting "Plans start at $9 per month". The price is plain text, not bold (`strong` is unwrapped).
   4. **"Customer growth"** as a smaller heading, a grey chart image reading "Customer growth chart", and below it the caption "Customers per month, January to September 2026." as a normal paragraph.
