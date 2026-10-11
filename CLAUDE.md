@@ -13,7 +13,7 @@ Docs are the source of truth. If code and docs disagree, the docs win. If a doc 
 
 **Tasks & steps**
 
-- Aim to build each task in one Claude session that ends in one commit + push.
+- Aim to build each task in one Claude session. The dev commits and pushes, not Claude: commits optionally after each step, and pushes once the task is done.
 - Split a task into steps. Define and build each step as one prompt or a short prompt loop.
 - Define every step together with its **Verify** action (something the dev runs or sees). A step is done only when it passes.
 - Order tasks outside-in: what the user sees first gets built first.
@@ -24,7 +24,7 @@ Docs are the source of truth. If code and docs disagree, the docs win. If a doc 
 1. **Plan:** detail the next task's steps, Verify actions and "Done when" in `tasks.md`. No code.
 2. **Wait for review** and approval.
 3. **Implement** only that task, step by step, tests first.
-4. **Finish:** run `pnpm test` and `pnpm typecheck`, note deviations under the task, tick it, then commit and push.
+4. **Finish:** run `pnpm test` and `pnpm typecheck`, note deviations under the task, tick it, and hand off to the dev to commit and push.
 
 Changes outside the task's scope become follow-ups.
 

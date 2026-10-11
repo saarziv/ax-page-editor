@@ -2,7 +2,7 @@
 
 Follows the SDD guidelines in `CLAUDE.md`:
 
-- Aim for one session per task, ending in one commit + push.
+- Aim for one session per task. The dev commits and pushes, not Claude: commits optionally after each step, and pushes once the task is done.
 - Each step is one prompt or a short prompt loop, with its own **Verify** action.
 - Detail a task's steps right before it starts.
 
@@ -16,7 +16,7 @@ Verified elsewhere: restoring a saved configuration on open, and the unsaved-cha
 
 **Steps**
 
-- [ ] **S1 – Minimal wiring**
+- [x] **S1 – Minimal wiring**
   - pnpm workspace, `tsconfig.base.json` (strict), Node 20+.
   - `packages/core` (`@ax/core`) exports one value.
   - `apps/api` (NestJS) serves `GET /api/health` → `{ ok: true, core: <value> }`.
