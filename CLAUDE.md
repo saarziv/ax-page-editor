@@ -45,6 +45,12 @@ Everything is a function of `(page tree, config)`. The editor and Agent View use
 - Typecheck: `pnpm typecheck` · Lint: `pnpm lint`
 - Build: `pnpm build`
 
+**Running the app:** the dev runs `pnpm dev` in their own terminal, so they can see the logs and stop it.
+
+- Claude never leaves `pnpm dev`, a watcher or a server running in the background.
+- Before starting anything on ports 3001 or 5173, check `lsof -nP -iTCP:3001 -iTCP:5173 -sTCP:LISTEN` and say if something is already there.
+- If a one-off check needs a server (e.g. `curl` against the api), say where it runs and stop it in the same command.
+
 ## Hard rules
 
 - `packages/core` stays pure: no I/O, no Nest, no React, no fetch.
@@ -72,6 +78,7 @@ Everything is a function of `(page tree, config)`. The editor and Agent View use
 - Errors:
   - Catch where you can handle or translate them (e.g. a fetch failure becomes a `FetchError` code with a user-facing message); otherwise let them propagate.
   - No empty catches. Error messages say what failed and with what input.
+- Request bodies that need validation use the `@ZodBody(schema)` decorator, typed with `z.infer<typeof schema>`. Never a raw `@Body()`.
 - File size: consider splitting above ~300 lines, but only if it improves clarity.
 - Tests: only test code where our logic can be wrong. Core logic and safety checks get thorough tests. Don't test that a library or the DB works.
 

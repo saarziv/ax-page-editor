@@ -40,20 +40,24 @@ Verified elsewhere: restoring a saved configuration on open, and the unsaved-cha
   - A zod validation pipe, with `zod` added to core.
   - `better-sqlite3` installed (no schema yet; that's 05).
   - **Verify:** `curl -i -H "Origin: http://evil.test" localhost:3001/api/health` has no `Access-Control-Allow-Origin` header, while the web app still loads health. Changing `API_PORT` in `.env` moves the server.
-- [ ] **S5 – Feature stubs (no logic)**
-  - core: `normalizeUrl` and `clean` with their final signatures, throwing "not implemented".
-  - api:
-    - `SafeFetchService.fetchHtml` stub.
-    - `POST /api/snapshot` validates `{ url }` and returns a hardcoded stub `PageTree` that echoes the url.
+- [x] **S5 – Feature stubs (no logic)**
+  - Goal: every piece of 01 exists with its final name and signature, but returns fake data. Later tasks replace the insides without rewiring.
+  - core (`packages/core`):
+    - `normalizeUrl(rawUrl)` and `clean(html, baseUrl)` throw "not implemented".
+    - `PageNode` / `PageTree` zod schemas, so the api and web share one type.
+  - api (`apps/api`):
+    - `SafeFetchService.fetchHtml(url)` rejects with "not implemented".
+    - `POST /api/snapshot` checks the body is `{ url }`, then returns a fake `PageTree` titled "Stub page" that echoes the url.
     - `GET /api/configs` returns `[]`.
-  - web:
-    - StartScreen: URL input + Open, and the three sample buttons. The Recent row is hidden because the list is empty.
-    - Editor placeholder: a top bar URL field, plus the stub tree's url and title.
-    - Switching between the two screens is driven by the store's `url`.
+  - web (`apps/web`):
+    - StartScreen: a URL input with an Open button, plus Article / Product / Pricing sample buttons. The Recent row stays hidden because the list is empty.
+    - Editor placeholder: a top bar URL field, and below it the stub page's title and url.
+    - Which screen shows depends on the store's `url`: empty shows StartScreen, set shows the editor. No router.
   - **Verify:** in the browser, type any URL and click Open, and the editor shows "Stub page" with that URL. Click a sample and see the same with `sample:pricing`. `POST /api/snapshot` with `{}` returns 400.
 - [ ] **S6 – E2E**
-  - Playwright config that starts web and api.
-  - One smoke flow: start screen → Open → stub editor.
+  - Goal: turn the S5 click-through into an automated browser test.
+  - A Playwright config that starts web and api itself.
+  - One smoke test: start screen → type a URL → Open → the stub editor shows "Stub page".
   - **Verify:** `pnpm e2e` passes.
 
 **Done when**
@@ -73,8 +77,11 @@ Verified elsewhere: restoring a saved configuration on open, and the unsaved-cha
 - S4: `better-sqlite3` pinned to 12.x. 13.x requires Node 22+, which conflicts with "Node 20+".
 - S4: Env is loaded with Node's built-in `process.loadEnvFile` (no dotenv), so `engines` is now `>=20.12`. `.env.example` lives in `apps/api/` because the api reads `.env` from its own working directory. Values are validated with zod and default to the `.env.example` values, so a fresh clone runs without a `.env`. An invalid value stops startup.
 - S4: CORS takes `[WEB_ORIGIN]`, not a plain string. With a string, `cors` sends that origin to every caller, which would fail the Verify.
-- S4: `ZodValidationPipe` is applied per route (`@Body(new ZodValidationPipe(schema))`). Its 400 uses `code: 'INVALID_REQUEST'`; the global plan doesn't name a code for bad request bodies.
+- S4: `ZodValidationPipe` was first applied per route. Its 400 uses `code: 'INVALID_REQUEST'`; the global plan doesn't name a code for bad request bodies.
 - S4: The web app still calls `http://localhost:3001`, so if `API_PORT` changes, the web stops reaching the api. Follow-up: a Vite `/api` proxy or a `VITE_API_URL`.
+- S5: The stub snapshot's `root` is a single empty `main` node, since the `PageTree` schema requires one. Stubs that take parameters include them in the "not implemented" message, so lint doesn't flag unused arguments and the error names its input.
+- S5: The pipe stays per-route, behind a `@ZodBody(schema)` decorator (`common/zod-body.decorator.ts`) that wraps `Body(new ZodValidationPipe(schema))`. A global pipe with DTO classes (`createZodDto`) was tried and dropped: it needed a class built by a function, a cast and a type guard, which was too hard to read. Trade-off: a raw `@Body()` still skips validation, so `CLAUDE.md` says bodies must use `@ZodBody`.
+- S5: The web `queries.ts` now has `useSnapshot(url)`, which parses the response with core's `pageTreeSchema`. It's still hardcoded to `http://localhost:3001` (see the S4 follow-up).
 
 ---
 
