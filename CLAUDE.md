@@ -8,6 +8,8 @@ A visual editor that lets publishers (non-developers) load a webpage, click elem
 
 Docs are the source of truth. If code and docs disagree, the docs win. If a doc seems wrong, stop and say so. Don't improvise around it.
 
+Every fact lives in exactly one place: what and why in the specs and `spec-decisions.md`, how in the plans, coding details (versions, config, file locations) in the code, progress in `tasks.md`. Never write the same fact in two places.
+
 - Global: `docs/spec.md` (what), `docs/spec-decisions.md` (why), `docs/plan.md` (shared how: architecture, core contracts, conventions).
 - Per feature (`docs/features/NN-<feature>/`, in build order): `spec.md` (what + acceptance criteria), `plan.md` (how; builds on the global plan, never restates it), `tasks.md` (ordered tasks and progress).
 
@@ -21,10 +23,17 @@ Docs are the source of truth. If code and docs disagree, the docs win. If a doc 
 
 **Workflow**
 
-1. **Plan:** detail the next task's steps, Verify actions and "Done when" in `tasks.md`. No code.
+1. **Plan:** first compact the previous task (it's pushed, so git keeps the full text): keep its Goal, each ticked step with a 1–2 line summary of what it built, "Done when" and deviation one-liners, and drop the rest of the step details. Then detail the next task's steps, Verify actions and "Done when" in `tasks.md`. No code.
 2. **Wait for review** and approval.
 3. **Implement** only that task, step by step, tests first.
-4. **Finish:** run `pnpm test` and `pnpm typecheck`, note deviations under the task, tick it, and hand off to the dev to commit and push.
+4. **Finish:** run `pnpm test` and `pnpm typecheck`, handle deviations (below), tick the task, and hand off to the dev to commit and push.
+
+**Deviations** (the code ended up different from the docs or the step): sort each one, never leave a paragraph under the task.
+
+- **Makes a doc wrong:** fix that sentence in the doc in place (edit, don't append). Under the task, add one line: `- <what changed> → <doc> §<section>`.
+- **Coding detail** (a version pin, a config file location, how a library is set up): don't write it down; the code shows it. Add a code comment only if the WHY isn't obvious.
+- **Work for later:** a one-liner in the `## Follow-ups` list at the bottom of `tasks.md`.
+- **Temporary** (a stub the next task replaces): skip it.
 
 Changes outside the task's scope become follow-ups.
 

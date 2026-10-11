@@ -29,7 +29,7 @@ Where a shared piece is first built by a feature, that's noted as "first built i
 
 ## 2. Stack & repo layout
 
-- pnpm workspaces, Node 20+, TypeScript strict everywhere.
+- pnpm workspaces, Node >=20.12 (built-in `.env` loading), TypeScript strict everywhere.
 - **web:** Vite + React + TS, Tailwind + shadcn/ui, TanStack Query, Zustand.
 - **api:** NestJS, better-sqlite3.
 - **core:** pure TS, depends only on `htmlparser2` (parsing) and `zod`.
@@ -56,8 +56,8 @@ docs/
   features/NN-<feature>/spec.md plan.md tasks.md   per feature
 ```
 
-**Run:** `pnpm install && pnpm dev` (web + api together). `pnpm test`, `pnpm e2e`.
-**Env (`.env.example`):** `API_PORT=3001`, `WEB_ORIGIN=http://localhost:5173`, `DB_PATH=./data/ax.db`.
+**Run:** `pnpm install && pnpm dev` (web + api together). `pnpm test`, `pnpm e2e` (fresh clone: `pnpm exec playwright install chromium` first).
+**Env (`apps/api/.env.example`):** `API_PORT=3001`, `WEB_ORIGIN=http://localhost:5173`, `DB_PATH=./data/ax.db`.
 
 ## 3. Shared core (`packages/core`)
 
@@ -182,7 +182,7 @@ Details live in the owning feature's plan.
 
 ### 4.3 Conventions
 - **Errors:** `{ code, message }`. The web maps `code` to the plain-language messages in the Open a page spec.
-- **Validation:** request bodies go through a zod pipe with the core schemas.
+- **Validation:** request bodies are validated per route with `@ZodBody(schema)` (core schemas). Invalid → 400 `{ code: 'INVALID_REQUEST' }`.
 - **No caching in the API** (D9: forwards are fetched live). The only cache is the editor's session cache (P11).
 
 ## 5. Frontend (`apps/web`)
