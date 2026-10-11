@@ -22,6 +22,11 @@ Every fact lives in exactly one place: what and why in the specs and `spec-decis
 - Detail a task's steps only right before it starts.
 - Keep a `## Roadmap` at the top of `tasks.md`: one line per task with the spec ACs it covers (`Covers: AC1, AC3`). Every AC must appear in at least one line.
 - A task points to the plan section it implements; it never restates the plan.
+- Each task must be clear on its own: its title, goal and steps together should explain the idea. If a concept needs more words or a short example to land, add them.
+- Write steps for a human reading cold: plain sentences, never comma-separated keyword lists. Point to the plan for exact rules.
+- Step = a short title saying what it does, then 1–3 sentences on what it builds and why.
+- Verify = a numbered list of what the dev runs or sees, with the expected result.
+- If Verify runs `pnpm test`, add a few bullets on what the tests check, with key examples only.
 
 **Workflow**
 

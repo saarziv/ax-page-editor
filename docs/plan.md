@@ -71,6 +71,7 @@ type NodeKind =
   | 'table' | 'row' | 'cell' | 'form' | 'field' | 'button' | 'quote' | 'code'
   | 'section' | 'article' | 'nav' | 'header' | 'footer' | 'aside' | 'main' | 'figure'
   | 'text'
+  | 'page'                        // the root only
   | 'annotation' | 'forwarded';   // inserted by transform, never produced by clean
 
 type PageNode = {
@@ -94,12 +95,34 @@ type PageTree = { url: string; title: string; root: PageNode };
 
 First built in 01. Used by every page load, forward and Agent View.
 
+Every consumer must clean identically, or saved selectors break (D11). So these rules are the contract, not an implementation detail.
+
 - Parse with htmlparser2.
-- **Drop:** `script`, `style`, `noscript`, `iframe`, `object`, `embed`, `svg` internals, `template`, comments, hidden inputs, all `on*` attributes.
-- **Map** tags to `kind` with a whitelist. Unwrap any element not on the whitelist (`div`, `span`, etc.), keeping its children. This yields "only meaningful elements" (See & select).
+- **Drop:** `head` (after reading the title), `script`, `style`, `noscript`, `iframe`, `object`, `embed`, `svg` internals, `template`, `hr`, comments, hidden inputs, all `on*` attributes. `br` becomes a space.
+- **Map** tags to `kind` with this whitelist. Unwrap any other element (`div`, `span`, `strong`, `label`, `thead`, etc.), keeping its children. This yields "only meaningful elements" (See & select).
+
+| Tags | kind | attrs |
+|---|---|---|
+| `h1`–`h6` | heading | `level` |
+| `p`, `figcaption` | paragraph | |
+| `a` with `href` (without: unwrapped) | link | `href` |
+| `img` with `src` (without: dropped) | image | `src`, `alt` |
+| `ul`, `ol` · `li` | list · listItem | |
+| `table` · `tr` · `td`, `th` | table · row · cell | |
+| `form` | form | |
+| `input` (not hidden/submit/button), `select`, `textarea` | field | `label` |
+| `button`, `input[type=submit\|button]` | button | |
+| `blockquote` | quote | |
+| `pre` | code | |
+| `section`, `article`, `nav`, `header`, `footer`, `aside`, `main`, `figure` | same name | |
+
+- **Fields** are leaves, and their contents (`option`, `textarea` text) are ignored. `label` is the first of: `aria-label`, the `label[for]` text, the wrapping `label`'s text, `placeholder`, `name`.
+- **Root:** `{ id: '', kind: 'page', tag: 'body' }`. It isn't a selector step, so its children start the path (`main:1`).
+- **Text:** collapse whitespace runs to one space, and trim at the edges of each element. Adjacent text left by unwrapping is merged. An element whose only content is text keeps it in `text`, with no children. Mixed content becomes `text` children: `<p>Read <a>terms</a> now</p>` → paragraph[text, link, text].
 - **Prune** nodes with no text and no meaningful children. Images are kept if they have `src`.
 - **Resolve** `href`/`src` against `baseUrl`. Drop `javascript:` links' href.
-- **Collapse** whitespace.
+- **Ids** are assigned last, over the pruned tree (§3.3), so unwrapping and pruning never shift an `nth`. Text nodes get ids too.
+- **Title:** `<title>`, else the first heading's text, else `baseUrl`.
 - **Deterministic:** the same HTML always produces the same tree. Required for targeting.
 
 ### 3.3 Selectors & targets

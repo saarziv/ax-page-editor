@@ -44,22 +44,60 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 ## T03 – Page tree endpoint (backend)
 
-**Goal:** `POST /api/page-tree` with `{ url }` returns the real clean page as `{ url, title, root }`, or `{ code, message }` when it fails. Backend only: the web keeps showing just the title and URL. The tree renderer and the plain-language error screens come in the next task.
+**Goal:** you send the server a URL, and it sends back that page cleaned up as a tree (JSON). If the page can't be loaded, you get back an error code and a message instead.
 
-**Implements:** `plan.md` §API → Page tree, and the demo page.
+This task is backend only. The app keeps showing just the page title for now. Drawing the tree on screen, and the friendly error screens, come in T04.
 
-- [x] **S1 – Rename:** `/api/snapshot` → `/api/page-tree` (controller, route, `useSnapshot` → `usePageTree`). Still returns the stub page.
-  - **Verify:** open any URL in the app and see "Stub page". `curl -X POST localhost:3001/api/page-tree -d '{"url":"x"}' -H 'content-type: application/json'` returns the stub tree. The e2e smoke test passes.
-- [x] **S2 – `normalizeUrl` + the error response:** tests first (AC3, host case, fragment, query order, root slash, `sample:` passthrough, invalid → `INVALID_URL`). The endpoint normalizes the URL, and a `FetchError` becomes `{ code, message }` with a matching HTTP status.
-  - **Verify:** curl `{"url":"HTTPS://Example.com/page/?utm_source=x#top"}` → the stub tree's `url` is `https://example.com/page`. Curl `{"url":"ftp://x"}` → 400 `{ "code": "INVALID_URL", ... }`.
-- [ ] **S3 – `clean`:** tests first (whitelist → kind, unwrap `div`/`span`, drop scripts/styles/`on*`/`javascript:` hrefs, prune empty nodes, keep images with `src`, resolve relative URLs, collapse whitespace, ids = `kind:nth` selector paths, deterministic, title from `<title>`).
-  - **Verify:** `pnpm test` passes the `clean` suite.
-- [ ] **S4 – Demo page + loader:** write `samples/demo.html` (cookie banner, chart image, form, links to real public URLs). `sample:demo` is read from disk and cleaned.
-  - **Verify:** curl `{"url":"sample:demo"}` returns a tree with the demo's title, headings, the image, the form and absolute links, and no script content. In the app, "Try a sample" shows the demo's title.
-- [ ] **S5 – `SafeFetchService`:** tests first, with DNS mocked: one test per rule in `plan.md` §4.1 (IP blocking v4 + v6, every redirect hop, timeout, size cap, content type), each failing with its typed `FetchError`.
-  - **Verify:** curl `https://example.com` → its real tree. `http://localhost:5173` → `BLOCKED`. A PDF URL → `NOT_HTML`. `https://no-such-host.invalid` → `UNREACHABLE`.
+**Implements:** `plan.md` → API → Page tree, and the demo page.
 
-**Done when:** over curl, a real public URL and `sample:demo` return their clean trees, and every blocked case returns its `{ code, message }`. `pnpm e2e` still passes.
+- [x] **S1 – Rename the endpoint**
+
+  The endpoint used to be called "snapshot". It's now "page-tree", everywhere. It still returns a fake page.
+
+  **Verify:** open any URL in the app and you see "Stub page".
+
+- [x] **S2 – Tidy up the URL, and return errors properly**
+
+  Before loading a page, the server tidies the URL so the same page always gets the same address. It lowercases the domain and drops `#anchors`, tracking parameters like `utm_source` and trailing slashes. A bad URL gets a clear error back instead of a crash.
+
+  **Verify:**
+  1. Send `HTTPS://Example.com/page/?utm_source=x#top` and you get back `https://example.com/page`.
+  2. Send `ftp://x` and you get an `INVALID_URL` error.
+
+- [ ] **S3 – Clean a page into a tree, and add the demo page**
+
+  This is the heart of the product: turning messy HTML into a clean tree of meaningful parts (headings, paragraphs, links, images, forms…). Scripts, styles and empty wrapper `div`s are thrown away. Every part gets an address like `main:1>paragraph:2`, which is how saved changes find it again later. The exact rules are in `plan.md` §3.2, and each rule gets its own test, written first.
+
+  We also add a demo page (`samples/demo.html`), with a cookie banner, a chart image, a form and a few links. The server loads it straight from disk, so it needs no internet. Real URLs keep returning the fake page until S4.
+
+  **Verify:**
+  1. `pnpm test` passes. The `clean` tests check that:
+     - meaningful tags become parts: `<h2>` becomes a heading (level 2), `<a href>` a link, `<img src>` an image
+     - wrappers disappear but their content stays: `<div><p>Hi</p></div>` becomes just the paragraph
+     - junk is removed: scripts, styles, `onclick` handlers and `javascript:` links
+     - relative links become full URLs: `/about` becomes `https://site.com/about`
+     - addresses are stable: the same HTML always gives the same tree, and wrapping a paragraph in extra `div`s doesn't change its `main:1>paragraph:2` address
+  2. Send `sample:demo` to the endpoint. You get back the demo as a clean tree: its title, headings, image, form and links are all there, and no script code.
+  3. In the app, click "Try a sample" and you see the demo's title.
+
+- [ ] **S4 – Fetch real pages safely**
+
+  Now the server fetches real websites. It does that through a guard that refuses anything dangerous: addresses inside our own network (like `localhost`), redirects that sneak there, pages that are too slow or too big, and files that aren't web pages. Each refusal comes back as a clear error code. Each rule gets its own test, written first (rules: `plan.md` §4.1).
+
+  **Verify:**
+  1. `pnpm test` passes. The guard tests fake the network, and check that every dangerous case is refused with the right error:
+     - private and local addresses are `BLOCKED`, like `127.0.0.1`, `192.168.x.x` and their IPv6 versions
+     - a public URL that redirects to a private one is also `BLOCKED`, and so is a chain of more than 5 redirects
+     - a slow site gives `TIMEOUT`, a page over 3 MB gives `TOO_LARGE`, and a PDF gives `NOT_HTML`
+  2. Send `https://example.com` and you get back its real clean tree.
+  3. Send `http://localhost:5173` and you get `BLOCKED`.
+  4. Send a PDF link and you get `NOT_HTML`.
+  5. Send `https://no-such-host.invalid` and you get `UNREACHABLE`.
+
+**How to send a URL:** with `pnpm dev` running,
+`curl -X POST localhost:3001/api/page-tree -H 'content-type: application/json' -d '{"url":"<URL>"}'`
+
+**Done when:** a real website and the demo page both come back as clean trees, every dangerous URL is refused with its error code, and `pnpm e2e` still passes.
 
 **Deviations:**
 
