@@ -61,7 +61,7 @@ Implications:
 ## 5. User flow
 
 1. User opens the editor and lands on the **start screen**.
-2. User enters a URL (or picks a sample page / a recent page) and opens it.
+2. User enters a URL (or picks the demo page) and opens it.
 3. The editor shows the **preview** (left) and the **inspector** (right). If a configuration was saved for this URL, it's restored.
 4. User hovers elements to see what they are, clicks one to select it.
 5. The inspector shows the element and its controls. User hides it, adds context, or forwards it (links only).
@@ -79,7 +79,7 @@ Each feature below is described in full (behavior, acceptance criteria, edge cas
 
 ### 6.1 Open a page
 
-A focused start screen whose only job is to get a page on screen: enter a URL, pick a sample page, or reopen a recent one. The page is fetched server-side exactly as an agent would fetch it (no JavaScript), and every failure is explained in plain language. A page that comes back nearly empty because it's built with JavaScript opens anyway, with a banner explaining that this is all an agent sees.
+A focused start screen whose only job is to get a page on screen: enter a URL or pick the demo page. The page is fetched server-side exactly as an agent would fetch it (no JavaScript), cleaned, and shown in the editor. Every failure is explained in plain language.
 
 ### 6.2 See & select the page
 

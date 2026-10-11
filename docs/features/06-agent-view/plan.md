@@ -28,7 +28,7 @@ Flow:
 
 ## Tests
 
-- Agent View on a sample (API): applied output plus the skipped header.
+- Agent View on the demo page (API): applied output plus the skipped header.
 - No configuration → clean page.
 - `format=html` returns HTML with the same content.
 - E2E flow 2 (global plan §7): save, reload; the modifications are restored, and Agent View returns the same Markdown as the editor.

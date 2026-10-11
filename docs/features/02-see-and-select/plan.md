@@ -38,7 +38,7 @@ First built here:
 
 ## Tests
 
-- `renderMarkdown`: snapshot tests for the samples.
+- `renderMarkdown`: snapshot test for the demo page.
 - `renderHtml`: escaping of page text.
 - Label per `kind`.
 - Breadcrumb derivation from a selector.

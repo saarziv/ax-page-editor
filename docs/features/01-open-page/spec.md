@@ -1,73 +1,70 @@
 # Open a Page – Spec
 
-Get a page on screen, exactly as an agent would fetch it. Part of AX Editor: see the global `spec.md` for the problem, users, core concepts, configuration format and trust & safety rules.
+Type a URL, click Open, and see the page's clean tree in the editor, fetched exactly as an agent would fetch it. Part of AX Editor: see the global `spec.md` for the problem, users, core concepts and trust & safety rules.
 
 ---
 
 ## What & why
 
-**What:** A focused entry screen whose only job is to get a page open.
+**What:** A start screen with a URL input, and an editor shell that shows the opened page.
 
 ```
-┌──────────────────────────────────────────────────┐
-│  AX Editor                                       │
-│                                                  │
-│    See your page the way AI agents read it.      │
-│    [ https://your-site.com/page         ] [Open] │
-│                                                  │
-│    Try a sample:  Article · Product · Pricing    │
-│    Recent:  example.com/blog/post  · 3 changes   │
-└──────────────────────────────────────────────────┘
+Start screen                              Editor
+┌───────────────────────────────────┐     ┌────────────────────────────────────────────┐
+│  AX Editor                        │     │ [ example.com/pricing      ] [Open]        │
+│                                   │     ├──────────────────────────┬─────────────────┤
+│  See your page the way AI agents  │     │  Pricing that scales     │  Hide from AI   │
+│  read it.                         │ ──▶ │                          │  Context for AI │
+│  [ https://your-site.com ] [Open] │     │  Plans start at $9...    │  Forward link   │
+│                                   │     │  • Starter  • Pro        │  (coming soon)  │
+│  Try a sample                     │     │  Read our terms          │                 │
+└───────────────────────────────────┘     └──────────────────────────┴─────────────────┘
 ```
 
-**Why:** The first thing a publisher needs is their own page on screen. Sample pages let anyone (including reviewers) try every feature with no network issues, using pages designed to exercise each modification (a chart, a form, links worth forwarding, a cookie banner). Recent pages make returning to work one click.
+**Why:** Everything else in the product (selecting, hiding, context, forwarding) works on an opened page. This feature delivers that foundation: a real page, fetched safely, cleaned, and on screen in the editor's layout.
 
 ## Behavior
 
 **Opening a page**
 
-- The URL bar stays visible in the editor's top bar, so a different page can be opened at any time.
-- Opening a URL fetches the page server-side, exactly as an agent would (no JavaScript).
-- The URL is normalized (lowercase host, no trailing slash, tracking parameters like `utm_*` removed) and redirects are followed. The final URL is the one shown and the one configurations are saved under.
-- While loading, the preview shows a loading state.
-- If there is a saved configuration for the URL, it's restored and the change count is shown. (How restored modifications are matched back to elements is defined in the Save & review changes spec.)
-- If the editor has unsaved changes, opening another URL or leaving the editor warns first.
+- The user types a URL and clicks **Open** (or presses Enter).
+- The page is fetched server-side, exactly as an agent would fetch it (no JavaScript), then cleaned into the page tree.
+- The URL is normalized: lowercase host, no trailing slash, no fragment, and tracking parameters like `utm_*` removed. Redirects are followed.
+- While loading, the preview shows a loading spinner, never the previous page.
 
-**Sample pages**
+**The editor shell**
 
-- Three samples: **Article**, **Product**, **Pricing**.
-- Together they contain at least one of each thing worth modifying: a chart or image that needs context, a form, links worth forwarding, a cookie banner or promo worth hiding.
-- Samples open with no network access. Their forwardable links point to other sample pages, so forwarding can be tried offline too.
+- **Top bar:** a URL field and an Open button, so another page can be opened at any time.
+- **Left panel:** the clean tree rendered as a basic readable page (headings, paragraphs, lists, links, images, tables). Links don't navigate. The full preview (reading layout, landmark labels, modification markers) is built in 02 See & select.
+- **Right panel:** the modification controls (Hide from AI, Context for AI, Forward this link), shown as disabled stubs. 02 wires them to the selected element, and 03 and 04 make them work.
 
-**Recent pages**
+**Demo page**
 
-- Lists the pages that have a saved configuration, each with its URL and its number of changes.
-- Most recently saved first.
-- Clicking one opens it, the same as typing its URL.
-- When nothing has been saved yet, the "Recent" row is not shown.
+- One bundled demo page, opened from a "Try a sample" link on the start screen, with no network access.
+- It contains one of each thing worth modifying: a chart or image that needs context, a form, links worth forwarding, and a cookie banner worth hiding.
 
 ## Acceptance criteria
 
-- Given a valid public URL, when the user opens it, then the clean page appears in the preview.
-- Given a URL with a saved configuration, when opened, then all its modifications are shown in the preview and changes list. (Verified in 05.)
-- Given `example.com/page/?utm_source=x`, when opened, then it resolves to the same configuration as `example.com/page`.
-- Given unsaved changes, when the user opens another URL or leaves, then they are warned first. (Verified in 05.)
-- Given a URL that redirects, when opened, then the final URL is shown in the URL bar.
-- Given a page is loading, then the preview shows a loading state, not the previous page.
-- Given a sample is picked, then it opens without any network fetch.
-- Given saved configurations exist, then the start screen lists them under "Recent" with their change counts, most recently saved first.
-- Given a page whose visible text is nearly empty, when opened, then it opens with the JavaScript banner (see Edge cases), not an error.
-- Given any failure in the table below, then the user sees that plain-language message as an on-screen state (not a toast), and no error code.
+- Given a valid public URL, when the user opens it, then its clean tree appears in the left panel.
+- Given the editor is open, then the right panel shows the Hide, Context and Forward controls, disabled.
+- Given `example.com/page/?utm_source=x`, when opened, then it normalizes to `example.com/page`.
+- Given a page is loading, then the preview shows a spinner, not the previous page.
+- Given the editor is open, when the user enters another URL in the top bar and opens it, then that page replaces the current one.
+- Given any failure in the table below, then the user sees that plain-language message on screen (not a toast), and no error code.
+- Given "Try a sample" is clicked, then the demo page opens without any network fetch.
 
 ## Edge cases
 
-Each is a clear, plain-language state, not a toast.
+| Case                                | What the user sees                                         |
+| ----------------------------------- | ---------------------------------------------------------- |
+| Invalid URL / not http(s)           | "That doesn't look like a web address."                    |
+| Private or local address            | "This address can't be opened for security reasons."       |
+| Not an HTML page (PDF, image, JSON) | "This link isn't a web page."                              |
+| Too large                           | "This page is too large to load."                          |
+| Timeout / unreachable               | "The site didn't respond." with a Retry button             |
 
-| Case                                    | What the user sees                                                                                                                                                  |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Invalid URL / not http(s)               | "That doesn't look like a web address."                                                                                                                             |
-| Private or local address                | "This address can't be opened for security reasons."                                                                                                                |
-| Not an HTML page (PDF, image, JSON)     | "This link isn't a web page."                                                                                                                                       |
-| Too large                               | "This page is too large to load."                                                                                                                                   |
-| Timeout / unreachable                   | "The site didn't respond." with Retry                                                                                                                               |
-| Page is mostly empty (JavaScript-built) | The page opens, with a banner: "This page is built with JavaScript, so AI agents see almost nothing here. This is what they get." This is a finding, not a failure. |
+## Out of scope
+
+- Hover, selection, inspector, landmark labels and the Markdown view: 02 See & select.
+- Restoring a saved configuration on open, and the unsaved-changes warning: 05 Save & review changes.
+- Recent pages list and the "built with JavaScript" banner: follow-ups in `tasks.md`.

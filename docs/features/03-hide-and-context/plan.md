@@ -43,4 +43,4 @@ Insert an `annotation` node holding the note as a plain string:
 - `renderMarkdown`: annotation as first block in a container (including lists), and directly after a leaf.
 - `renderHtml`: annotation format and escaping.
 - Store: one context per element, empty note removes it.
-- E2E flow 1 (global plan §7): open the pricing sample, hide the banner, add context to the chart; the Markdown view reflects both.
+- E2E flow 1 (global plan §7): open the demo page, hide the cookie banner, add context to the chart; the Markdown view reflects both.

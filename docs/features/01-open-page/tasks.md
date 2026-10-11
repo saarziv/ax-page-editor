@@ -2,8 +2,6 @@
 
 Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
-Verified elsewhere: restoring a saved configuration on open, and the unsaved-changes warning, are verified in 05 Save & review changes. They need `GET /api/configs?url=`, `load` and `dirty`.
-
 ---
 
 ## T01 – Running skeleton ✓
@@ -27,37 +25,27 @@ Verified elsewhere: restoring a saved configuration on open, and the unsaved-cha
 
 ---
 
-## T02 – Start screen: URL input, samples and recent row, with input validation
 
 
+## T02 – Editor shell
 
-## T03 – Open flow and editor shell: loading state, top bar URL field, final URL and JavaScript banner
+**Goal:** the editor shows the spec's layout, and the preview shows a mock page returned by the BE.
 
+- [ ] **S1 – Shell layout (no BE call):** top bar with URL field + Open, preview panel on the left, disabled Hide / Context / Forward controls on the right.
+  - **Verify:** open any URL from the start screen and see the three areas.
+- [ ] **S2 – Mock page from the BE:** `POST /api/snapshot` returns a short mock page tree of an imaginary website (from the `clean` stub). The left panel renders it.
+  - **Verify:** open any URL and see the mock page in the left panel.
 
-
-## T04 – Plain-language error states (all edge cases, Retry), driven by API error codes
-
-
-
-## T05 – Sample pages (Article, Product, Pricing) loaded by snapshot from disk
-
-
-
-## T06 – Core page tree types, zod schemas and `clean` (incl. `isNearlyEmpty`)
-
-
-
-## T07 – `normalizeUrl` (tracking params, trailing slash, `sample:` passthrough)
-
-
-
-## T08 – `SafeFetchService` and real-URL snapshot (SSRF checks, limits, `FetchError` codes)
-
-
+**Done when:** both Verify actions pass, and `pnpm test` and `pnpm typecheck` pass.
 
 ---
+
+
 
 ## Follow-ups
 
 - The web app hardcodes `http://localhost:3001`, so changing `API_PORT` breaks it. Fix: a Vite `/api` proxy or `VITE_API_URL`. (From T01 S4)
 - Playwright starting the servers itself (no `pnpm dev` running) hasn't been exercised yet. (From T01 S6)
+- Recent pages list on the start screen (pages with a saved configuration and their change counts). The `GET /api/configs` stub from T01 exists for it. Needs 05.
+- "Built with JavaScript" banner when a page's visible text is nearly empty.
+

@@ -43,14 +43,14 @@ apps/
     state/          store.ts (Zustand), queries.ts (TanStack Query), derived.ts
   api/src/
     fetch/          SafeFetchService
-    page/           snapshot + forward controllers/services, samples
+    page/           snapshot + forward controllers/services, demo loader
     config/         controller, ConfigRepository (SQLite)
     agent-view/     controller + service
 packages/
   core/src/
     types.ts  schemas.ts  clean.ts  selector.ts  resolve.ts
     transform.ts  render-markdown.ts  render-html.ts  url.ts  tokens.ts
-samples/            article.html  product.html  pricing.html
+samples/            demo.html
 docs/
   spec.md  plan.md  spec-decisions.md          global
   features/NN-<feature>/spec.md plan.md tasks.md   per feature
@@ -82,7 +82,7 @@ type PageNode = {
   children?: PageNode[];
 };
 
-type PageTree = { url: string; title: string; root: PageNode; isNearlyEmpty: boolean };
+type PageTree = { url: string; title: string; root: PageNode };
 ```
 
 `kind` drives everything:
@@ -100,7 +100,6 @@ First built in 01. Used by every page load, forward and Agent View.
 - **Prune** nodes with no text and no meaningful children. Images are kept if they have `src`.
 - **Resolve** `href`/`src` against `baseUrl`. Drop `javascript:` links' href.
 - **Collapse** whitespace.
-- `isNearlyEmpty` = visible text under ~200 chars, which drives the JavaScript banner (Open a page).
 - **Deterministic:** the same HTML always produces the same tree. Required for targeting.
 
 ### 3.3 Selectors & targets
@@ -174,7 +173,6 @@ Details live in the owning feature's plan.
 | Method | Path | Owner |
 |---|---|---|
 | POST | `/api/snapshot` | 01 Open a page |
-| GET | `/api/configs` (recent list) | 01 Open a page |
 | POST | `/api/forward` | 04 Forward a link |
 | GET | `/api/configs?url=` | 05 Save & review changes |
 | PUT | `/api/configs` | 05 Save & review changes |
@@ -231,9 +229,9 @@ The preview renders the **original** tree with markers, so hidden nodes stay cli
 ## 7. Testing strategy
 
 - **Core (Vitest):** the bulk of the tests, mapped to spec ACs. Every shared core function is tested where it's first built; each feature plan lists its own tests.
-- **API (Vitest):** safety checks (SafeFetch), validation, and Agent View on a sample.
+- **API (Vitest):** safety checks (SafeFetch), validation, and Agent View on the demo page.
 - **E2E (Playwright, 2 flows):**
-  1. Open the pricing sample, hide the banner, add context to the chart: the Markdown view reflects both. (Lands with 03.)
+  1. Open the demo page, hide the cookie banner, add context to the chart: the Markdown view reflects both. (Lands with 03.)
   2. Save, reload: the modifications are restored, and Agent View returns the same Markdown. (Lands with 06.)
 
 ## 8. Technical decisions
@@ -247,7 +245,7 @@ The preview renders the **original** tree with markers, so hidden nodes stay cli
 | P5 | Main content by heuristic (`main`/`article`, minus chrome) | Simple, deterministic, no extra deps | Mozilla Readability (better on messy pages, future) |
 | P6 | `transform` in shared core, run on web + api | Parity by construction | Server-rendered preview per edit (latency) |
 | P7 | TanStack Query + Zustand | Server data vs editor state separated; fine-grained re-renders | Context+useReducer, Redux, Jotai |
-| P8 | `sample:` scheme for bundled pages | Offline demos without weakening SSRF rules | Serving samples from localhost |
+| P8 | `sample:` scheme for the bundled demo page | Offline demo without weakening SSRF rules | Serving it from localhost |
 | P9 | Tokens ≈ chars/4 | Good enough for budget UX | Real tokenizer (heavy, model-specific) |
 | P10 | SQLite behind a repository | Real DB, no setup, swappable for Postgres JSONB | JSON files |
 | P11 | Session-cached forwards in editor only | Snappy editing; Agent View stays live per spec | Refetch on every edit |
