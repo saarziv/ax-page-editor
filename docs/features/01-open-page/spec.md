@@ -62,6 +62,7 @@ Start screen                              Editor
 | Not an HTML page (PDF, image, JSON) | "This link isn't a web page."                              |
 | Too large                           | "This page is too large to load."                          |
 | Timeout / unreachable               | "The site didn't respond." with a Retry button             |
+| Anything else (our server down or failing) | "Something went wrong loading this page." with a Retry button |
 
 ## Out of scope
 

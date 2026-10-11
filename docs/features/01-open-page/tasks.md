@@ -6,8 +6,8 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 - [x] T01 – Running skeleton · Covers: —
 - [x] T02 – Editor shell · Covers: AC2
-- [ ] T03 – Page tree endpoint + preview · Covers: AC1, AC3, AC7
-- [ ] T04 – Loading + error screens · Covers: AC4, AC5, AC6
+- [x] T03 – Demo page in the preview · Covers: AC3, AC7
+- [ ] T04 – Real pages, loading and errors · Covers: AC1, AC4, AC5, AC6
 
 ---
 
@@ -42,11 +42,9 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 ---
 
-## T03 – Page tree endpoint + preview
+## T03 – Demo page in the preview ✓
 
-**Goal:** you send the server a URL, and it sends back that page cleaned up as a tree (JSON), which the editor draws in the preview panel. If the page can't be loaded, you get back an error code and a message instead.
-
-The friendly error screens and the loading spinner come in T04. Until then, errors show as plain text.
+**Goal:** the server turns the bundled demo page into a clean tree and the editor draws it in the preview, with no network fetch. Real URLs still return the fake "Stub page". Fetching, the loading spinner and the friendly errors come in T04.
 
 **Implements:** `plan.md` → API → Page tree, the demo page, and Web → Preview.
 
@@ -68,7 +66,7 @@ The friendly error screens and the loading spinner come in T04. Until then, erro
 
   This is the heart of the product: turning messy HTML into a clean tree of meaningful parts (headings, paragraphs, links, images, forms…). Scripts, styles and empty wrapper `div`s are thrown away. Every part gets an address like `main:1>paragraph:2`, which is how saved changes find it again later. The exact rules are in `plan.md` §3.2, and each rule gets its own test, written first.
 
-  We also add a demo page (`samples/demo.html`), with a cookie banner, a chart image, a form and a few links. The server loads it straight from disk, so it needs no internet. Real URLs keep returning the fake page until S5.
+  We also add a demo page (`samples/demo.html`), with a cookie banner, a chart image, a form and a few links. The server loads it straight from disk, so it needs no internet. Real URLs keep returning the fake page until T04.
 
   **Verify:**
   1. `pnpm test` passes. The `clean` tests check that:
@@ -82,7 +80,7 @@ The friendly error screens and the loading spinner come in T04. Until then, erro
 
 - [x] **S4 – Draw the clean tree in the preview**
 
-  Until now the preview only showed the page title. Now it draws the whole tree as a basic readable page: one React element per node kind, called recursively, with no `dangerouslySetInnerHTML` and no iframe (rules: `plan.md` → Web → Preview rendering). This is the first time you can *see* what `clean` produces, so the demo page is the main check: what's on screen is exactly what an agent will read. Real URLs still show the fake page until S5.
+  Until now the preview only showed the page title. Now it draws the whole tree as a basic readable page: one React element per node kind, called recursively, with no `dangerouslySetInnerHTML` and no iframe (rules: `plan.md` → Web → Preview rendering). This is the first time you can *see* what `clean` produces, so the demo page is the main check: what's on screen is exactly what an agent will read. Real URLs still show the fake page until T04.
 
   **How the demo should look** (click "Try a sample"). Plain and unstyled, like a document, in the app's own font. A small header line shows the page title and URL, and below it, from top to bottom:
   1. **Cookie text** in a normal paragraph at the top, followed by an "Accept all" button. It's first because it's first in the HTML. The real page floats it at the bottom with CSS, which agents never see. It stays: hiding it is the publisher's job in 03.
@@ -103,24 +101,7 @@ The friendly error screens and the loading spinner come in T04. Until then, erro
   4. `grep -rn "dangerouslySetInnerHTML\|<iframe" apps/web/src` finds nothing.
   5. `pnpm e2e` passes. A new test opens the sample and checks that the "Analytics that scale with you" heading and the Plans table are visible, and that `acceptCookies` and `do-not-show` are not on the page.
 
-- [ ] **S5 – Fetch real pages safely**
-
-  Now the server fetches real websites. It does that through a guard that refuses anything dangerous: addresses inside our own network (like `localhost`), redirects that sneak there, pages that are too slow or too big, and files that aren't web pages. Each refusal comes back as a clear error code. Each rule gets its own test, written first (rules: `plan.md` §4.1).
-
-  **Verify:**
-  1. `pnpm test` passes. The guard tests fake the network, and check that every dangerous case is refused with the right error:
-     - private and local addresses are `BLOCKED`, like `127.0.0.1`, `192.168.x.x` and their IPv6 versions
-     - a public URL that redirects to a private one is also `BLOCKED`, and so is a chain of more than 5 redirects
-     - a slow site gives `TIMEOUT`, a page over 3 MB gives `TOO_LARGE`, and a PDF gives `NOT_HTML`
-  2. Send `https://example.com` and you get back its real clean tree. Open it in the app too: the preview shows its "Example Domain" heading, a paragraph and a link.
-  3. Send `http://localhost:5173` and you get `BLOCKED`.
-  4. Send a PDF link and you get `NOT_HTML`.
-  5. Send `https://no-such-host.invalid` and you get `UNREACHABLE`.
-
-**How to send a URL:** with `pnpm dev` running,
-`curl -X POST localhost:3001/api/page-tree -H 'content-type: application/json' -d '{"url":"<URL>"}'`
-
-**Done when:** a real website and the demo page both come back as clean trees and render in the preview as described in S4, every dangerous URL is refused with its error code, and `pnpm e2e` passes.
+**Done when:** "Try a sample" shows the demo as described in S4, with no scripts or hidden fields. `pnpm test` and `pnpm e2e` pass.
 
 **Deviations:**
 
@@ -129,6 +110,64 @@ The friendly error screens and the loading spinner come in T04. Until then, erro
 - Unresolvable hrefs (e.g. relative on `sample:`) unwrap the link like `javascript:` → plan.md §3.2
 - core depends on `domhandler` directly for DOM types and guards → plan.md §2
 - `clean.ts` split into a `clean/` folder, one file per pipeline step → plan.md §2
+
+---
+
+## T04 – Real pages, loading and errors
+
+**Goal:** opening any real URL works end to end. While it loads you see a spinner. When it's done you see the page, or a plain-language message saying why it couldn't load (with Retry when trying again might help). Opening another URL from the top bar replaces whatever is showing.
+
+**Implements:** `plan.md` → Web → Loading and Error mapping, and API → Page tree (SafeFetch, global plan §4.1).
+
+- [ ] **S1 – Load real pages into the preview**
+
+  The server now fetches the real URL through `SafeFetchService` and cleans it, so any website shows in the preview, not just the demo. This first version only covers the basics: http(s) only, a 10s timeout, HTML only, a 3 MB cap, and normal redirect-following (rules: `plan.md` §4.1). The private-address guard comes in S2, and errors still show as plain text until S4. If a real site looks wrong in the preview, add it as a follow-up instead of fixing `clean` in this step.
+
+  **Verify:**
+  1. `pnpm test` passes. The fetch tests fake the network and check that:
+     - a slow site gives `TIMEOUT`, a page over 3 MB gives `TOO_LARGE`, and a PDF gives `NOT_HTML`
+     - a site that doesn't exist gives `UNREACHABLE`
+     - after a redirect, the tree's `url` is the final address
+  2. Open `https://example.com` in the app. You see its "Example Domain" heading, a paragraph and a link.
+  3. Open 2–3 real sites you know (a docs page, a blog post, a news article). The preview reads like the page's content, with no code or CSS showing.
+  4. `pnpm e2e` passes. The e2e tests that expected "Stub page" now open the sample instead, so they don't depend on the internet.
+
+- [ ] **S2 – Block private and local addresses**
+
+  The fetcher now refuses anything that points inside our own network. Before every request, including each redirect, it looks up the address and refuses private, loopback, link-local and reserved IPs. It follows redirects itself, up to 5. Without this, anyone could use the server to reach machines that should be private. Each rule gets its own test, written first (rules: `plan.md` §4.1).
+
+  **Verify:**
+  1. `pnpm test` passes. The guard tests fake DNS and check that:
+     - `127.0.0.1`, `192.168.x.x`, `10.x.x.x`, `169.254.x.x` and their IPv6 versions (`::1`, `fc00::`) are `BLOCKED`
+     - a public URL that redirects to a private one is also `BLOCKED`
+     - a chain of more than 5 redirects is `BLOCKED`
+  2. Send `http://localhost:5173` and you get `BLOCKED`.
+  3. `https://example.com` still opens in the app.
+
+- [ ] **S3 – Spinner while loading, and a new URL replaces the old page**
+
+  While the page tree is loading, the preview shows a spinner in place of the page, never the previous page. Opening another URL from the top bar starts a new load for that URL, so the old page disappears right away.
+
+  **Verify:**
+  1. Open the sample, then type `example.com` in the top bar and press Enter. The demo is replaced by the "Example Domain" page.
+  2. `pnpm e2e` passes. A new test slows down the `/api/page-tree` response, checks that the spinner shows and the previous page is gone, then that the new page appears.
+
+- [ ] **S4 – Plain-language error messages with Retry**
+
+  The web reads the server's `{ code, message }` and shows the spec's message for that code in the preview, never the code itself (messages: `spec.md` → Edge cases). Timeouts and unreachable sites get a Retry button that loads again. Any other failure, like the api being down, gets the generic message with Retry. A failed load is no longer retried 3 times automatically, because that delayed the message by up to 40s and Retry is now the user's choice.
+
+  **Verify:**
+  1. Open `ftp://x` and you see "That doesn't look like a web address.", and `http://localhost:5173` shows "This address can't be opened for security reasons.". No error code is on screen.
+  2. Stop the api and open a URL. You see the generic message with Retry. Start the api again, click Retry, and the page loads.
+  3. `pnpm e2e` passes. The new tests fake the api response for each code and check that:
+     - each code shows its spec message, and the code itself is never on screen
+     - `TIMEOUT` and `UNREACHABLE` show Retry, and clicking it loads the page
+     - `BLOCKED`, `NOT_HTML` and `TOO_LARGE` show no Retry
+
+**How to send a URL:** with `pnpm dev` running,
+`curl -X POST localhost:3001/api/page-tree -H 'content-type: application/json' -d '{"url":"<URL>"}'`
+
+**Done when:** a real website renders in the preview. Every failure in the spec's table shows its message, with Retry only for timeout and unreachable. Loading shows a spinner, never the old page. `pnpm test`, `typecheck` and `e2e` pass.
 
 ---
 

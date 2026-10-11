@@ -26,12 +26,12 @@ The demo lives in `/samples/demo.html` and is addressed as `sample:demo`. The en
 
 ## Web
 
-- **StartScreen:** URL input + Open, a "Try a sample" link, and the error state.
+- **StartScreen:** URL input + Open, and a "Try a sample" link.
 - **Editor shell:** TopBar (URL field + Open), Preview (left), Inspector (right).
 - **Preview:** draws the page tree as a plain, readable document. Rules in **Preview rendering** below. 02 extends it into the full preview.
 - **Inspector:** the Hide, Context and Forward controls, rendered disabled. 02 connects them to the selection.
 - **Loading:** `usePageTree(url)` pending state drives the preview's spinner.
-- **Error mapping:** `FetchError.code` → the spec's edge-case messages, shown as an on-screen state. `TIMEOUT` / `UNREACHABLE` get a Retry button, which refetches.
+- **Error mapping:** `FetchError.code` → the spec's edge-case messages, shown in the preview panel however the page was opened (start screen, top bar or sample). `TIMEOUT` / `UNREACHABLE` get a Retry button, which refetches. Any other failure (no `{ code }` in the response, or the api unreachable) gets the generic message with Retry. A failed load isn't retried automatically, so the message shows right away and retrying is the user's choice.
 
 ### Preview rendering
 

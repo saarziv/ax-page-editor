@@ -31,7 +31,7 @@ Every fact lives in exactly one place: what and why in the specs and `spec-decis
 
 **Workflow**
 
-1. **Plan:** first compact the previous task (it's pushed, so git keeps the full text): keep its Goal, each ticked step with a 1–2 line summary of what it built, "Done when" and deviation one-liners, and drop the rest of the step details. Then detail the next task's steps, Verify actions and "Done when" in `tasks.md`. No code.
+1. **Plan:** if the previous task is long or full of deviations, compact it first (it's pushed, so git keeps the full text): keep its Goal, each ticked step with a 1–2 line summary of what it built, "Done when" and deviation one-liners, and drop the rest of the step details. Then detail the next task's steps, Verify actions and "Done when" in `tasks.md`. No code.
 2. **Wait for review** and approval.
 3. **Implement** only that task, step by step, tests first.
 4. **Finish:** run `pnpm test` and `pnpm typecheck`, handle deviations (below), tick the task, and hand off to the dev to commit and push.
