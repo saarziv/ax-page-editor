@@ -54,11 +54,12 @@ Verified elsewhere: restoring a saved configuration on open, and the unsaved-cha
     - Editor placeholder: a top bar URL field, and below it the stub page's title and url.
     - Which screen shows depends on the store's `url`: empty shows StartScreen, set shows the editor. No router.
   - **Verify:** in the browser, type any URL and click Open, and the editor shows "Stub page" with that URL. Click a sample and see the same with `sample:pricing`. `POST /api/snapshot` with `{}` returns 400.
-- [ ] **S6 – E2E**
+- [x] **S6 – E2E**
   - Goal: turn the S5 click-through into an automated browser test.
-  - A Playwright config that starts web and api itself.
+  - A Playwright config that starts web and api itself, with `reuseExistingServer: true` so a running `pnpm dev` is reused. Servers Playwright starts stop when the run ends.
   - One smoke test: start screen → type a URL → Open → the stub editor shows "Stub page".
-  - **Verify:** `pnpm e2e` passes.
+  - Scripts so the dev can watch the test: `pnpm e2e:ui` (Playwright UI mode, click ▶ to run, step through each action) and `pnpm e2e:headed` (real browser window, slowed with `SLOW_MO=800` so the clicks are visible), and `pnpm e2e:debug` (Playwright Inspector, step through each action).
+  - **Verify:** `pnpm e2e` passes. Run `pnpm e2e:ui`, click ▶, and watch the smoke test pass.
 
 **Done when**
 
@@ -82,6 +83,7 @@ Verified elsewhere: restoring a saved configuration on open, and the unsaved-cha
 - S5: The stub snapshot's `root` is a single empty `main` node, since the `PageTree` schema requires one. Stubs that take parameters include them in the "not implemented" message, so lint doesn't flag unused arguments and the error names its input.
 - S5: The pipe stays per-route, behind a `@ZodBody(schema)` decorator (`common/zod-body.decorator.ts`) that wraps `Body(new ZodValidationPipe(schema))`. A global pipe with DTO classes (`createZodDto`) was tried and dropped: it needed a class built by a function, a cast and a type guard, which was too hard to read. Trade-off: a raw `@Body()` still skips validation, so `CLAUDE.md` says bodies must use `@ZodBody`.
 - S5: The web `queries.ts` now has `useSnapshot(url)`, which parses the response with core's `pageTreeSchema`. It's still hardcoded to `http://localhost:3001` (see the S4 follow-up).
+- S6: `playwright.config.ts` and `e2e/` live at the repo root. The config has two `webServer` entries (api health URL, web URL), because the api needs time to boot. The smoke test matches the Open button with `exact: true`, since the TanStack devtools button also contains "Open". Only Chromium is installed (`pnpm exec playwright install chromium` on a fresh clone). The run was checked against the dev's already-running `pnpm dev`; the path where Playwright starts the servers itself wasn't exercised. UI mode shows recorded DOM snapshots, not a live browser; `e2e:headed` and `e2e:debug` were added to watch the real one.
 
 ---
 
