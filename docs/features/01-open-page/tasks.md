@@ -121,16 +121,20 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 - [ ] **S1 – Load real pages into the preview**
 
-  The server now fetches the real URL through `SafeFetchService` and cleans it, so any website shows in the preview, not just the demo. This first version only covers the basics: http(s) only, a 10s timeout, HTML only, a 3 MB cap, and normal redirect-following (rules: `plan.md` §4.1). The private-address guard comes in S2, and errors still show as plain text until S4. If a real site looks wrong in the preview, add it as a follow-up instead of fixing `clean` in this step.
+  The server now fetches the real URL through `SafeFetchService` and cleans it, so any website shows in the preview, not just the demo. This first version only covers the basics: http(s) only, a 10s timeout, HTML only, a 3 MB cap, and normal redirect-following (rules: global `plan.md` §4.1, and `plan.md` → Fetching a real page). The private-address guard comes in S2, and errors still show as plain text until S4. If a real site looks wrong in the preview, add it as a follow-up instead of fixing `clean` in this step.
+
+  We test against Wikipedia and MDN, not example.com: example.com's HTML is a single paragraph plus a script, so it proves very little.
 
   **Verify:**
   1. `pnpm test` passes. The fetch tests fake the network and check that:
-     - a slow site gives `TIMEOUT`, a page over 3 MB gives `TOO_LARGE`, and a PDF gives `NOT_HTML`
-     - a site that doesn't exist gives `UNREACHABLE`
-     - after a redirect, the tree's `url` is the final address
-  2. Open `https://example.com` in the app. You see its "Example Domain" heading, a paragraph and a link.
-  3. Open 2–3 real sites you know (a docs page, a blog post, a news article). The preview reads like the page's content, with no code or CSS showing.
-  4. `pnpm e2e` passes. The e2e tests that expected "Stub page" now open the sample instead, so they don't depend on the internet.
+     - a slow site gives `TIMEOUT`, also when only the body is slow
+     - a page over 3 MB gives `TOO_LARGE`, with or without a `content-length` header, and a PDF gives `NOT_HTML`
+     - a site that doesn't exist, or that answers 404, gives `UNREACHABLE`
+     - after a redirect, the tree's `url` is the final address, normalized
+  2. Open `https://en.wikipedia.org/wiki/Web_page` in the app. You see the "Web page" heading, many section headings and paragraphs, images, and links inside sentences that don't break them apart. No CSS or script text.
+  3. Open `https://developer.mozilla.org/en-US/docs/Web/HTML/Element/p`. It redirects, and the editor shows the final address, `.../Reference/Elements/p`.
+  4. Open 2–3 real sites you know (a blog post, a news article). The preview reads like the page's content, with no code or CSS showing.
+  5. `pnpm e2e` passes. The e2e tests that expected "Stub page" now open the sample instead, so they don't depend on the internet.
 
 - [ ] **S2 – Block private and local addresses**
 
@@ -142,14 +146,14 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
      - a public URL that redirects to a private one is also `BLOCKED`
      - a chain of more than 5 redirects is `BLOCKED`
   2. Send `http://localhost:5173` and you get `BLOCKED`.
-  3. `https://example.com` still opens in the app.
+  3. The Wikipedia page from S1 still opens in the app.
 
 - [ ] **S3 – Spinner while loading, and a new URL replaces the old page**
 
   While the page tree is loading, the preview shows a spinner in place of the page, never the previous page. Opening another URL from the top bar starts a new load for that URL, so the old page disappears right away.
 
   **Verify:**
-  1. Open the sample, then type `example.com` in the top bar and press Enter. The demo is replaced by the "Example Domain" page.
+  1. Open the sample, then type `en.wikipedia.org/wiki/Web_page` in the top bar and press Enter. The demo is replaced by the Wikipedia page.
   2. `pnpm e2e` passes. A new test slows down the `/api/page-tree` response, checks that the spinner shows and the previous page is gone, then that the new page appears.
 
 - [ ] **S4 – Plain-language error messages with Retry**

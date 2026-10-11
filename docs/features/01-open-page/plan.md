@@ -21,6 +21,20 @@ First built here (contracts in the global plan):
 
 - **Page tree:** `normalizeUrl` → SafeFetch (or the demo loader) → `clean`. A `FetchError` is returned as `{ code, message }`.
 
+### Fetching a real page
+
+**The idea:** `fetchHtml` downloads the page with Node's built-in `fetch`, stopping as soon as one of the global plan's limits (§4.1) is broken, and turns every failure into a `FetchError` code. The page-tree service then cleans the HTML.
+
+Example: `developer.mozilla.org/en-US/docs/Web/HTML/Element/p` answers with a 301 to `.../Reference/Elements/p`. The tree comes back with that article's headings and paragraphs, and its `url` is `https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/p`, the final address.
+
+**Tricky parts:**
+- **One timer covers the headers and the body.** A site can answer fast and then send the body a byte at a time, so the 10s limit runs until the last byte is read, not just until the headers arrive.
+- **`content-type` is checked before reading the body.** A PDF is refused as `NOT_HTML` without downloading it.
+- **The size is counted while reading.** `content-length` may be missing or wrong, so it's only an early exit. The real check counts bytes as they arrive and aborts past 3 MB.
+- **Errors map by cause.** Our own timer firing is `TIMEOUT`. A network failure (unknown domain, connection refused) or a non-2xx answer is `UNREACHABLE`. Anything else is a bug and propagates as a 500.
+- **`clean` gets the real final address, the tree gets the normalized one.** Relative links must resolve against what the browser would use: on `/docs/`, the link `intro` means `/docs/intro`, but on the normalized `/docs` it would mean `/intro`. The tree's `url` is the normalized one, because that's the key configurations are saved under.
+- **Text is decoded with the `charset` from `content-type`**, falling back to UTF-8 when it's missing or unknown.
+
 ### Demo page
 The demo lives in `/samples/demo.html` and is addressed as `sample:demo`. The endpoint loads it from disk instead of fetching, because SafeFetch would correctly block `localhost`. `normalizeUrl` passes `sample:` through. Its links point to real public URLs.
 

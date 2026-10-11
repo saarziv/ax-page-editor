@@ -187,6 +187,7 @@ Every server-side fetch goes through it: page loads, forwards, Agent View. First
 - **Before each request:** resolve DNS and reject private, loopback, link-local and reserved IPs (IPv4 + IPv6).
 - **Redirects:** followed manually, max 5, each hop re-checked.
 - **Limits:** 10s timeout, 3 MB body cap (stream and abort), `content-type` must be `text/html`.
+- **Status:** a non-2xx response is `UNREACHABLE`, so an error page never becomes a page a publisher configures.
 - Returns `{ finalUrl, html }`, or throws a typed `FetchError` with `code`: `INVALID_URL | BLOCKED | NOT_HTML | TOO_LARGE | TIMEOUT | UNREACHABLE`.
 
 ### 4.2 Endpoints (index)

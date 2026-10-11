@@ -61,7 +61,7 @@ Start screen                              Editor
 | Private or local address            | "This address can't be opened for security reasons."       |
 | Not an HTML page (PDF, image, JSON) | "This link isn't a web page."                              |
 | Too large                           | "This page is too large to load."                          |
-| Timeout / unreachable               | "The site didn't respond." with a Retry button             |
+| Timeout / unreachable / the site answers with an error (404, 500…) | "The site didn't respond." with a Retry button |
 | Anything else (our server down or failing) | "Something went wrong loading this page." with a Retry button |
 
 ## Out of scope
