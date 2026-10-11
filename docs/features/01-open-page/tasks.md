@@ -23,8 +23,8 @@ Verified elsewhere: restoring a saved configuration on open, and the unsaved-cha
   - `apps/web` (Vite + React) fetches it and shows it.
   - `pnpm dev` starts all three.
   - **Verify:** run `pnpm dev`, open http://localhost:5173, and see the health response, including the core value.
-- [ ] **S2 – Quality scripts**
-  - Vitest in each package, with one smoke test each.
+- [x] **S2 – Quality scripts**
+  - Vitest in core and api (global plan §2/§7), with no placeholder tests. The first tests land with real logic.
   - ESLint flat config: typescript-eslint, `no-explicit-any` as an error, and react-hooks rules for web.
   - Root `test`, `typecheck`, `lint` and `build` scripts.
   - **Verify:** `pnpm test && pnpm typecheck && pnpm lint && pnpm build` all pass.
@@ -65,7 +65,10 @@ Verified elsewhere: restoring a saved configuration on open, and the unsaved-cha
 
 **Out of scope:** any real feature logic (fetching, cleaning, normalizing, error mapping), the DB schema, routing beyond the store-driven screen switch.
 
-**Deviations:** –
+**Deviations:**
+
+- S2: Vitest pinned to 4.x. Vitest 5 requires Node 22.12+, which conflicts with "Node 20+".
+- S2: Smoke tests dropped. Per `CLAUDE.md`, tests only cover code where our logic can be wrong. Vitest is wired in core and api with `passWithNoTests`, so `pnpm test` passes until the first real tests land.
 
 ---
 

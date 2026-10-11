@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "nest build",
-    "dev": "nest start --watch --preserveWatchOutput"
+    "dev": "nest start --watch --preserveWatchOutput",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@ax/core": "workspace:*",
@@ -18,6 +20,7 @@
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
     "@types/node": "^20.0.0",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "vitest": "^4.1.11"
   }
 }

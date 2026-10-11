@@ -7,12 +7,26 @@
   },
   "scripts": {
     "predev": "pnpm --filter @ax/core build",
-    "dev": "pnpm -r --parallel dev"
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "pretest": "pnpm --filter @ax/core build",
+    "test": "pnpm -r test",
+    "pretypecheck": "pnpm --filter @ax/core build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint ."
   },
   "pnpm": {
     "onlyBuiltDependencies": [
       "@nestjs/core",
       "esbuild"
     ]
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.12.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.1"
   }
 }
