@@ -49,9 +49,9 @@ Get a page on screen, exactly as an agent would fetch it. Part of AX Editor: see
 ## Acceptance criteria
 
 - Given a valid public URL, when the user opens it, then the clean page appears in the preview.
-- Given a URL with a saved configuration, when opened, then all its modifications are shown in the preview and changes list.
+- Given a URL with a saved configuration, when opened, then all its modifications are shown in the preview and changes list. (Verified in 05.)
 - Given `example.com/page/?utm_source=x`, when opened, then it resolves to the same configuration as `example.com/page`.
-- Given unsaved changes, when the user opens another URL or leaves, then they are warned first.
+- Given unsaved changes, when the user opens another URL or leaves, then they are warned first. (Verified in 05.)
 - Given a URL that redirects, when opened, then the final URL is shown in the URL bar.
 - Given a page is loading, then the preview shows a loading state, not the previous page.
 - Given a sample is picked, then it opens without any network fetch.

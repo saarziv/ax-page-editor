@@ -31,9 +31,9 @@ Samples live in `/samples` and are addressed as `sample:pricing`, etc. Snapshot 
 - **StartScreen:** URL input, samples, recent configs from `GET /api/configs`, and error states.
 - **Error mapping:** `FetchError.code` → the plain-language messages in the spec's edge-case table. Shown as an on-screen state, not a toast. `TIMEOUT` / `UNREACHABLE` get a Retry button.
 - **JavaScript banner:** shown when `PageTree.isNearlyEmpty` is true.
-- **TopBar URL field:** opens a new page from inside the editor. Unsaved changes are guarded with `beforeunload` and a confirm on URL change (uses `dirty`, global plan §5.1).
+- **TopBar URL field:** opens a new page from inside the editor. Unsaved changes are guarded with `beforeunload` and a confirm on URL change (uses `dirty`, global plan §5.1). Built and verified in 05, once `dirty` exists.
 - **Loading:** `useSnapshot(url)` pending state drives the preview's loading state.
-- **Restore on open:** `useConfig(url)` loads the saved configuration into the store via `load` (matching and statuses are covered in 05).
+- **Restore on open:** `useConfig(url)` loads the saved configuration into the store via `load` (matching and statuses are covered in 05). Built and verified in 05, once `GET /api/configs?url=` exists.
 
 ## Tests
 

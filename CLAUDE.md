@@ -4,31 +4,29 @@
 
 A visual editor that lets publishers (non-developers) load a webpage, click elements, and change how the page is served to AI agents: hide elements, add context, forward links. Saves a per-page configuration that a downstream consumer (Agent View) applies to the live page.
 
-## Docs (source of truth)
+## SDD guidelines
 
-Global (whole product):
+Docs are the source of truth. If code and docs disagree, the docs win. If a doc seems wrong, stop and say so. Don't improvise around it.
 
-- `docs/spec.md` – product overview: problem, users, goals, core concepts, user flow, key features, agent output, configuration format, trust & safety.
-- `docs/spec-decisions.md` – WHY behind product decisions.
-- `docs/plan.md` – shared HOW: architecture, stack, repo layout, shared core contracts (page tree, `clean`, `resolve`, `transform`, renderers, config), conventions, security, testing strategy, technical decisions.
+- Global: `docs/spec.md` (what), `docs/spec-decisions.md` (why), `docs/plan.md` (shared how: architecture, core contracts, conventions).
+- Per feature (`docs/features/NN-<feature>/`, in build order): `spec.md` (what + acceptance criteria), `plan.md` (how; builds on the global plan, never restates it), `tasks.md` (ordered tasks and progress).
 
-Per feature (`docs/features/NN-<feature>/`, numbered in build order):
+**Tasks & steps**
 
-- `spec.md` – WHAT + acceptance criteria and edge cases for that feature.
-- `plan.md` – that feature's HOW. Builds on the global plan, never restates it.
-- `tasks.md` – the feature's ordered task list and progress. Each task is 1–2 sessions.
-- `tasks/Txx.md` – the plan for one task, written before implementing it.
+- Aim to build each task in one Claude session that ends in one commit + push.
+- Split a task into steps. Define and build each step as one prompt or a short prompt loop.
+- Define every step together with its **Verify** action (something the dev runs or sees). A step is done only when it passes.
+- Order tasks outside-in: what the user sees first gets built first.
+- Detail a task's steps only right before it starts.
 
-If code and docs disagree, the docs win. If a doc seems wrong, stop and say so. Don't improvise around it.
+**Workflow**
 
-## Workflow
+1. **Plan:** detail the next task's steps, Verify actions and "Done when" in `tasks.md`. No code.
+2. **Wait for review** and approval.
+3. **Implement** only that task, step by step, tests first.
+4. **Finish:** run `pnpm test` and `pnpm typecheck`, note deviations under the task, tick it, then commit and push.
 
-1. **Plan:** read the task in the feature's `tasks.md`, the feature's `spec.md` and `plan.md`, and the global `plan.md` parts it builds on. Write the feature's `tasks/Txx.md`. No code yet.
-2. **Wait for review.** The user edits and approves the plan.
-3. **Implement only that task.** Write tests for its acceptance criteria first.
-4. **Finish:** run `pnpm test` and `pnpm typecheck`, then list any deviations at the bottom of `Txx.md` and tick the task in `tasks.md`.
-
-Don't change things outside the task's scope. Note them as follow-ups instead.
+Changes outside the task's scope become follow-ups.
 
 ## Architecture (details in plan.md)
 
@@ -47,8 +45,6 @@ Everything is a function of `(page tree, config)`. The editor and Agent View use
 - Typecheck: `pnpm typecheck` · Lint: `pnpm lint`
 - Build: `pnpm build`
 
-
-
 ## Hard rules
 
 - `packages/core` stays pure: no I/O, no Nest, no React, no fetch.
@@ -60,14 +56,10 @@ Everything is a function of `(page tree, config)`. The editor and Agent View use
 - A modification whose target can't be confidently resolved is never applied. Mark it unmatched.
 - Types come from the zod schemas in core (`z.infer`). Don't hand-duplicate them.
 
-
-
 ## Engineering standards
 
 - TypeScript strict, no `any`. Use `unknown` and narrow.
 - Validate at boundaries (API input, stored config, fetched HTML), then trust types inside.
-
-
 
 ## Coding guidelines
 
@@ -82,8 +74,6 @@ Everything is a function of `(page tree, config)`. The editor and Agent View use
   - No empty catches. Error messages say what failed and with what input.
 - File size: consider splitting above ~300 lines, but only if it improves clarity.
 - Tests: only test code where our logic can be wrong. Core logic and safety checks get thorough tests. Don't test that a library or the DB works.
-
-
 
 ## Collaboration
 
