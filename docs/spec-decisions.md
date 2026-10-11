@@ -28,7 +28,7 @@ Why the spec is the way it is. Each entry: the decision, why, and what was rejec
 
 ### D4. Hidden elements are ghosted in the preview but removed in the output
 
-- **Why:** Users must be able to click a hidden element to undo it. Agents must not see it at all. The Markdown view already shows the literal output, so no extra "agent-exact" preview mode is needed.
+- **Why:** Users must be able to click a hidden element to undo it. Agents must not see it at all. The preview is a readable, near-agent view with every modification visible; the **Page | Markdown** toggle shows the literal agent output, so no extra "agent-exact" preview switch is needed.
 - **Rejected:**
   - Removing hidden elements from the preview. They couldn't be undone.
   - CSS hiding or `aria-hidden` in the output. Agents read the source, so it's still visible.
@@ -48,6 +48,13 @@ Why the spec is the way it is. Each entry: the decision, why, and what was rejec
   - llms.txt (site-level, wrong granularity)
   - NLWeb/MCP (a query API, a different paradigm)
   - JSON-LD (a complement for facts, future work)
+
+
+
+### D6. No front matter in the output
+
+- **Why:** It adds a format convention agents may not interpret, and nothing currently needs it. A page-level summary is future work.
+- **Rejected:** YAML front matter.
 
 
 
@@ -72,19 +79,20 @@ Why the spec is the way it is. Each entry: the decision, why, and what was rejec
 
 ### D9. Forward stores only the link, fetched live each time, no caching
 
-- **Why:** Content is always current, the configuration stays minimal, and there's no cache to invalidate.
+- **Why:** Content is always current, the configuration stays minimal, and there's no cache to invalidate. Simplest to build and least bug-prone.
+- **Note:** The editor may cache forwards for the length of an editing session so the preview isn't refetched on every edit. Agent View never caches.
 - **Rejected:**
   - Snapshotting content at save time (goes stale, bloats the config).
-  - Caching (added complexity, staleness).
+  - Caching in Agent View (added complexity, staleness).
 
 
 
 ### D10. Forwarding is one level deep, with per-link and per-page size limits
 
 - **Why:** Every forward adds to what the agent must read. Unbounded forwarding dilutes the main content and makes cost unpredictable.
-  - Per-link truncation stops one huge page from dominating.
-  - The page budget stops the sum from doing the same.
-  - When serving, forwards beyond the budget fall back to plain links and are reported.
+  - **Per link: 3,000 tokens.** Longer content is truncated and marked "(truncated)", so one huge page can't dominate but the agent still gets most of the answer.
+  - **Per page: 10,000 tokens.** Filled in page order. Forwards that don't fit are not added: they stay plain links and are flagged as over budget, in the editor and in Agent View's report.
+  - Page order makes the result predictable: the publisher can see which forwards win.
 - **Rejected:** Recursive forwarding, and unlimited size.
 
 
@@ -92,6 +100,8 @@ Why the spec is the way it is. Each entry: the decision, why, and what was rejec
 ### D11. Target = position in the clean page + text snippet
 
 - **Why:** Editor-only ids don't exist on a fresh fetch. Position alone can silently point at the wrong element after the page changes. The snippet detects that, so a mismatch is skipped and flagged, never misapplied.
+- **Position format:** a path through the **clean** page (`main:1>section:2>paragraph:3`), not a CSS selector over the raw HTML. Wrapper churn on the live site (`div`s, classes) doesn't break it.
+- **Rejected:** Raw-DOM CSS selectors (break when wrappers change).
 - **Consequence:** The editor and Agent View must clean pages identically.
 
 
