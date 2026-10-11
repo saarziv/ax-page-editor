@@ -25,8 +25,6 @@ First built here:
 - **Preview:** a recursive `PreviewNode` renders the original tree by `kind`, overlaying the draft status:
   - hover outline and label, a selected ring, and click-to-select via `stopPropagation`
   - landmark sections (`header`, `nav`, `main`, `footer`, `aside`) shown as labeled regions
-  - links render as non-navigating elements
-  - images get `referrerPolicy="no-referrer"`
   - no `dangerouslySetInnerHTML` anywhere
   - markers for hidden, context and forwarded are added by 03 and 04
   - "Open original" link with `rel="noopener noreferrer"`

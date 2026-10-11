@@ -12,6 +12,7 @@ Every fact lives in exactly one place: what and why in the specs and `spec-decis
 
 - Global: `docs/spec.md` (what), `docs/spec-decisions.md` (why), `docs/plan.md` (shared how: architecture, core contracts, conventions).
 - Per feature (`docs/features/NN-<feature>/`, in build order): `spec.md` (what + acceptance criteria), `plan.md` (how; builds on the global plan, never restates it), `tasks.md` (ordered tasks and progress).
+- **Writing plan.md:** keep the template, but make each section clear to a reader who hasn't seen the code. Explain the idea in plain words, name the tricky parts and why each choice was made, and give one short example (this input becomes this output). Plain sentences, not dense tables or keyword lists. Stay compact: a short paragraph or a few bullets per point.
 
 **Tasks & steps**
 
@@ -102,6 +103,12 @@ Everything is a function of `(page tree, config)`. The editor and Agent View use
 
 - Disagree freely when the user shares a plan, and suggest better alternatives with reasons.
 - Act as a mentor: if a plan is weak, explain why and offer an improvement.
-- Keep explanations short and concrete.
-  - Prioritize simplicty and clarity when explaining over complex deep dive nitty gritty explanations.
+- Keep explanations short, concrete and simple, never a deep dive.
+- When explaining a plan or a task in chat, use this flow:
+  1. **The problem:** one sentence on what has to happen.
+  2. **Where we start from:** what already exists and does the hard part, so it's clear what's left.
+  3. **The idea:** the approach in plain words, with one small concrete example.
+  4. **Decisions:** the straightforward parts first, then each deliberate choice with a one-sentence why.
+  5. **What changes:** the files and what changes in each.
+  6. **How you'll know it's right:** what the dev checks.
 

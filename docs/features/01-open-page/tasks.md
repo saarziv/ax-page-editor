@@ -6,8 +6,8 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 - [x] T01 – Running skeleton · Covers: —
 - [x] T02 – Editor shell · Covers: AC2
-- [ ] T03 – Page tree endpoint (backend) · Covers: AC1 (API), AC3, AC7
-- [ ] T04 – Tree renderer + error screens · Covers: AC1 (UI), AC4, AC5, AC6
+- [ ] T03 – Page tree endpoint + preview · Covers: AC1, AC3, AC7
+- [ ] T04 – Loading + error screens · Covers: AC4, AC5, AC6
 
 ---
 
@@ -42,13 +42,13 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 ---
 
-## T03 – Page tree endpoint (backend)
+## T03 – Page tree endpoint + preview
 
-**Goal:** you send the server a URL, and it sends back that page cleaned up as a tree (JSON). If the page can't be loaded, you get back an error code and a message instead.
+**Goal:** you send the server a URL, and it sends back that page cleaned up as a tree (JSON), which the editor draws in the preview panel. If the page can't be loaded, you get back an error code and a message instead.
 
-This task is backend only. The app keeps showing just the page title for now. Drawing the tree on screen, and the friendly error screens, come in T04.
+The friendly error screens and the loading spinner come in T04. Until then, errors show as plain text.
 
-**Implements:** `plan.md` → API → Page tree, and the demo page.
+**Implements:** `plan.md` → API → Page tree, the demo page, and Web → Preview.
 
 - [x] **S1 – Rename the endpoint**
 
@@ -68,7 +68,7 @@ This task is backend only. The app keeps showing just the page title for now. Dr
 
   This is the heart of the product: turning messy HTML into a clean tree of meaningful parts (headings, paragraphs, links, images, forms…). Scripts, styles and empty wrapper `div`s are thrown away. Every part gets an address like `main:1>paragraph:2`, which is how saved changes find it again later. The exact rules are in `plan.md` §3.2, and each rule gets its own test, written first.
 
-  We also add a demo page (`samples/demo.html`), with a cookie banner, a chart image, a form and a few links. The server loads it straight from disk, so it needs no internet. Real URLs keep returning the fake page until S4.
+  We also add a demo page (`samples/demo.html`), with a cookie banner, a chart image, a form and a few links. The server loads it straight from disk, so it needs no internet. Real URLs keep returning the fake page until S5.
 
   **Verify:**
   1. `pnpm test` passes. The `clean` tests check that:
@@ -80,7 +80,30 @@ This task is backend only. The app keeps showing just the page title for now. Dr
   2. Send `sample:demo` to the endpoint. You get back the demo as a clean tree: its title, headings, image, form and links are all there, and no script code.
   3. In the app, click "Try a sample" and you see the demo's title.
 
-- [ ] **S4 – Fetch real pages safely**
+- [ ] **S4 – Draw the clean tree in the preview**
+
+  Until now the preview only showed the page title. Now it draws the whole tree as a basic readable page: one React element per node kind, called recursively, with no `dangerouslySetInnerHTML` and no iframe (rules: `plan.md` → Web → Preview rendering). This is the first time you can *see* what `clean` produces, so the demo page is the main check: what's on screen is exactly what an agent will read. Real URLs still show the fake page until S5.
+
+  **How the demo should look** (click "Try a sample"). Plain and unstyled, like a document, in the app's own font. From top to bottom:
+  1. **Cookie text** in a normal paragraph at the top (not floating at the bottom of the screen), followed by an "Accept all" button. It stays: hiding it is the publisher's job in 03.
+  2. **Navigation:** a bulleted list of three links, Home, Pricing and Blog.
+  3. **"Analytics that scale with you"** as the largest heading, then a paragraph starting "Plans start at $9 per month". The price is plain text, not bold (`strong` is unwrapped).
+  4. **"Customer growth"** as a smaller heading, a grey chart image reading "Customer growth chart", and below it the caption "Customers per month, January to September 2026." as a normal paragraph.
+  5. **"Plans"** heading, then a table with 3 rows and 3 columns (Plan / Price / Seats, Starter, Pro), with visible cell borders. The header row looks like the other rows.
+  6. **One sentence** with two links inside it, "terms of service" and "guide to web analytics", all on the same line(s). The links don't break the sentence into separate blocks.
+  7. **"Talk to sales"** heading, then three fields labelled "Work email", "Company size" and "How can we help?", and a "Request a demo" button. The dropdown's options aren't shown.
+  8. **Footer:** "© 2026 Acme Analytics. Privacy", with "Privacy" as a link.
+
+  **What must not appear:** any code (`dataLayer`, `acceptCookies`), CSS text, the hidden `csrf` field or its value `do-not-show`, the dropdown options (`1–10`), or the page's own styles. Clicking a link or a button does nothing.
+
+  **Verify:**
+  1. Click "Try a sample" and the preview matches the list above, top to bottom, with none of the "must not appear" items.
+  2. Click "terms of service": the app stays on the editor, and no new tab opens.
+  3. Open any real URL and you still see "Stub page" as a heading.
+  4. `grep -rn "dangerouslySetInnerHTML\|<iframe" apps/web/src` finds nothing.
+  5. `pnpm e2e` passes. A new test opens the sample and checks that the "Analytics that scale with you" heading and the Plans table are visible, and that `acceptCookies` and `do-not-show` are not on the page.
+
+- [ ] **S5 – Fetch real pages safely**
 
   Now the server fetches real websites. It does that through a guard that refuses anything dangerous: addresses inside our own network (like `localhost`), redirects that sneak there, pages that are too slow or too big, and files that aren't web pages. Each refusal comes back as a clear error code. Each rule gets its own test, written first (rules: `plan.md` §4.1).
 
@@ -89,7 +112,7 @@ This task is backend only. The app keeps showing just the page title for now. Dr
      - private and local addresses are `BLOCKED`, like `127.0.0.1`, `192.168.x.x` and their IPv6 versions
      - a public URL that redirects to a private one is also `BLOCKED`, and so is a chain of more than 5 redirects
      - a slow site gives `TIMEOUT`, a page over 3 MB gives `TOO_LARGE`, and a PDF gives `NOT_HTML`
-  2. Send `https://example.com` and you get back its real clean tree.
+  2. Send `https://example.com` and you get back its real clean tree. Open it in the app too: the preview shows its "Example Domain" heading, a paragraph and a link.
   3. Send `http://localhost:5173` and you get `BLOCKED`.
   4. Send a PDF link and you get `NOT_HTML`.
   5. Send `https://no-such-host.invalid` and you get `UNREACHABLE`.
@@ -97,7 +120,7 @@ This task is backend only. The app keeps showing just the page title for now. Dr
 **How to send a URL:** with `pnpm dev` running,
 `curl -X POST localhost:3001/api/page-tree -H 'content-type: application/json' -d '{"url":"<URL>"}'`
 
-**Done when:** a real website and the demo page both come back as clean trees, every dangerous URL is refused with its error code, and `pnpm e2e` still passes.
+**Done when:** a real website and the demo page both come back as clean trees and render in the preview as described in S4, every dangerous URL is refused with its error code, and `pnpm e2e` passes.
 
 **Deviations:**
 
