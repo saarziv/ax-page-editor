@@ -6,7 +6,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 - [x] T01 – Agent View endpoint · Covers: AC1, AC2, AC3, AC4, AC5, AC6, AC7
 - [x] T02 – View as agent button · Covers: AC9, AC10, AC11
-- [ ] T03 – Agent View in the README · Covers: AC8
+- [x] T03 – Agent View in the README · Covers: AC8
 
 ---
 
@@ -101,7 +101,7 @@ S1 builds the button and the tab it opens. S2 adds the disabled state and both t
 
 **Implements:** `plan.md` → README.
 
-- [ ] **S1 – Explain Agent View in the README (AC8)**
+- [x] **S1 – Explain Agent View in the README (AC8)**
   A short README section on what the endpoint returns, why it exists (it's the downstream consumer that proves a saved configuration works without the editor), and a `curl` example against the demo page.
   **Verify:**
   1. Read the README's Agent View section: it says what it returns, why we built it, and has a `curl` command.
