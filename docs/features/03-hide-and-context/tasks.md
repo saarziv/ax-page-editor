@@ -6,7 +6,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 - [x] T01 – Show the Hide from AI switch · Covers: the UI part of K1 and K3
 - [x] T02 – Hide an element from AI, and see it in the preview · Covers: K1, K2, K3, K4 (agent output checked on the marked page; the text in 06)
-- [ ] T03 – Add context (steps detailed when it starts) · Covers: K5, K6, K7, K8, K9, K10, K11
+- [ ] T03 – Add context for AI, and see it in the preview · Covers: K5, K6, K7, K8, K9, K10, K11 (agent output checked on the marked page; the text in 06)
 
 ---
 
@@ -94,6 +94,63 @@ Not in this task: the Markdown view and removing hidden parts from what the agen
 - The `inactive` rule for modifications inside a hidden element (global plan §3.4, step 2) was built here → feature `plan.md` §`markModificationsInTree`, steps 1 and 2
 
 **Done when:** on the demo page, the publisher can hide and un-hide any element from the inspector. A hidden element looks faded in the preview, and nothing moves. The changes lists match `modificationsDraft`. Core tests show that `markModificationsInTree` marks the right element as hidden. `pnpm test`, `typecheck` and `e2e` pass.
+
+---
+
+## T03 – Add context for AI, and see it in the preview
+
+**Goal:** the publisher can attach a short note to any element, explaining it to AI agents, and see it in the preview where the agent will read it.
+
+The flow (`plan.md` → How adding context works):
+1. The publisher selects an element and types in the "Context for AI" box.
+2. The store adds one `context` entry to `modificationsDraft`, replaces its note as they keep typing, and removes it when the box is cleared.
+3. Core's `markModificationsInTree` inserts an `annotation` node into the marked page: first inside a container, right after anything else, and after the whole paragraph or table when the element sits inside one.
+4. The preview draws the annotation as a "Context for AI" callout. Clicking it selects its element.
+
+S1 builds steps 1 and 2. S2 builds steps 3 and 4.
+
+Not in this task: the note as Markdown text (06), saving (05).
+
+**Implements:** `plan.md` → `markModificationsInTree` step 3, Context box, Store: `setContext(target, note)`, Drawing the callout.
+
+- [ ] **S1 – The Context box writes the note to the draft (K10, K11)**
+
+  The disabled "Context for AI" button becomes a text box with a placeholder suited to the element. Typing adds or updates one `context` entry for the selected element, and clearing the box removes it. The schema's note limit is fixed from 500 to 300 to match the spec. The preview doesn't show the note yet; that's S2.
+
+  **Verify:**
+  1. Click "Try a sample", click the chart: the box shows "What does this chart show?". Click a section through the breadcrumb: "What is this section about?".
+  2. Select the chart and type "Customer growth from 1,200 to 8,500". "Changes on this element" shows one line, "Context: Customer growth from 1,200 to 8,500". Keep typing: still one line, with the new text (K10).
+  3. Click another element, then the chart again: the box shows the note.
+  4. Clear the box: the line is gone from both changes lists (K10).
+  5. Paste a long text: the box grows to about 10 lines, then scrolls; a counter shows near the end; it stops at 300 characters; the Hide switch and the Forward button stay reachable (K11).
+  6. `pnpm test` passes. New tests check `setContext`:
+     - A note on a new element adds one `context` entry.
+     - A second note on the same element replaces the text and keeps the id.
+     - An empty or whitespace-only note removes the entry.
+     - The schema rejects a 301-character note.
+  7. `pnpm e2e` passes. A new test types a note on the chart, checks the changes lists, clears it, and checks they're empty. The tests expecting a disabled "Context for AI" button are updated.
+
+- [ ] **S2 – Notes show in the preview, where the agent will read them (K5–K9)**
+
+  Core's `markModificationsInTree` gets step 3, which inserts each note as an `annotation` node, placed by the element's kind. A note on a hidden element is `inactive` and isn't inserted. The preview draws each annotation as a light "Context for AI" callout that selects its element on click. `PreviewNode` gets `React.memo`, so a keystroke re-renders only the nodes on the path to the edited element.
+
+  **Verify:**
+  1. Note on the chart: a callout appears right under the chart (K5, K6).
+  2. Note on a section (via breadcrumb): the callout is the first thing inside the section (K7). Same on a list: the callout sits above the bullets.
+  3. Note on "terms of service": the sentence stays whole, and the callout comes after the paragraph, labeled `Context for AI (on "terms of service")` (K8).
+  4. Note `<script>alert(1)</script> # heading [x](y)`: the callout shows exactly those characters (K9).
+  5. Click a callout: its element is selected and the box shows the note.
+  6. Hide the chart that has a note: the callout disappears. Un-hide: it's back.
+  7. Type quickly in the chart's note: the callout keeps up with the typing, with no visible lag.
+  8. `pnpm test` passes. New core tests check step 3:
+     - A note on an image becomes the next sibling; on a section, the first child (K6, K7).
+     - A note on a link inside a paragraph goes right after the paragraph, with `about` set; a note on a cell goes right after the table (K8).
+     - A note on a paragraph and one on its link both land after the paragraph, the paragraph's first.
+     - A note on a hidden element, or inside one, is `inactive` and not inserted.
+     - The note text is kept exactly as typed (K9), and the input page is unchanged.
+  9. `pnpm e2e` passes. Global flow 1 lands: hide the cookie banner and add a note to the chart; the banner is faded and the callout shows under the chart. Clearing the note removes the callout.
+
+**Done when:** on the demo page, the publisher can add, edit and clear a note on any element, and the preview shows it as a callout placed as the agent will read it. Core tests show every placement rule. `pnpm test`, `typecheck` and `e2e` pass.
 
 ---
 

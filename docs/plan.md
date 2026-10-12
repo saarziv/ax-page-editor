@@ -162,7 +162,7 @@ type Marked = {
 | Step | What | Rules in |
 |---|---|---|
 | 1. Resolve | Resolve each modification with `resolve`. If unresolved, mark it `unmatched`. | §3.3 |
-| 2. Hide | Flag the node `hidden`; modifications inside a hidden subtree become `inactive`. | 03 Hide & add context |
+| 2. Hide | Flag the node `hidden`; other modifications in or on a hidden subtree become `inactive`. | 03 Hide & add context |
 | 3. Context | Insert `annotation` nodes, placed by kind. | 03 Hide & add context |
 | 4. Forward | Insert `forwarded` nodes within size limits; `overBudget` / `failed` leave the plain link. | 04 Forward a link |
 
