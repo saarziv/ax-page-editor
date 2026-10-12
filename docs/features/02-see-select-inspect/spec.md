@@ -98,7 +98,7 @@ The disabled Hide / Context / Forward stubs from 01 show only when an element is
 - **Hover:** a light outline (lighter than the selection) and a small plain-language label ("Heading", "Link", "Image", "List", "Section", "Navigation").
 - **Deselect:** Esc or a click on empty preview space clears the selection.
 - **Reach a container:** because a click picks the innermost element, the inspector shows a breadcrumb (`Main › Section › Paragraph`) where each step is clickable.
-- **Nothing selected:** the inspector shows a hint at the top ("Click an element in the preview to inspect it.") and a simple **changes list** of all modifications on the page at the bottom. Until 03 it's empty ("No changes yet."), except on the demo page, where it shows the mock modifications (section 5). The full grouped list with statuses comes in 04.
+- **Nothing selected:** the inspector shows a hint at the top ("Click an element in the preview to inspect it.") and a simple **changes list** of all modifications on the page at the bottom. Until 03 it's empty ("No changes yet."), except on the demo page, where it shows the mock modifications (section 5). The full grouped list with statuses comes in 04. Clicking a change scrolls the preview to its element, without selecting it, so the list stays open. A change whose element can't be found isn't clickable.
 
 **Secondary acceptance criteria**
 
@@ -106,6 +106,7 @@ The disabled Hide / Context / Forward stubs from 01 show only when an element is
 - **S2.** Given an element is selected, when the user presses Esc or clicks empty preview space, then nothing is selected.
 - **S3.** Given a nested element is selected, then the inspector shows its breadcrumb. When the user clicks a step, then that ancestor becomes selected.
 - **S4.** Given nothing is selected, then the inspector shows the hint at the top and the page's changes list at the bottom ("No changes yet." when empty), with no modification buttons.
+- **S5.** Given nothing is selected and the page has a change on an element outside the visible preview, when the user clicks that change in the list, then the preview scrolls the element into view, and the inspector still shows the list.
 
 ## 5. Bonus: visual diff overlay
 

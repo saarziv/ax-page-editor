@@ -18,7 +18,7 @@ export function Inspector({ url }: { url: string }) {
       ) : (
         <>
           <p className="text-sm text-muted-foreground">Click an element in the preview to inspect it.</p>
-          <PageChanges />
+          <PageChanges url={url} />
         </>
       )}
     </aside>

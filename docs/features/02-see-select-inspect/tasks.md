@@ -7,6 +7,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 - [x] T01 – Select an element and inspect it · Covers: K1, K2, K3, K4, K5, K6, K7, K8 (no-changes case), S4
 - [x] T02 – Deselect, climb with the breadcrumb, and see what you hover · Covers: S1, S2, S3
 - [x] T03 – See the changes on the demo page · Covers: K8 (with changes), B1, B2, B3
+- [x] T04 – Jump from a change to its element · Covers: S5
 
 ---
 
@@ -82,6 +83,21 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
   5. `pnpm e2e` passes. A new test checks that the demo shows exactly three markers with those three badges, and that clicking the marked image selects it.
 
 **Done when:** the demo page opens with three marked elements, selecting one lists its changes, the nothing-selected list shows all three, and a real URL shows no changes. `pnpm test`, `typecheck` and `e2e` pass.
+
+---
+
+## T04 – Jump from a change to its element
+
+**Goal:** on a long page, clicking a row in "Changes on this page" scrolls the preview to the element that change is on. It only scrolls: the selection doesn't change, so the publisher can go through the list row by row. The row finds its element with the same core `resolve` the preview uses, so it never scrolls to a guess.
+
+- [x] **Step 1 – Make each row's text a button that scrolls to its element.** The label and snippet become a button; the Remove ✕ stays a separate button beside it. A change whose element can't be resolved shows plain text instead.
+  **Verify:**
+  1. Make the browser window short, open the demo, select the chart and turn on Hide from AI, press Esc, then scroll the preview to the bottom.
+  2. Click "Hidden from AI · Customer growth": the preview scrolls the faded chart into view, and the inspector still shows the list.
+  3. Click ✕ on the row: the change is removed and nothing scrolls.
+  4. `pnpm e2e` passes. A new test checks that the chart is in view after clicking its row, and the hint is still shown.
+
+**Done when:** clicking a change scrolls to its element without selecting it. `pnpm test`, `typecheck` and `e2e` pass.
 
 ---
 
