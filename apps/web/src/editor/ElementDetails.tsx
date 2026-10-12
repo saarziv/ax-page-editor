@@ -5,10 +5,9 @@ import { Switch } from '@/components/ui/switch';
 import { useNodeModifications } from '@/state/derived';
 import { useEditorStore } from '@/state/store';
 import { Breadcrumb } from './Breadcrumb';
+import { ContextBox } from './ContextBox';
 import { describeModification } from './modificationLabels';
 import { NODE_LABELS } from './nodeLabels';
-
-const PENDING_CONTROLS = ['Context for AI', 'Forward this link'];
 
 // Past this, the text is clamped to four lines with a toggle, so a long paragraph doesn't push everything else away.
 const LONG_TEXT_LENGTH = 200;
@@ -40,14 +39,13 @@ export function ElementDetails({ path, node }: { path: PageNode[]; node: PageNod
         <ElementChanges node={node} />
       </DetailRow>
 
-      <div className="flex flex-col gap-2 border-t pt-4">
+      <div className="flex flex-col gap-3 border-t pt-4">
         <HideSwitch node={node} />
-        {/* Disabled until later tasks make them work. */}
-        {PENDING_CONTROLS.map((controlName) => (
-          <Button key={controlName} variant="outline" disabled>
-            {controlName}
-          </Button>
-        ))}
+        <ContextBox node={node} />
+        {/* Disabled until 04 makes it work. */}
+        <Button variant="outline" disabled>
+          Forward this link
+        </Button>
       </div>
     </section>
   );

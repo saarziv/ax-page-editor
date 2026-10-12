@@ -113,7 +113,7 @@ Not in this task: the note as Markdown text (06), saving (05).
 
 **Implements:** `plan.md` → `markModificationsInTree` step 3, Context box, Store: `setContext(target, note)`, Drawing the callout.
 
-- [ ] **S1 – The Context box writes the note to the draft (K10, K11)**
+- [x] **S1 – The Context box writes the note to the draft (K10, K11)**
 
   The disabled "Context for AI" button becomes a text box with a placeholder suited to the element. Typing adds or updates one `context` entry for the selected element, and clearing the box removes it. The schema's note limit is fixed from 500 to 300 to match the spec. The preview doesn't show the note yet; that's S2.
 
@@ -155,3 +155,5 @@ Not in this task: the note as Markdown text (06), saving (05).
 ---
 
 ## Follow-ups
+
+- The e2e test "hovering an element outlines it and names its type" is flaky (about half of runs, already on `f039677`): the hover box is sometimes 512px wide instead of the link's width. Make it wait for the box to settle before measuring.

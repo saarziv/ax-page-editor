@@ -75,9 +75,12 @@ function isAbsoluteHttpUrl(value: string): boolean {
   return protocol === 'http:' || protocol === 'https:';
 }
 
+// Spec D8. Exported so the Context box stops input at the same limit the schema enforces.
+export const CONTEXT_NOTE_MAX_LENGTH = 300;
+
 export const modificationSchema = z.discriminatedUnion('type', [
   z.object({ id: z.string(), type: z.literal('hide'), target: targetSchema }),
-  z.object({ id: z.string(), type: z.literal('context'), target: targetSchema, note: z.string().min(1).max(500) }),
+  z.object({ id: z.string(), type: z.literal('context'), target: targetSchema, note: z.string().min(1).max(CONTEXT_NOTE_MAX_LENGTH) }),
   z.object({ id: z.string(), type: z.literal('forward'), target: targetSchema, href: absoluteHttpUrlSchema }),
 ]);
 

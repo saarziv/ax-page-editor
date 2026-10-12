@@ -23,9 +23,11 @@ test('clicking an element selects it and shows it in the inspector', async ({ pa
   const hideSwitch = inspector.getByRole('switch', { name: 'Hide from AI' });
   await expect(hideSwitch).toBeEnabled();
   await expect(hideSwitch).not.toBeChecked();
-  for (const controlName of ['Context for AI', 'Forward this link']) {
-    await expect(inspector.getByRole('button', { name: controlName })).toBeDisabled();
-  }
+  const contextBox = inspector.getByRole('textbox', { name: 'Context for AI' });
+  await expect(contextBox).toBeEditable();
+  await expect(contextBox).toHaveValue('');
+  await expect(contextBox).toHaveAttribute('placeholder', 'What happens when someone clicks this?');
+  await expect(inspector.getByRole('button', { name: 'Forward this link' })).toBeDisabled();
 
   // The selection moves to the next element clicked.
   const heading = preview.getByRole('heading', { name: 'Analytics that scale with you' });
@@ -191,4 +193,67 @@ test('a hidden element is faded in place, and stays clickable', async ({ page })
   await hideSwitch.click();
   await expect(chart).not.toHaveAttribute('data-hidden');
   await expect(chartVeil).toHaveCount(0);
+});
+
+test('the Context box adds, edits and clears one note in both changes lists', async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Try a sample').click();
+
+  const preview = page.getByRole('region', { name: 'Preview' });
+  const elementChanges = page.getByRole('region', { name: 'Selected element' });
+  const pageChanges = page.getByRole('region', { name: 'Changes on this page' });
+  const contextBox = page.getByRole('textbox', { name: 'Context for AI' });
+  const chart = preview.getByRole('img', { name: 'Customer growth' });
+
+  await chart.click();
+  await expect(contextBox).toHaveAttribute('placeholder', 'What does this chart show?');
+
+  // Each keystroke replaces the note, so the element keeps exactly one (K10).
+  await contextBox.pressSequentially('Customer growth');
+  await expect(elementChanges.getByText(/^Context:/)).toHaveText(['Context: Customer growth']);
+  await contextBox.pressSequentially(' from 1,200 to 8,500');
+  await expect(elementChanges.getByText(/^Context:/)).toHaveText(['Context: Customer growth from 1,200 to 8,500']);
+
+  // The box reads the draft, so the note is back after selecting another element and returning.
+  await preview.getByText('terms of service', { exact: true }).click();
+  await expect(contextBox).toHaveValue('');
+  await chart.click();
+  await expect(contextBox).toHaveValue('Customer growth from 1,200 to 8,500');
+
+  await page.keyboard.press('Escape');
+  await expect(pageChanges.getByRole('listitem')).toHaveText(['Context · Customer growth']);
+
+  await chart.click();
+  await contextBox.clear();
+  await expect(elementChanges.getByText('No changes on this element.')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(pageChanges.getByText('No changes yet.')).toBeVisible();
+});
+
+test('a long note stops at 300 characters, and the box scrolls instead of pushing controls away (K11)', async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Try a sample').click();
+
+  const inspector = page.getByRole('complementary', { name: 'Inspector' });
+  const contextBox = inspector.getByRole('textbox', { name: 'Context for AI' });
+
+  await page.getByRole('region', { name: 'Preview' }).getByRole('img', { name: 'Customer growth' }).click();
+  await contextBox.fill('word '.repeat(50));
+  await expect(inspector.getByText('250 / 300')).toBeVisible();
+
+  await contextBox.fill('x'.repeat(400));
+  await expect(contextBox).toHaveValue('x'.repeat(300));
+  await expect(inspector.getByText('300 / 300')).toBeVisible();
+
+  // Taller than 10 lines of text, so it scrolls inside itself and stays narrower than the inspector.
+  await contextBox.fill('line\n'.repeat(20));
+  const scrolls = await contextBox.evaluate((textarea) => textarea.scrollHeight > textarea.clientHeight);
+  expect(scrolls).toBe(true);
+  const boxRect = await contextBox.boundingBox();
+  const inspectorRect = await inspector.boundingBox();
+  expect(boxRect && inspectorRect && boxRect.width < inspectorRect.width).toBe(true);
+  await inspector.getByRole('switch', { name: 'Hide from AI' }).click();
+  await expect(inspector.getByRole('switch', { name: 'Hide from AI' })).toBeChecked();
+  await inspector.getByRole('button', { name: 'Forward this link' }).scrollIntoViewIfNeeded();
+  await expect(inspector.getByRole('button', { name: 'Forward this link' })).toBeInViewport();
 });

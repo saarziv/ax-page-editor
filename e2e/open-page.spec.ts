@@ -24,9 +24,8 @@ test('the editor shows the top bar, preview and the inspector with no changes ye
   const pageChanges = inspector.getByRole('region', { name: 'Changes on this page' });
   await expect(pageChanges.getByText('No changes yet.')).toBeVisible();
   await expect(page.getByRole('switch', { name: 'Hide from AI' })).toHaveCount(0);
-  for (const controlName of ['Context for AI', 'Forward this link']) {
-    await expect(page.getByRole('button', { name: controlName })).toHaveCount(0);
-  }
+  await expect(page.getByRole('textbox', { name: 'Context for AI' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Forward this link' })).toHaveCount(0);
 });
 
 test('the sample page renders as a clean document, with no scripts or hidden fields', async ({ page }) => {
