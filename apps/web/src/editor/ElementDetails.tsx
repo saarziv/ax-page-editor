@@ -70,7 +70,7 @@ function HideSwitch({ node }: { node: PageNode }) {
 
   return (
     <div className="flex items-center justify-between py-1">
-      <label htmlFor={switchId} className="text-sm font-medium">
+      <label htmlFor={switchId} className="cursor-pointer text-sm font-medium">
         Hide from AI
       </label>
       <Switch id={switchId} checked={isHidden} onCheckedChange={() => toggleHide(targetFor(node))} className="data-[state=checked]:bg-green-600" />
