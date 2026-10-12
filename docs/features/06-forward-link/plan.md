@@ -109,7 +109,7 @@ Works like `toggleHide`: the first call adds one `forward` modification with the
 
 One TanStack query per distinct forwarded `href` (`useQueries`), keyed `['forward', href]` with `staleTime: Infinity`. That's the session cache (P11): editing a note or hiding something never refetches a forward, and turning a forward off and on again reuses it. Its `combine` option builds the `Map<href, Forwarded>` that `useMarkedPage` passes to `markModificationsInTree`. The tricky part is that this map must keep the same identity while nothing changes, or the marked page would be recomputed on every render. `combine` gives that, as long as it isn't an inline function that changes on every render.
 
-A failed query keeps the api's `code` as the forward's `error`. It isn't retried automatically, so a blocked or non-HTML link fails fast.
+A failed query keeps the api's `code` as the forward's `error`. A failure with no `code` (our api down or failing) becomes `UNREACHABLE`, because `Forwarded.error` only holds fetch codes and the publisher can't do more about it than about a site that's down. It isn't retried automatically, so a blocked or non-HTML link fails fast.
 
 ### Forwarded block in the preview
 
@@ -120,6 +120,8 @@ A failed query keeps the api's `code` as the forward's `error`. It isn't retried
 - **failed:** the same block, labeled "Couldn't forward <href>", with the reason from 01's edge-case messages by `errorCode` (e.g. `BLOCKED` → "This address can't be opened for security reasons.").
 
 Forwarded content can't be selected: `PreviewNode` is told it's inside forwarded content (a React context), and then adds no selection or hover props. Its links don't navigate, like every preview link.
+
+The block itself behaves like a note callout: a click anywhere on it selects the forwarded link (and the label also toggles it open), and hovering it shows no outline. Without this, a click inside the block would select the section around it, which isn't what the publisher meant. Like a note, a forward after a list item sits inside the list, so it's wrapped in its own `<li>`.
 
 ## Tests
 

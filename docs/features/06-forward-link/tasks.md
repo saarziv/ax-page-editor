@@ -61,9 +61,52 @@ The api gets `POST /api/forward`, which fetches the page safely and keeps only i
 
 Example: forwarding "terms of service" on the demo shows, under the paragraph, a collapsed "Forwarded from https://www.iana.org/help/example-domains" that expands to "Example Domains" and its text.
 
-Steps are detailed when this task starts.
+The cut at about 3,000 tokens (`truncateTree`) isn't part of this task. It comes with T03, so the preview may show a long page in full until then. Agent View doesn't fetch anything yet either: it passes no forwards, so its output stays the same until T03.
 
-**Implements:** `plan.md` → `mainContent`, `markModificationsInTree` step 4, `POST /api/forward`, `useForwardedPages`, Forwarded block in the preview.
+S1 places the block, S2 builds the endpoint, S3 connects them, and S4 handles failures.
+
+**Implements:** `plan.md` → `mainContent`, `markModificationsInTree` step 4 (without the size limit), `POST /api/forward`, `useForwardedPages`, Forwarded block in the preview.
+
+- [ ] **S1 – A "Loading…" block appears where the forward goes**
+  `markModificationsInTree` gets its third argument, the fetched forwards by `href`, and step 4 inserts one `forwarded` node per active forward, in the spot a note on that link would go. The editor doesn't fetch yet, so it passes an empty map and every forward shows as a muted "Loading <href>…" block. Core already handles all three states (`loading`, `loaded` and `failed`), because the map is just an input and tests can supply it. Clicking the block selects the link, as clicking a note does.
+  **Verify:**
+  1. Open the demo, select "terms of service" and turn Forward to AI on. "Loading https://www.iana.org/help/example-domains…" appears below the whole "Read our terms of service…" paragraph, not in the middle of the sentence.
+  2. Add the context "Our legal terms" to the same link. The note shows above the loading block.
+  3. Click the loading block: the inspector shows "terms of service".
+  4. Select the "Plans" section and hide it. The loading block disappears, because a forward inside a hidden element is inactive.
+  5. `pnpm test` passes. New `markModificationsInTree` tests check:
+    - a forward on a link inside a sentence lands after its paragraph, and a note on the same link comes before it
+    - an `href` missing from the map gives `loading`, one with a tree gives `loaded` with the content as children, and one with an error gives `failed`, carries its `errorCode`, and has the status `failed`
+    - loaded content ids start with `forward:<modificationId>>`, so a forward whose target points inside forwarded content comes back `unmatched`
+    - a forward inside a hidden element is `inactive` and inserts nothing
+
+- [ ] **S2 – `POST /api/forward` returns the page's main content (K4)**
+  Core gets `mainContent(root)`, which keeps `main` (or the longest `article`) and drops every `nav`, `header`, `footer` and `aside` inside it. The api gets `ForwardService` and its controller: they load the page through `PageTreeService`, so every safety check applies, and return it with `mainContent` applied.
+  **Verify:**
+  1. With `pnpm dev` running, run `curl -s -X POST localhost:3001/api/forward -H 'content-type: application/json' -d '{"url":"https://www.iana.org/help/example-domains"}' | jq '[.. | .kind? // empty] | unique'`. The list has `heading` and `paragraph`, but no `nav`, `header`, `footer` or `aside` (K4).
+  2. Run the same command with `https://www.rfc-editor.org/rfc/rfc2606.txt` and drop the `jq` filter. It answers `{"code":"NOT_HTML", …}`.
+  3. `pnpm test` passes. New tests check:
+    - `mainContent` prefers `main`, then the article with the most text, then the root. `header, nav, main[h1, p, aside], footer` becomes `main[h1, p]`.
+    - `/api/forward` on a stubbed page returns only its main content, and a stubbed `BLOCKED` fetch answers `{ code: 'BLOCKED' }`.
+
+- [ ] **S3 – The editor fetches each forward and shows it collapsed (K2, K5)**
+  `useForwardedPages` asks `/api/forward` once per forwarded `href` in this session, and `useMarkedPage` passes the result to `markModificationsInTree`. The loaded block shows "Forwarded from <href>" with a chevron and expands on click. Nothing inside it can be selected or hovered, and its links are plain links.
+  **Verify:**
+  1. Forward "terms of service". "Loading…" turns into a collapsed "Forwarded from https://www.iana.org/help/example-domains" (K2).
+  2. Click the label. It expands to "Example Domains" and its text, and the inspector shows "terms of service".
+  3. Hover the content and click a link inside it. No hover outline appears, and the selection stays on "terms of service" (K5).
+  4. With the browser's Network tab open, type in a note and turn the forward off and on. No new `/api/forward` request is sent, because the session cache keeps it.
+  5. `pnpm test` passes. New tests check that a failed `/api/forward` call keeps the api's `code` (`BLOCKED` stays `BLOCKED`), and that a failure without a code becomes `UNREACHABLE`.
+  6. `pnpm e2e` passes. A new test stubs `/api/forward` with a small page that contains a link. It checks that the block appears collapsed, expands to the content, and that clicking the link inside keeps "terms of service" selected.
+
+- [ ] **S4 – A failed forward says why (K7)**
+  The web gets the plain-language messages for each fetch error code, from 01's edge cases. 01 T04 S4 will use them for page loads too. A failed block reads "Couldn't forward <href>" followed by the reason. The demo gets a link to a plain-text page as the last line of its footer, so there's a forward that always fails. It goes last so no existing selector shifts.
+  **Verify:**
+  1. Forward the new "RFC 2606" link in the demo footer. The block says "Couldn't forward https://www.rfc-editor.org/rfc/rfc2606.txt" and "This link isn't a web page." (K7).
+  2. The forward is still listed under "Changes on this element", and Save keeps it (`curl 'localhost:3001/api/configs/sample%3Ademo'` shows it).
+  3. `pnpm e2e` passes. A new test stubs `/api/forward` to answer 403 with `{ "code": "BLOCKED" }`, and checks that the block shows "This address can't be opened for security reasons." Existing tests that list the demo's footer get the new line.
+
+**Done when:** a forwarded link shows its page's main content in the preview, collapsed under "Forwarded from <url>" right where the agent will read it. Its content can't be selected, a failed forward says why and stays in the changes list, and each forward is fetched only once per session. `pnpm test`, `typecheck` and `e2e` pass.
 
 ---
 
