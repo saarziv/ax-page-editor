@@ -128,19 +128,20 @@ S1 writes the block, S2 handles failed forwards, and S3 adds the size limit.
 
 **Implements:** `plan.md` → Renderer formats, Agent View fetches forwards live, `truncateTree`.
 
-- [ ] **S1 – Agent View writes forwarded content as a quoted block (K3, K8)**
+- [x] **S1 – Agent View writes forwarded content as a quoted block (K3, K8)**
   `renderMarkdown` writes a loaded `forwarded` node as a blockquote headed "**Forwarded content from <href>:**", with its content escaped like any page text and the `href` written as is. `AgentViewService` fetches each distinct forwarded `href` in parallel through `ForwardService` before calling `markModificationsInTree`, so the nodes arrive loaded.
   **Verify:**
   1. With `pnpm dev` running, open the demo, forward "terms of service" and Save. Click "View as agent": after the "Read our terms of service…" paragraph comes "> **Forwarded content from https://www.iana.org/help/example-domains:**", then "> # Example Domains" and its text, each line quoted (K3).
   2. The quoted content has no IANA site header or footer ("Root Zone Registry"), and the link itself is still in the paragraph above.
-  3. Reload the Agent View tab: the api log shows the IANA page fetched again, since nothing is cached (K8).
-  4. `pnpm test` passes. New tests check:
+  3. `pnpm test` passes. New tests check:
     - `renderMarkdown` writes a loaded forward as the exact quoted block above, escapes its content (`*sale*` becomes `\*sale\*`), and leaves the `href` alone (`https://a.com/a_b` keeps its `_`)
     - a loading forward writes nothing
     - a forward after a list item is written inside that item, indented under its text
-    - Agent View with a saved forward to a stubbed page returns that page's content after the link, and a second request returns the new content after the stubbed page changes
+    - Agent View with a saved forward to a stubbed page returns that page's main content after the link's paragraph
+    - a second request fetches the page again and returns its new content after the stubbed page changes, since nothing is cached (K8)
+    - a page forwarded from two links is fetched once per request
 
-- [ ] **S2 – A failed forward leaves just the link (K7)**
+- [x] **S2 – A failed forward leaves just the link (K7)**
   When `ForwardService` throws a `FetchError`, Agent View passes it as that forward's `error`, so the node is `failed` and writes nothing. Any other error is a bug and still fails the request. The modification stays in the configuration, so it works again once the page is back.
   **Verify:**
   1. Forward "Privacy" in the demo footer (a page that doesn't exist) and Save. "View as agent" returns the page, with "[Privacy](https://example.com/privacy)" in the footer and no "Forwarded content" after it (K7).
