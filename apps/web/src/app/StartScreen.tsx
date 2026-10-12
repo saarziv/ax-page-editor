@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
+import { AppLogo } from '@/components/AppLogo';
 import { Input } from '@/components/ui/input';
 import { DEMO_URL } from '@/editor/demo';
 import { useEditorStore } from '@/state/store';
@@ -18,13 +19,15 @@ export function StartScreen() {
   // Same full-height shell and top bar as the editor, so opening a page doesn't feel like a jump to another app.
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex items-center border-b p-3">
-        <span className="px-1 text-sm font-semibold">AX Editor</span>
+      <header className="flex items-center border-b bg-background p-3">
+        <AppLogo />
       </header>
-      <main className="flex-1 bg-muted/40">
+      <main className="flex-1 bg-sidebar bg-[radial-gradient(ellipse_70%_45%_at_50%_0%,var(--color-accent),transparent)]">
         <div className="mx-auto max-w-2xl space-y-10 px-6 pt-24 pb-12">
           <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight">See your page the way AI agents read it.</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">
+              See your page the way <span className="text-primary">AI agents</span> read it.
+            </h1>
             <p className="text-muted-foreground">
               Open a page, then choose what agents skip, what context they get, and which links they follow.
             </p>
@@ -34,17 +37,17 @@ export function StartScreen() {
               <Input
                 aria-label="Page URL"
                 placeholder="https://example.com/page"
-                className="h-10 bg-background"
+                className="h-10 bg-background shadow-xs"
                 value={typedUrl}
                 onChange={(event) => setTypedUrl(event.target.value)}
               />
-              <Button type="submit" size="lg">
+              <Button type="submit" size="lg" className="cursor-pointer">
                 Open
               </Button>
             </form>
             <p className="text-sm text-muted-foreground">
               No page in mind?{' '}
-              <Button variant="link" className="h-auto p-0" onClick={() => setUrl(DEMO_URL)}>
+              <Button variant="link" className="h-auto cursor-pointer p-0" onClick={() => setUrl(DEMO_URL)}>
                 Try a sample
               </Button>
             </p>
