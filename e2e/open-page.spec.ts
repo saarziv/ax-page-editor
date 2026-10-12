@@ -10,7 +10,7 @@ test('typing a URL and clicking Open shows the page in the editor', async ({ pag
   await expect(page.getByText('sample:demo', { exact: true })).toBeVisible();
 });
 
-test('the editor shows the top bar, preview and disabled modification controls', async ({ page }) => {
+test('the editor shows the top bar, preview and the empty inspector', async ({ page }) => {
   await page.goto('/');
   await page.getByLabel('Page URL').fill('sample:demo');
   await page.getByRole('button', { name: 'Open', exact: true }).click();
@@ -18,8 +18,13 @@ test('the editor shows the top bar, preview and disabled modification controls',
   await expect(page.getByLabel('Page URL')).toHaveValue('sample:demo');
   await expect(page.getByRole('button', { name: 'Open', exact: true })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Preview' })).toBeVisible();
+
+  const inspector = page.getByRole('complementary', { name: 'Inspector' });
+  await expect(inspector.getByText('Click an element in the preview to inspect it.')).toBeVisible();
+  const pageChanges = inspector.getByRole('region', { name: 'Changes on this page' });
+  await expect(pageChanges.getByText('No changes yet.')).toBeVisible();
   for (const controlName of ['Hide from AI', 'Context for AI', 'Forward this link']) {
-    await expect(page.getByRole('button', { name: controlName })).toBeDisabled();
+    await expect(page.getByRole('button', { name: controlName })).toHaveCount(0);
   }
 });
 

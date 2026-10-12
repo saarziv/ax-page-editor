@@ -15,7 +15,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 **Implements:** `plan.md` → Selection, and Inspector.
 
-- [ ] **S1 – Inspector: the "nothing selected" state (UI only)**
+- [x] **S1 – Inspector: the "nothing selected" state (UI only)**
 
   The right panel changes from three disabled buttons to the spec's empty state: a hint at the top ("Click an element in the preview to inspect it.") and a "Changes on this page" section at the bottom that says "No changes yet." Nothing can be selected yet, so this is the only state, and the modification buttons are gone for now. They come back in S2, under a selected element's details.
 
