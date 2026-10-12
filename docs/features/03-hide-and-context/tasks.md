@@ -5,7 +5,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 ## Roadmap
 
 - [x] T01 – Show the Hide from AI switch · Covers: the UI part of K1 and K3
-- [ ] T02 – Hide an element from AI, and see it in the preview · Covers: K1, K2, K3, K4 (agent output checked on the marked page; the text in 06)
+- [x] T02 – Hide an element from AI, and see it in the preview · Covers: K1, K2, K3, K4 (agent output checked on the marked page; the text in 06)
 - [ ] T03 – Add context (steps detailed when it starts) · Covers: K5, K6, K7, K8, K9, K10, K11
 
 ---
@@ -69,7 +69,7 @@ Not in this task: the Markdown view and removing hidden parts from what the agen
      - A new test hides the chart, checks both changes lists, turns it off, and checks both lists are empty again.
      - The marker test only checks the chart's amber marker. S2 removes it.
 
-- [ ] **S2 – The preview shows hidden elements faded (K1–K4)**
+- [x] **S2 – The preview shows hidden elements faded (K1–K4)**
 
   Core gets `markModificationsInTree`, which returns the marked page. The preview now draws the marked page instead of the page as loaded.
 
@@ -87,7 +87,11 @@ Not in this task: the Markdown view and removing hidden parts from what the agen
      - The page passed to `markModificationsInTree` is not changed, and the parts that weren't hidden are reused as they are.
      - K2: hiding a section sets `hidden: true` on the section, so all its text, links, images and nested elements are inside the hidden part.
      - K4: with no modifications, `markModificationsInTree` returns a page equal to the original.
+     - A hide inside a hidden section gets the status `inactive`, and only the section is flagged.
   7. `pnpm e2e` passes. A new test hides the chart and checks that it has `data-hidden="true"`, the label is visible, and the chart hasn't moved. It then turns the switch off and checks the attribute and the label are gone. 02's marker test is deleted.
+
+**Deviations:**
+- The `inactive` rule for modifications inside a hidden element (global plan §3.4, step 2) was built here → feature `plan.md` §`markModificationsInTree`, steps 1 and 2
 
 **Done when:** on the demo page, the publisher can hide and un-hide any element from the inspector. A hidden element looks faded in the preview, and nothing moves. The changes lists match `modificationsDraft`. Core tests show that `markModificationsInTree` marks the right element as hidden. `pnpm test`, `typecheck` and `e2e` pass.
 

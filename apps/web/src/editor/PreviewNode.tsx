@@ -13,10 +13,10 @@ const UNSELECTABLE_KINDS = new Set<PageNode['kind']>(['text', 'page', 'annotatio
 export function PreviewNode({ node }: { node: PageNode }) {
   // A boolean, so moving the selection re-renders only the old and the new node.
   const isSelected = useEditorStore((state) => state.selectedId === node.id);
-  // Preview reads data-node-id to find what was clicked; index.css styles both attributes.
+  // Preview reads data-node-id to find what was clicked; index.css styles data-selected; HiddenLayer veils data-hidden.
   const selectable = UNSELECTABLE_KINDS.has(node.kind)
     ? {}
-    : { 'data-node-id': node.id, 'data-selected': isSelected ? 'true' : undefined };
+    : { 'data-node-id': node.id, 'data-selected': isSelected ? 'true' : undefined, 'data-hidden': node.hidden ? 'true' : undefined };
   const content = node.text ?? node.children?.map((child) => <PreviewNode key={child.id} node={child} />);
 
   switch (node.kind) {

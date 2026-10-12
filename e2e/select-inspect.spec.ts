@@ -166,23 +166,29 @@ test('the Hide switch adds and removes a hide in both changes lists', async ({ p
   await expect(pageChanges.getByText('No changes yet.')).toBeVisible();
 });
 
-// S2 replaces this amber marker with the faded look.
-test('a hidden element is marked in the preview, and stays clickable', async ({ page }) => {
+test('a hidden element is faded in place, and stays clickable', async ({ page }) => {
   await page.goto('/');
   await page.getByText('Try a sample').click();
 
   const chart = page.getByRole('region', { name: 'Preview' }).getByRole('img', { name: 'Customer growth' });
-  const chartMarker = page.locator('[data-marker-for="main:1>figure:1>image:1"]');
+  const chartVeil = page.locator('[data-veil-for="main:1>figure:1>image:1"]');
+  const hideSwitch = page.getByRole('switch', { name: 'Hide from AI' });
 
   await chart.click();
-  await page.getByRole('switch', { name: 'Hide from AI' }).click();
-  await expect(chartMarker).toHaveText('Hidden from AI');
+  const chartRectBefore = await chart.boundingBox();
+  await hideSwitch.click();
+  await expect(chart).toHaveAttribute('data-hidden', 'true');
+  await expect(chartVeil).toHaveText('⊘ Hidden from AI');
+  // The veil floats on top, so nothing moves (K1).
+  expect(await chart.boundingBox()).toEqual(chartRectBefore);
 
-  // The marker lets the click through, so the image underneath is selected again.
+  // The veil lets the click through, so the image underneath is selected again, with its switch on (K3).
   await page.keyboard.press('Escape');
   await chart.click();
   await expect(chart).toHaveAttribute('data-selected', 'true');
+  await expect(hideSwitch).toBeChecked();
 
-  await page.getByRole('switch', { name: 'Hide from AI' }).click();
-  await expect(chartMarker).toHaveCount(0);
+  await hideSwitch.click();
+  await expect(chart).not.toHaveAttribute('data-hidden');
+  await expect(chartVeil).toHaveCount(0);
 });

@@ -17,6 +17,8 @@ export type PageNode = {
   text?: string;
   attrs?: { href?: string; src?: string; alt?: string; level?: number; label?: string; inputType?: string; width?: number; height?: number };
   children?: PageNode[];
+  // Set by markModificationsInTree on a hidden element, which stays in place so the preview can still draw it.
+  hidden?: true;
 };
 
 // A node contains nodes, so the schema refers to itself: z.lazy delays that reference until first use.
@@ -40,6 +42,7 @@ export const pageNodeSchema: z.ZodType<PageNode> = z.lazy(() =>
       })
       .optional(),
     children: z.array(pageNodeSchema).optional(),
+    hidden: z.literal(true).optional(),
   }),
 );
 
@@ -79,3 +82,8 @@ export const modificationSchema = z.discriminatedUnion('type', [
 ]);
 
 export type Modification = z.infer<typeof modificationSchema>;
+
+// What markModificationsInTree did with one modification (global plan §3.4).
+export const modificationStatusSchema = z.enum(['active', 'inactive', 'unmatched', 'overBudget', 'failed']);
+
+export type ModificationStatus = z.infer<typeof modificationStatusSchema>;
