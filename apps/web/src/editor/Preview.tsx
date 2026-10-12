@@ -7,16 +7,17 @@ export function Preview({ url }: { url: string }) {
   const pageTreeQuery = usePageTree(url);
   const select = useEditorStore((state) => state.select);
 
-  // One handler for the whole page: closest() walks up from the exact element clicked,
+  // One handler for the whole preview: closest() walks up from the exact element clicked,
   // so the innermost selectable element wins (a link inside a paragraph selects the link).
+  // A click that no selectable element covers is a click on empty space, and clears the selection.
   function handleClick(event: MouseEvent<HTMLElement>) {
     if (!(event.target instanceof Element)) return;
     const clickedNodeId = event.target.closest<HTMLElement>('[data-node-id]')?.dataset.nodeId;
-    if (clickedNodeId) select(clickedNodeId);
+    select(clickedNodeId ?? null);
   }
 
   return (
-    <section aria-label="Preview" className="min-w-0 flex-1 overflow-auto p-6">
+    <section aria-label="Preview" className="min-w-0 flex-1 overflow-auto p-6" onClick={handleClick}>
       {pageTreeQuery.isPending && <p className="text-muted-foreground">Loading…</p>}
       {pageTreeQuery.isError && (
         <p role="alert" className="text-destructive">
@@ -29,7 +30,7 @@ export function Preview({ url }: { url: string }) {
             <h1 className="text-sm font-medium">{pageTreeQuery.data.title}</h1>
             <p className="text-xs text-muted-foreground">{pageTreeQuery.data.url}</p>
           </div>
-          <div className="max-w-3xl" onClick={handleClick}>
+          <div className="max-w-3xl">
             <PreviewNode node={pageTreeQuery.data.root} />
           </div>
         </>

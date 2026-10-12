@@ -72,7 +72,7 @@ Example: in `<p data-node-id="…paragraph:3">Read our <span data-node-id="…li
 
 - The steps are the path minus the `page` root, each named with its plain-language label: `Main content › Section › Paragraph › Link`. The ancestors are buttons that call `select(ancestor.id)`. The last step is the current element, plain text, marked `aria-current`.
 - An element whose only ancestor is `page` (e.g. the demo's `main`) has nothing to climb to, so it shows no breadcrumb.
-- It lives in `Breadcrumb.tsx`, and `ElementDetails` receives the path instead of just the node.
+- It lives in `Breadcrumb.tsx`, and `ElementDetails` receives the path along with the node.
 
 Example: select "terms of service" on the demo, then click "Section" in the breadcrumb. The outline moves to the whole section, and the breadcrumb becomes `Main content › Section`.
 

@@ -29,7 +29,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 **Implements:** `plan.md` → Deselect, Breadcrumb, and Hover.
 
-- [ ] **S1 – Clear the selection with Esc or a click on empty space**
+- [x] **S1 – Clear the selection with Esc or a click on empty space**
 
   Pressing Esc anywhere in the editor clears the selection, and so does a click on preview space that no element covers. The click handler moves up to the whole preview, and a click that finds no element now selects nothing instead of being ignored. A click in a gap inside a section still selects that section. That's by design, and `plan.md` → Deselect explains why.
 
@@ -39,7 +39,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
   3. Select the link, then click in the gap between the "Plans" table and the paragraph below it: the "Plans" section is selected, outlined as a whole, and the inspector says "Section".
   4. `pnpm e2e` passes. New tests in `select-inspect` select the link, then check that Esc clears it and that a click on empty preview space clears it.
 
-- [ ] **S2 – Breadcrumb to select a container**
+- [x] **S2 – Breadcrumb to select a container**
 
   The top of the selected element's details shows the path from the page down to it, named in plain words, like `Main content › Section › Paragraph › Link`. Every step except the last is clickable and selects that container. The last step is the current element. A top-level element with nothing above it shows no breadcrumb.
 

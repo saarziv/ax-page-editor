@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { nodeText, type PageNode } from '@ax/core';
 import { Button } from '@/components/ui/button';
+import { Breadcrumb } from './Breadcrumb';
 import { NODE_LABELS } from './nodeLabels';
 
 const MODIFICATION_CONTROLS = ['Hide from AI', 'Context for AI', 'Forward this link'];
@@ -8,9 +9,11 @@ const MODIFICATION_CONTROLS = ['Hide from AI', 'Context for AI', 'Forward this l
 // Past this, the text is clamped to four lines with a toggle, so a long paragraph doesn't push everything else away.
 const LONG_TEXT_LENGTH = 200;
 
-export function ElementDetails({ node }: { node: PageNode }) {
+/** `path` runs from the root down to the selected node, which is its last item. */
+export function ElementDetails({ path, node }: { path: PageNode[]; node: PageNode }) {
   return (
     <section aria-label="Selected element" className="flex flex-col gap-4">
+      <Breadcrumb path={path} />
       <div>
         <h2 className="text-base font-semibold">{NODE_LABELS[node.kind]}</h2>
         <p className="text-xs text-muted-foreground">

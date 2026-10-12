@@ -42,3 +42,50 @@ test('opening a page from the top bar clears the selection', async ({ page }) =>
 
   await expect(page.getByText('Click an element in the preview to inspect it.')).toBeVisible();
 });
+
+test('Esc and a click on empty preview space clear the selection', async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Try a sample').click();
+
+  const preview = page.getByRole('region', { name: 'Preview' });
+  const termsLink = preview.getByText('terms of service', { exact: true });
+  const hint = page.getByText('Click an element in the preview to inspect it.');
+
+  await termsLink.click();
+  await expect(hint).toBeHidden();
+  await page.keyboard.press('Escape');
+  await expect(preview.locator('[data-selected="true"]')).toHaveCount(0);
+  await expect(hint).toBeVisible();
+
+  // The far right of the preview is outside the content column, so no element covers it.
+  await termsLink.click();
+  const previewBox = await preview.boundingBox();
+  if (!previewBox) throw new Error('The preview has no bounding box');
+  await preview.click({ position: { x: previewBox.width - 10, y: previewBox.height / 2 } });
+  await expect(preview.locator('[data-selected="true"]')).toHaveCount(0);
+  await expect(hint).toBeVisible();
+});
+
+test('the breadcrumb shows the path and selects a container', async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Try a sample').click();
+
+  const preview = page.getByRole('region', { name: 'Preview' });
+  const inspector = page.getByRole('complementary', { name: 'Inspector' });
+  const breadcrumb = inspector.getByRole('navigation', { name: 'Breadcrumb' });
+
+  await preview.getByText('terms of service', { exact: true }).click();
+  await expect(breadcrumb).toHaveText('Main content›Section›Paragraph›Link');
+
+  await breadcrumb.getByRole('button', { name: 'Paragraph' }).click();
+  const selected = preview.locator('[data-selected="true"]');
+  await expect(selected).toHaveCount(1);
+  await expect(selected).toHaveJSProperty('tagName', 'P');
+  await expect(selected).toContainText('Read our terms of service');
+  await expect(inspector.getByRole('heading', { name: 'Paragraph' })).toBeVisible();
+
+  // Main has only the page above it, so there is nothing to climb to.
+  await breadcrumb.getByRole('button', { name: 'Main content' }).click();
+  await expect(inspector.getByRole('heading', { name: 'Main content' })).toBeVisible();
+  await expect(breadcrumb).toBeHidden();
+});

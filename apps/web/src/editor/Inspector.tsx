@@ -13,8 +13,8 @@ export function Inspector({ url }: { url: string }) {
 
   return (
     <aside aria-label="Inspector" className="flex w-72 shrink-0 flex-col overflow-y-auto border-l p-4">
-      {selectedNode ? (
-        <ElementDetails key={selectedNode.id} node={selectedNode} />
+      {selectedPath && selectedNode ? (
+        <ElementDetails key={selectedNode.id} path={selectedPath} node={selectedNode} />
       ) : (
         <>
           <p className="text-sm text-muted-foreground">Click an element in the preview to inspect it.</p>
