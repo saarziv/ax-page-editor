@@ -10,9 +10,7 @@ AI agents read web pages differently from people. They don't run JavaScript, the
 
 Changes are saved as a small per-page **configuration**. A separate endpoint, **Agent View**, applies that configuration to the live page and returns exactly what an agent should read.
 
-
-
-Loom Link : [https://www.loom.com/share/a2d915e0d432467f91818f2365b17fa4](https://www.loom.com/share/a2d915e0d432467f91818f2365b17fa4)  
+Loom Link : [https://www.loom.com/share/52dfdeec57d94c4eaa0bed90df10f1b7](https://www.loom.com/share/52dfdeec57d94c4eaa0bed90df10f1b7)  
 Includes a 5 min of end to end explanation and walkthrough of the product by me.
 
 ---
