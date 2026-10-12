@@ -192,7 +192,6 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 ## Follow-ups
 
-- The web app hardcodes `http://localhost:3001`, so changing `API_PORT` breaks it. Fix: a Vite `/api` proxy or `VITE_API_URL`. (From T01 S4)
 - Playwright starting the servers itself (no `pnpm dev` running) hasn't been exercised yet. (From T01 S6)
 - Recent pages list on the start screen (pages with a saved configuration and their change counts). The `GET /api/configs` stub from T01 exists for it. Needs 04.
 - "Built with JavaScript" banner when a page's visible text is nearly empty.

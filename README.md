@@ -48,7 +48,7 @@ Open [http://localhost:5173](http://localhost:5173) and either enter any public 
 
 ### Environment configuration (optional)
 
-Everything has working defaults, so a fresh clone runs without any setup. To change them, copy `apps/api/.env.example` to `apps/api/.env`:
+Everything has working defaults, so a fresh clone runs without any setup. To change the API settings, copy `apps/api/.env.example` to `apps/api/.env`:
 
 
 | Variable     | Default                 | What it does                                                |
@@ -58,7 +58,7 @@ Everything has working defaults, so a fresh clone runs without any setup. To cha
 | `DB_PATH`    | `./data/ax.db`          | SQLite file for saved configurations (created on first run) |
 
 
-The web app currently expects the API on port `3001`, so see Limitations before you change `API_PORT`.
+If you change `API_PORT`, tell the web app where the API is: copy `apps/web/.env.example` to `apps/web/.env` and set `VITE_API_URL` to match (default `http://localhost:3001`).
 
 ### Tests and checks
 
@@ -196,7 +196,6 @@ Features, in build order:
 - **Private addresses aren't blocked yet.** `SafeFetchService` enforces the timeout, size limit and HTML-only rule, but it doesn't yet refuse private, local and internal IP addresses (SSRF protection), and it doesn't re-check them after redirects. This must be done before deployment anywhere public.
 - **Changes that no longer match aren't surfaced.** If the live page changes, a saved change that no longer matches its element is safely skipped, but the editor doesn't yet list it under "Needs attention".
 - **No JavaScript rendering.** Pages built in the browser (single-page apps) show little or no content, which is also what most agents see.
-- **The API address is hardcoded** in the web app (`localhost:3001`), so changing `API_PORT` requires a matching change in the web app.
 
 **Future improvements**
 

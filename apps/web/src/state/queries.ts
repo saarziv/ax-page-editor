@@ -14,7 +14,8 @@ import {
   type SavedPageSummary,
 } from '@ax/core';
 
-export const API_ORIGIN = 'http://localhost:3001';
+// Set VITE_API_URL when the api runs somewhere other than the default port (see apps/web/.env.example).
+export const API_ORIGIN = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/+$/, '');
 const API_URL = `${API_ORIGIN}/api`;
 
 async function fetchHealth(): Promise<unknown> {

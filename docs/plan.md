@@ -58,7 +58,7 @@ docs/
 ```
 
 **Run:** `pnpm install && pnpm dev` (web + api together). `pnpm test`, `pnpm e2e` (fresh clone: `pnpm exec playwright install chromium` first).
-**Env (`apps/api/.env.example`):** `API_PORT=3001`, `WEB_ORIGIN=http://localhost:5173`, `DB_PATH=./data/ax.db`.
+**Env (`apps/api/.env.example`):** `API_PORT=3001`, `WEB_ORIGIN=http://localhost:5173`, `DB_PATH=./data/ax.db`. **Env (`apps/web/.env.example`):** `VITE_API_URL=http://localhost:3001`, the api's address, which must match `API_PORT`.
 
 ## 3. Shared core (`packages/core`)
 
