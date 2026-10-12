@@ -17,7 +17,7 @@ The preview is where the publisher works. The **View as agent** button opens Age
   - The assignment asks for the preview "as it would be served to an agent after modification", and agents don't see CSS.
   - Inserting notes, forwarded content and markers into an arbitrary site's layout breaks things: overlap, positioning, menus hidden by CSS.
   - A consistent reading layout is reliable and safe.
-  - Publishers recognize their page by its content, and "Open original" covers comparison.
+  - Publishers recognize their page by its content.
 - **Why a rendered page to edit on, not just the Markdown:**
   - Every modification starts with clicking an element. In the preview each element is one clickable thing. In Markdown a click lands on a line of text, and mapping it back to its element is unreliable.
   - Hidden elements must stay visible to be undone (D4). In the Markdown they're gone, so there's nothing left to click.
@@ -149,7 +149,7 @@ The preview is where the publisher works. The **View as agent** button opens Age
 
 
 
-### D16. Click selects the innermost element; breadcrumb and Select parent reach containers
+### D16. Click selects the innermost element; the breadcrumb reaches containers
 
 - **Why:** Precise by default, and still able to target whole sections for hide or context.
 
@@ -163,7 +163,7 @@ The preview is where the publisher works. The **View as agent** button opens Age
 
 ### D18. Hiding doesn't delete modifications inside it
 
-- **Why:** Un-hiding should restore the user's work. Those modifications are shown as inactive, so nothing is hidden from the user.
+- **Why:** Un-hiding should restore the user's work. Those modifications stay in the configuration but aren't applied while their parent is hidden.
 
 
 

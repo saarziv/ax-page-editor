@@ -34,7 +34,7 @@ Where a shared piece is first built by a feature, that's noted as "first built i
 - **web:** Vite + React + TS, Tailwind + shadcn/ui, TanStack Query, Zustand.
 - **api:** NestJS, better-sqlite3.
 - **core:** pure TS, depends only on `htmlparser2` (parsing), `domhandler` (its DOM types and guards) and `zod`.
-- **Tests:** Vitest (core, api), Playwright (2 flows).
+- **Tests:** Vitest (core, api, web), Playwright (the key flows of each feature).
 
 ```
 apps/
@@ -80,8 +80,11 @@ type PageNode = {
   kind: NodeKind;
   tag: string;           // original tag, shown in the inspector
   text?: string;         // own text (for text nodes / leaves)
-  attrs?: { href?: string; src?: string; alt?: string; level?: number; label?: string;
-            forId?: string; about?: string };   // annotation only (03)
+  attrs?: { href?: string; src?: string; alt?: string; level?: number;
+            label?: string; inputType?: string;         // field (01)
+            width?: number; height?: number;            // image size in px (01)
+            forId?: string; about?: string;             // annotation and forwarded (03, 06)
+            forwardState?: 'loading' | 'loaded' | 'failed'; errorCode?: FetchErrorCode };  // forwarded only (06)
   children?: PageNode[];
   hidden?: true;         // set by markModificationsInTree on a hidden element; prune removes it
 };
@@ -327,14 +330,14 @@ How the publisher's page modifications for agents (hide an element, add context,
 | SSRF | SafeFetch: DNS-resolved IP checks on every hop, limits, HTML only. |
 | Note injection | Notes are plain strings, escaped in every renderer, and capped at 300. |
 | Bad configs | zod validation on PUT and on read. |
-| Navigation out of the editor | Preview links don't navigate. "Open original" uses `rel="noopener noreferrer"`. |
+| Navigation out of the editor | Preview links don't navigate. View as agent opens its tab with `noopener`. |
 | CORS | The API only allows `WEB_ORIGIN`. |
 
 ## 8. Testing strategy
 
 - **Core (Vitest):** the bulk of the tests, mapped to spec ACs. Every shared core function is tested where it's first built; each feature plan lists its own tests.
 - **API (Vitest):** safety checks (SafeFetch), validation, and Agent View on the demo page.
-- **E2E (Playwright, 2 flows):**
+- **E2E (Playwright):** one spec file per feature, covering its key flows. Each feature plan lists its own. The two flows that tie the product together:
   1. Open the demo page, hide the cookie banner, add context to the chart: the preview shows both (lands with 03).
   2. Save, reload: the modifications are restored (04), and Agent View returns Markdown with the banner gone and the note in place (lands with 05).
 
