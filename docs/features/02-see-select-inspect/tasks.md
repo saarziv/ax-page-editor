@@ -4,7 +4,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 ## Roadmap
 
-- [ ] T01 – Select an element and inspect it · Covers: K1, K2, K3, K4, K5, K6, K7, K8 (no-changes case), S4
+- [x] T01 – Select an element and inspect it · Covers: K1, K2, K3, K4, K5, K6, K7, K8 (no-changes case), S4
 - Next tasks are defined after T01. Still to cover: S1, S2, S3, K8 (with changes), B1, B2, B3.
 
 ---
@@ -23,7 +23,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
   1. Click "Try a sample": the inspector shows the hint at the top and "Changes on this page · No changes yet." at the bottom, with no Hide / Context / Forward buttons.
   2. `pnpm e2e` passes. The 01 test that expected the disabled buttons now expects the empty state instead.
 
-- [ ] **S2 – Click to select, and show the element in the inspector**
+- [x] **S2 – Click to select, and show the element in the inspector**
 
   Clicking an element in the preview selects it: it gets a clear outline, and the inspector shows its details at the top, with the disabled modification buttons below them. A click picks the innermost element, so clicking "terms of service" selects the link, not the paragraph around it. Clicking another element moves the selection, and opening another page clears it. The rules for what's selectable, the highlight and what the inspector shows are in `plan.md` → Selection and Inspector.
 

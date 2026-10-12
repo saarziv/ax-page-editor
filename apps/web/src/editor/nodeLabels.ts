@@ -1,0 +1,31 @@
+import type { PageNode } from '@ax/core';
+
+// A Record over every kind, so adding a kind to core fails typecheck until it has a label.
+export const NODE_LABELS: Record<PageNode['kind'], string> = {
+  heading: 'Heading',
+  paragraph: 'Paragraph',
+  link: 'Link',
+  image: 'Image',
+  list: 'List',
+  listItem: 'List item',
+  table: 'Table',
+  row: 'Table row',
+  cell: 'Table cell',
+  form: 'Form',
+  field: 'Form field',
+  button: 'Button',
+  quote: 'Quote',
+  code: 'Code block',
+  section: 'Section',
+  article: 'Article',
+  nav: 'Navigation',
+  header: 'Header',
+  footer: 'Footer',
+  aside: 'Sidebar',
+  main: 'Main content',
+  figure: 'Figure',
+  text: 'Text',
+  page: 'Page',
+  annotation: 'Context note',
+  forwarded: 'Forwarded content',
+};

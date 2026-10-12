@@ -8,7 +8,7 @@ export function Editor({ url }: { url: string }) {
       <TopBar url={url} />
       <div className="flex min-h-0 flex-1">
         <Preview url={url} />
-        <Inspector />
+        <Inspector url={url} />
       </div>
     </div>
   );
