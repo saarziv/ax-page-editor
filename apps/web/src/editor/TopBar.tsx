@@ -19,7 +19,7 @@ export function TopBar({ url }: { url: string }) {
   }
 
   return (
-    <div className="flex items-center gap-4 border-b bg-background p-3">
+    <div className="flex items-center gap-4 border-b bg-sidebar p-3">
       <div className="border-r pr-4">
         <AppLogo />
       </div>

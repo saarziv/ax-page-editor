@@ -19,7 +19,7 @@ export function StartScreen() {
   // Same full-height shell and top bar as the editor, so opening a page doesn't feel like a jump to another app.
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex items-center border-b bg-background p-3">
+      <header className="flex items-center border-b bg-sidebar p-3">
         <AppLogo />
       </header>
       <main className="flex-1 bg-sidebar bg-[radial-gradient(ellipse_70%_45%_at_50%_0%,var(--color-accent),transparent)]">
