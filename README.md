@@ -10,14 +10,25 @@ AI agents read web pages differently from people. They don't run JavaScript, the
 
 Changes are saved as a small per-page **configuration**. A separate endpoint, **Agent View**, applies that configuration to the live page and returns exactly what an agent should read.
 
+
+
+Loom Link : [https://www.loom.com/share/a2d915e0d432467f91818f2365b17fa4](https://www.loom.com/share/a2d915e0d432467f91818f2365b17fa4)  
+Includes a 5 min of end to end explanation and walkthrough of the product by me.
+
 ---
 
+
+
 ## Run it locally
+
+
 
 ### Requirements
 
 - **Node.js 20.12 or newer** (`.nvmrc` pins 20, so `nvm use` works)
 - **pnpm 10** (`corepack enable` gives you the version pinned in `package.json`)
+
+
 
 ### Install and start
 
@@ -28,22 +39,26 @@ pnpm dev
 
 `pnpm dev` starts both apps together:
 
-| App | URL |
-|---|---|
-| Editor (web) | http://localhost:5173 |
-| API | http://localhost:3001 |
 
-Open http://localhost:5173 and either enter any public URL or click **Try a sample** to open the bundled demo page. The demo works offline.
+| App          | URL                                            |
+| ------------ | ---------------------------------------------- |
+| Editor (web) | [http://localhost:5173](http://localhost:5173) |
+| API          | [http://localhost:3001](http://localhost:3001) |
+
+
+Open [http://localhost:5173](http://localhost:5173) and either enter any public URL or click **Try a sample** to open the bundled demo page. The demo works offline.
 
 ### Environment configuration (optional)
 
 Everything has working defaults, so a fresh clone runs without any setup. To change them, copy `apps/api/.env.example` to `apps/api/.env`:
 
-| Variable | Default | What it does |
-|---|---|---|
-| `API_PORT` | `3001` | Port the API listens on |
-| `WEB_ORIGIN` | `http://localhost:5173` | The only origin allowed to call the API (CORS) |
-| `DB_PATH` | `./data/ax.db` | SQLite file for saved configurations (created on first run) |
+
+| Variable     | Default                 | What it does                                                |
+| ------------ | ----------------------- | ----------------------------------------------------------- |
+| `API_PORT`   | `3001`                  | Port the API listens on                                     |
+| `WEB_ORIGIN` | `http://localhost:5173` | The only origin allowed to call the API (CORS)              |
+| `DB_PATH`    | `./data/ax.db`          | SQLite file for saved configurations (created on first run) |
+
 
 The web app currently expects the API on port `3001`, so see Limitations before you change `API_PORT`.
 
@@ -60,6 +75,8 @@ On a fresh clone, run `pnpm exec playwright install chromium` once before `pnpm 
 
 ---
 
+
+
 ## Using the editor
 
 1. **Open a page:** enter a URL or pick the demo. The page is fetched the way an agent fetches it (no JavaScript) and cleaned down to its meaningful content.
@@ -70,6 +87,8 @@ On a fresh clone, run `pnpm exec playwright install chromium` once before `pnpm 
 
 ---
 
+
+
 ## Architecture overview
 
 The project is a pnpm monorepo with three parts:
@@ -79,6 +98,8 @@ apps/web        The editor. React + Vite, Tailwind + shadcn/ui, TanStack Query, 
 apps/api        The server. NestJS, SQLite. Fetches pages, stores configs, serves Agent View
 packages/core   Shared, pure logic used by both: clean, selectors, apply modifications, render Markdown
 ```
+
+
 
 ### The one idea
 
@@ -113,9 +134,11 @@ Step by step:
 
 **Safety, in short:** no page code ever runs. Every server-side fetch goes through one `SafeFetchService` with a 10 s timeout, a 3 MB cap and HTML only. User notes are treated as plain text everywhere.
 
-For the full architecture (the page tree, the selector format, endpoints, state and testing strategy), see [`docs/plan.md`](docs/plan.md).
+For the full architecture (the page tree, the selector format, endpoints, state and testing strategy), see `[docs/plan.md](docs/plan.md)`.
 
 ---
+
+
 
 ## Agent View
 
@@ -136,31 +159,37 @@ More detail: `docs/spec-decisions.md` D5 (why Markdown) and D14 (the downstream 
 
 ---
 
+
+
 ## How it was built: Spec-Driven Development (SDD)
 
 The project was built spec-first. **The docs are the source of truth:** every feature was specified with acceptance criteria and planned before any code was written, then built task by task, and each step had a check the developer runs. If code and docs disagree, the docs win.
 
 Every fact lives in exactly one place:
 
-| Document | What it holds |
-|---|---|
-| [`docs/spec.md`](docs/spec.md) | **Global spec (what).** The problem, the users, goals and non-goals, core concepts, the user flow, the agent output format and the configuration format. Start here. |
-| [`docs/spec-decisions.md`](docs/spec-decisions.md) | **Decisions log (why).** Each product decision with the alternatives that were rejected (D1–D20). |
-| [`docs/plan.md`](docs/plan.md) | **Global plan (how).** Architecture, stack, shared core contracts, security, testing strategy and technical decisions (P1–P12). The reference for architecture. |
-| `docs/features/NN-<feature>/spec.md` | **Feature spec.** Behavior, **acceptance criteria (ACs)** and edge cases for one feature. |
-| `docs/features/NN-<feature>/plan.md` | **Feature plan.** How that feature is built, on top of the global plan. |
-| `docs/features/NN-<feature>/tasks.md` | **Tasks and progress.** A roadmap mapping each task to the ACs it covers, the steps with their checks, deviations and follow-ups. |
+
+| Document                                           | What it holds                                                                                                                                                        |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `[docs/spec.md](docs/spec.md)`                     | **Global spec (what).** The problem, the users, goals and non-goals, core concepts, the user flow, the agent output format and the configuration format. Start here. |
+| `[docs/spec-decisions.md](docs/spec-decisions.md)` | **Decisions log (why).** Each product decision with the alternatives that were rejected (D1–D20).                                                                    |
+| `[docs/plan.md](docs/plan.md)`                     | **Global plan (how).** Architecture, stack, shared core contracts, security, testing strategy and technical decisions (P1–P12). The reference for architecture.      |
+| `docs/features/NN-<feature>/spec.md`               | **Feature spec.** Behavior, **acceptance criteria (ACs)** and edge cases for one feature.                                                                            |
+| `docs/features/NN-<feature>/plan.md`               | **Feature plan.** How that feature is built, on top of the global plan.                                                                                              |
+| `docs/features/NN-<feature>/tasks.md`              | **Tasks and progress.** A roadmap mapping each task to the ACs it covers, the steps with their checks, deviations and follow-ups.                                    |
+
 
 Features, in build order:
 
-1. [`01-open-page`](docs/features/01-open-page): enter a URL or open the demo, fetched safely and cleaned
-2. [`02-see-select-inspect`](docs/features/02-see-select-inspect): the two-panel editor, hover, select and inspect
-3. [`03-hide-and-context`](docs/features/03-hide-and-context): Hide from AI and Add context
-4. [`04-save-and-load-configs`](docs/features/04-save-and-load-configs): save, the changes list, saved pages
-5. [`05-agent-view`](docs/features/05-agent-view): the Agent View endpoint and the View as agent button
-6. [`06-forward-link`](docs/features/06-forward-link): forward a link's content into the page
+1. `[01-open-page](docs/features/01-open-page)`: enter a URL or open the demo, fetched safely and cleaned
+2. `[02-see-select-inspect](docs/features/02-see-select-inspect)`: the two-panel editor, hover, select and inspect
+3. `[03-hide-and-context](docs/features/03-hide-and-context)`: Hide from AI and Add context
+4. `[04-save-and-load-configs](docs/features/04-save-and-load-configs)`: save, the changes list, saved pages
+5. `[05-agent-view](docs/features/05-agent-view)`: the Agent View endpoint and the View as agent button
+6. `[06-forward-link](docs/features/06-forward-link)`: forward a link's content into the page
 
 ---
+
+
 
 ## Limitations and future improvements
 
@@ -181,6 +210,8 @@ Features, in build order:
 The full lists live in `docs/spec.md` §11 and the Follow-ups at the bottom of each feature's `tasks.md`.
 
 ---
+
+
 
 ## A note for publishers: cloaking
 
