@@ -4,8 +4,9 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 ## Roadmap
 
-- [ ] T01 – Agent View endpoint · Covers: AC1, AC2, AC3, AC4, AC5, AC6, AC7, AC8
-- [ ] T02 – View as agent button · Covers: AC9, AC10, AC11 (detailed when T01 is done)
+- [x] T01 – Agent View endpoint · Covers: AC1, AC2, AC3, AC4, AC5, AC6, AC7
+- [x] T02 – View as agent button · Covers: AC9, AC10, AC11
+- [ ] T03 – Agent View in the README · Covers: AC8
 
 ---
 
@@ -24,11 +25,11 @@ The flow (`plan.md` → How Agent View works):
 
 Example: with the demo's cookie banner hidden and a note on the chart, the answer has no banner text and has `> **Context:** Customer growth…` right after the chart image.
 
-S1 builds the endpoint and the Markdown writer, with no configuration applied yet. S2 applies the saved configuration. S3 documents it in the README.
+S1 builds the endpoint and the Markdown writer, with no configuration applied yet. S2 applies the saved configuration.
 
-Not in this task: the View as agent button (T02), and forwarded content (06).
+Not in this task: the View as agent button (T02), the README (T03), and forwarded content (06).
 
-**Implements:** `plan.md` → How Agent View works, `prune`, `renderMarkdown`, `GET /agentView?url=`, README.
+**Implements:** `plan.md` → How Agent View works, `prune`, `renderMarkdown`, `GET /agentView?url=`.
 
 - [x] **S1 – The endpoint returns the clean page as Markdown (AC3, AC6, AC7)**
   Core gets `renderMarkdown`, which writes every kind of node as Markdown and escapes page text. The api gets `GET /agentView?url=` at the root (outside `/api`), which fetches and cleans the page through `PageTreeService` and returns it as Markdown. A browser gets it as plain text so the tab shows it instead of downloading it.
@@ -54,13 +55,59 @@ Not in this task: the View as agent button (T02), and forwarded content (06).
     - The api, on the demo page: with a saved configuration the banner text is absent and the note is present; with none saved the clean page comes back; a modification whose `target.text` no longer matches is skipped while the others still apply (AC4).
   - A note on a list item is written inside that item → `plan.md` §renderMarkdown (tricky parts)
 
-- [ ] **S3 – Explain Agent View in the README (AC8)**
+**Done when:** `/agentView?url=` returns the live page as Markdown with its saved configuration applied, shows as text in a browser tab, and explains failures. `pnpm test` and `typecheck` pass.
+
+---
+
+
+
+## T02 – View as agent button
+
+**Goal:** the publisher clicks **View as agent ↗** next to Save and a new tab shows exactly what an agent gets for this page, straight from the real `/agentView` endpoint.
+
+The catch is that Agent View only knows the **saved** configuration. So the button is greyed out whenever there are unsaved changes, with a tooltip saying to save first, and lights up again after Save. Example: on the demo, hide the cookie banner and the button goes grey; click Save and it's enabled; click it and the new tab shows the demo's Markdown without the banner.
+
+S1 builds the button and the tab it opens. S2 adds the disabled state and both tooltips.
+
+**Implements:** `plan.md` → Web, View as agent button.
+
+- [x] **S1 – The button opens Agent View in a new tab (AC9)**
+  A View as agent ↗ button right after Save in the top bar. Clicking it opens Agent View for the page's normalized URL in a new tab, with that URL encoded so a page address with its own `?` or `&` stays intact (plan explains why). It's disabled only until the page has loaded.
+  **Verify:**
+  1. With `pnpm dev` running, open the demo in the editor: View as agent ↗ sits right after Save.
+  2. Click it: a new tab opens on `http://localhost:3001/agentView?url=sample%3Ademo` and shows the demo's Markdown as text (AC9).
+  3. `pnpm test` passes. A new test checks the Agent View address the button builds:
+    - `sample:demo` becomes `http://localhost:3001/agentView?url=sample%3Ademo`.
+    - `https://acme.com/p?id=2&lang=en` is fully encoded, so its `?` and `&` don't leak into Agent View's own query string.
+
+- [x] **S2 – Disabled while unsaved, with tooltips (AC10, AC11)**
+  The button is disabled whenever the editor has unsaved changes, using the same derived flag as Save, so the two always flip together. It gets a tooltip for each state; the tooltip sits on a wrapper because a disabled button doesn't receive hover.
+  **Verify:**
+  1. Open the demo with nothing unsaved and hover the button: "Opens what an AI agent gets for this page, in a new tab." (AC11).
+  2. Hide the cookie banner: the button is disabled, and hovering it shows "Save to see your latest changes as an agent." (AC10).
+  3. Click Save: the button is enabled again. Click it: the new tab's Markdown has no cookie banner text.
+  4. Undo the hide without saving: the button is disabled again until you Save.
+  - Tooltips use shadcn's `Tooltip` instead of a native `title`, which didn't show reliably → `plan.md` §View as agent button
+
+**Done when:** View as agent ↗ opens the page's Agent View in a new tab, is disabled with the right tooltip while there are unsaved changes, and shows the other tooltip when enabled. `pnpm test` and `typecheck` pass.
+
+---
+
+
+
+## T03 – Agent View in the README
+
+**Goal:** someone reading the repo learns what Agent View is, why it exists, and how to try it with one `curl` command, without opening the editor.
+
+**Implements:** `plan.md` → README.
+
+- [ ] **S1 – Explain Agent View in the README (AC8)**
   A short README section on what the endpoint returns, why it exists (it's the downstream consumer that proves a saved configuration works without the editor), and a `curl` example against the demo page.
   **Verify:**
   1. Read the README's Agent View section: it says what it returns, why we built it, and has a `curl` command.
   2. Copy the `curl` command with `pnpm dev` running: it returns the demo's Markdown.
 
-**Done when:** `/agentView?url=` returns the live page as Markdown with its saved configuration applied, shows as text in a browser tab, explains failures, and is documented in the README. `pnpm test` and `typecheck` pass.
+**Done when:** the README has an Agent View section whose `curl` example works as written.
 
 ---
 

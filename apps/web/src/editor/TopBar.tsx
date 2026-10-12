@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { hasUnsavedChanges, useEditorStore } from '@/state/store';
 import { SaveButton } from './SaveButton';
+import { ViewAsAgentButton } from './ViewAsAgentButton';
 
 export function TopBar({ url }: { url: string }) {
   const setUrl = useEditorStore((state) => state.setUrl);
@@ -23,6 +24,7 @@ export function TopBar({ url }: { url: string }) {
         <Button type="submit">Open</Button>
       </form>
       <SaveButton url={url} />
+      <ViewAsAgentButton url={url} />
       {isDirty && <span className="text-sm text-muted-foreground">Unsaved changes</span>}
     </div>
   );

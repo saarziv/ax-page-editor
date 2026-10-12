@@ -70,9 +70,14 @@ Lives at the root, outside the `/api` prefix, because it's the public address a 
 
 ## Web
 
-### View as agent button (T02)
+### View as agent button
 
-A button in the top bar that opens `/agentView?url=<page url>` in a new tab. It's disabled while the derived `dirty` flag is set (global plan §5), so it never opens a tab without the latest edits. Detailed when T02 is planned.
+A `ViewAsAgentButton` in the top bar, right after Save. Clicking it opens Agent View for the page in a new tab. The editor adds nothing of its own: the tab shows the real endpoint's answer, so what the publisher sees is what an agent gets.
+
+- **Which URL:** the page tree's `url`, the normalized one the page was loaded and saved under (the same one Save sends), not what the publisher typed. It's passed through `encodeURIComponent`, because a page URL with its own `?` or `&` would otherwise break the query string. Example: the demo opens `http://localhost:3001/agentView?url=sample%3Ademo`, and `https://acme.com/p?id=2&lang=en` opens `…/agentView?url=https%3A%2F%2Facme.com%2Fp%3Fid%3D2%26lang%3Den`.
+- **When it's disabled:** while the derived `dirty` flag is set (global plan §5), the same flag that enables Save, so the two always agree: Save lights up exactly when View as agent goes grey. It's also disabled until the page has loaded, since there's no URL to open yet.
+- **Tooltips:** shadcn's `Tooltip`, not a plain `title`. A native `title` shows only after a still hover, never on keyboard focus and not at all in an unfocused window, so publishers missed it; these two messages are the spec's explanation of the button, so they must show reliably. A disabled button gets no mouse or focus events, so the tooltip's trigger is a wrapper around the button, which also takes keyboard focus while the button is disabled; that's the only way the disabled tooltip ("Save to see your latest changes as an agent.") can show.
+- **Opening the tab:** `window.open(agentViewUrl, '_blank', 'noopener')`, so the new tab can't reach back into the editor.
 
 ## README
 
