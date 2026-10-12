@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('clicking an element selects it and shows it in the inspector', async ({ page }) => {
   await page.goto('/');
@@ -221,7 +221,10 @@ test('the Context box adds, edits and clears one note in both changes lists', as
   await expect(contextBox).toHaveValue('Customer growth from 1,200 to 8,500');
 
   await page.keyboard.press('Escape');
-  await expect(pageChanges.getByRole('listitem')).toHaveText(['Context · Customer growth']);
+  // The row shows the element's snippet, then the note on its own line.
+  await expect(pageChanges.getByRole('listitem')).toHaveCount(1);
+  await expect(pageChanges.getByText('Context · Customer growth', { exact: true })).toBeVisible();
+  await expect(pageChanges.getByText('Customer growth from 1,200 to 8,500', { exact: true })).toBeVisible();
 
   await chart.click();
   await contextBox.clear();

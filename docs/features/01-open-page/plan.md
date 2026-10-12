@@ -65,7 +65,7 @@ Example: `paragraph[text "Read our ", link "terms", text " before you subscribe.
 - **Images use `referrerPolicy="no-referrer"`.** Otherwise every preview shows up in the publisher's logs as a visit from the editor.
 - **Images are drawn at the size the page gives them, and capped in height.** The page's stylesheets never reach us, so without a size a logo is drawn at its natural size and fills the screen. When the tag itself carries a size (global plan §3.2), the preview uses it. The cap is the fallback for images with no size, and it also keeps a sized image from growing past the panel.
 - **Regions (`header`, `nav`, `main`, `aside`, `footer`, `section`, …) are plain `div`s.** Real landmark tags would mix with the editor's own for screen readers. 02 adds visible labels.
-- **`annotation` and `forwarded` draw nothing yet.** The `switch` on `kind` is exhaustive, so when 03 and 04 add them, TypeScript points to the spot.
+- **`annotation` and `forwarded` draw nothing yet.** The `switch` on `kind` is exhaustive, so when 03 and 05 add them, TypeScript points to the spot.
 
 #### Refinements from real pages
 

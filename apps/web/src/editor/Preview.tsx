@@ -23,7 +23,6 @@ export function Preview({ url }: { url: string }) {
 
   return (
     <section aria-label="Preview" className="min-w-0 flex-1 overflow-auto p-6" onClick={handleClick}>
-      {pageTreeQuery.isPending && <p className="text-muted-foreground">Loading…</p>}
       {pageTreeQuery.isError && (
         <p role="alert" className="text-destructive">
           {pageTreeQuery.error.message}

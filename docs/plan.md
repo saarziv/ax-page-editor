@@ -137,7 +137,7 @@ Every consumer must clean identically, or saved selectors break (D11). So these 
 
 - `selector` = path in the **clean tree**: `kind:nth` steps, e.g. `main:1>section:2>paragraph:3` (format defined in the global spec, Configuration). It's computed over the clean tree, not the raw DOM, so wrapper churn (`div` soup) on the live site doesn't break it.
 - `target.text` = first 60 chars of the node's normalized text (or `alt` for images).
-- `resolve(tree, target) → node | null`: find by selector, then require that the snippet still matches. Otherwise return `null` (unmatched, see Save & review changes). Never fall back to a guess.
+- `resolve(tree, target) → node | null`: find by selector, then require that the snippet still matches. Otherwise return `null` (unmatched, see 04 Save & load configs). Never fall back to a guess.
 
 ### 3.4 `markModificationsInTree(root, modifications, forwards) → Marked` and `prune(root)`
 
@@ -164,15 +164,15 @@ type Marked = {
 | 1. Resolve | Resolve each modification with `resolve`. If unresolved, mark it `unmatched`. | §3.3 |
 | 2. Hide | Flag the node `hidden`; other modifications in or on a hidden subtree become `inactive`. | 03 Hide & add context |
 | 3. Context | Insert `annotation` nodes, placed by kind. | 03 Hide & add context |
-| 4. Forward | Insert `forwarded` nodes within size limits; `overBudget` / `failed` leave the plain link. | 04 Forward a link |
+| 4. Forward | Insert `forwarded` nodes within size limits; `overBudget` / `failed` leave the plain link. | 05 Forward a link |
 
 - `markModificationsInTree` never changes its input: it copies only the nodes it changes and their ancestors, and shares every other node.
 - Note text is stored and rendered as a plain string, never parsed.
-- The editor uses `status` to group the changes list (Save & review changes). Agent View uses it to report what was skipped.
+- The editor uses `status` to group the changes list (04 Save & load configs). Agent View uses it to report what was skipped.
 
 ### 3.5 Renderers
 
-Both first built in 02. They render the agent tree (`prune` output), so they never see a hidden node. The formats for `annotation` and `forwarded` nodes are defined in 06 and 04.
+Both first built in 02. They render the agent tree (`prune` output), so they never see a hidden node. The formats for `annotation` and `forwarded` nodes are defined in 06 and 05.
 
 - **`renderMarkdown(tree)`:** our own tree-to-Markdown walker (headings, lists, tables, links, images). We own the tree, so we don't render HTML and then run it through Turndown. Deterministic, and no extraction guessing.
 - **`renderHtml(tree)`:** semantic HTML, everything text-escaped.
@@ -184,7 +184,7 @@ Both first built in 02. They render the agent tree (`prune` output), so they nev
 
 ### 3.7 Config type
 
-`Target` and `Modification` are first built in 02 (for the demo mock), `Config` in 05.
+`Target` and `Modification` are first built in 02 (for the demo mock), `Config` in 04.
 
 ```ts
 type Target = { selector: string; text: string };
@@ -215,9 +215,10 @@ Details live in the owning feature's plan.
 | Method | Path | Owner |
 |---|---|---|
 | POST | `/api/page-tree` | 01 Open a page |
-| POST | `/api/forward` | 04 Forward a link |
-| GET | `/api/configs?url=` | 05 Save & review changes |
-| PUT | `/api/configs` | 05 Save & review changes |
+| POST | `/api/forward` | 05 Forward a link |
+| GET | `/api/configs` | 04 Save & load configs (list of saved pages) |
+| GET | `/api/configs/:url` | 04 Save & load configs (one configuration) |
+| PUT | `/api/configs` | 04 Save & load configs |
 | GET | `/agentView?url=&format=md\|html` | 06 Agent View |
 
 ### 4.3 Conventions
@@ -232,7 +233,7 @@ Details live in the owning feature's plan.
 **Server data (TanStack Query):**
 - `usePageTree(url)`
 - `useConfig(url)`
-- `useForward(href)` (see 04)
+- `useForward(href)` (see 05)
 
 **Editor state (Zustand):**
 
@@ -241,9 +242,10 @@ Details live in the owning feature's plan.
   url: string | null;
   modificationsDraft: Modification[];          // the only editable source of truth
   savedJson: string;              // last saved draft, for the dirty flag
+  restoredPageUrl: string | null; // the page whose saved configuration the draft was filled from (04)
   selectedId: string | null;
   view: 'page' | 'markdown';
-  actions: { load, select, toggleHide, setContext, toggleForward, remove, markSaved }
+  actions: { setUrl, loadSavedModifications, select, toggleHide, setContext, toggleForward, removeModification, markSaved }
 }
 ```
 Actions enforce the spec rules: one modification per type per element, an empty note removes the context modification, forward only on links, and the page forward budget. Each action is specified in the plan of the feature that uses it.
@@ -261,7 +263,7 @@ How the publisher's page modifications for agents (hide an element, add context,
 
 **Why we need it.** A publisher's change shows up in four places: the preview, the Markdown view, the saved configuration and Agent View. If each of them worked out on its own what's hidden and where a note goes, they would drift apart. The preview could show a note above the chart while the agent gets it below, and the publisher would be approving something the agent never reads.
 
-**What it solves.** One flow, used by every feature that adds a modification (03 hide and context, 04 forward, 05 save, 06 Agent View):
+**What it solves.** One flow, used by every feature that adds a modification (03 hide and context, 04 save, 05 forward, 06 Agent View):
 - the publisher's changes live in exactly one place,
 - every decision about them is made exactly once,
 - the preview, the Markdown and Agent View only draw the result, so they always agree,
@@ -318,7 +320,7 @@ How the publisher's page modifications for agents (hide an element, add context,
    > **Context:** Customer growth from 1,200 to 8,500, Jan to Sep 2026.
    ```
    The preview and the Markdown come from the same marked page, so they can't disagree about what's hidden or where a note sits.
-5. **Save and load (05).** Save sends `modificationsDraft` wrapped as a `Config` (§3.7): `{ version: 1, url, updatedAt, modifications: modificationsDraft }`. The API validates it and stores one configuration per URL. Opening the page again loads it back into `modificationsDraft`, and steps 2–4 follow by themselves. "Unsaved changes" is `modificationsDraft` compared with the last saved copy, never a stored flag.
+5. **Save and load (04).** Save sends the page URL and `modificationsDraft`. The API validates them, wraps them as a `Config` (§3.7): `{ version: 1, url, updatedAt, modifications: modificationsDraft }`, and stores one configuration per URL. Opening the page again loads it back into `modificationsDraft`, and steps 2–4 follow by themselves. "Unsaved changes" is `modificationsDraft` compared with the last saved copy, never a stored flag.
 6. **Serve agents (06).** Agent View loads the saved configuration and runs the same chain on the live page: `renderMarkdown(prune(markModificationsInTree(page, config)))`.
 
 ## 7. Security (global spec, Trust & safety)
@@ -347,7 +349,7 @@ How the publisher's page modifications for agents (hide an element, add context,
 | P1 | Own page tree (JSON) shared by preview, Markdown, HTML | One model, three views; safe rendering; easy tests | Sanitized HTML strings in iframe |
 | P2 | Own tree→Markdown renderer | We own the tree; deterministic; exact placement control | HTML→Turndown |
 | P3 | Selectors over the clean tree (`kind:nth`) | Survive wrapper changes on live sites | Raw-DOM CSS selectors |
-| P4 | Strict snippet check, no fuzzy fallback | Never misapply (Save & review changes) | Fuzzy text search (future) |
+| P4 | Strict snippet check, no fuzzy fallback | Never misapply (Save & load configs) | Fuzzy text search (future) |
 | P5 | Main content by heuristic (`main`/`article`, minus chrome) | Simple, deterministic, no extra deps | Mozilla Readability (better on messy pages, future) |
 | P6 | `markModificationsInTree` + `prune` in shared core, run on web + api | Parity by construction | Server-rendered preview per edit (latency) |
 | P7 | TanStack Query + Zustand | Server data vs editor state separated; fine-grained re-renders | Context+useReducer, Redux, Jotai |

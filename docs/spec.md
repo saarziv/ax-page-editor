@@ -61,7 +61,7 @@ Implications:
 ## 5. User flow
 
 1. User opens the editor and lands on the **start screen**.
-2. User enters a URL (or picks the demo page) and opens it.
+2. User enters a URL (or picks the demo page or a saved page) and opens it.
 3. The editor shows the **preview** (left) and the **inspector** (right). If a configuration was saved for this URL, it's restored.
 4. User hovers elements to see what they are, clicks one to select it.
 5. The inspector shows the element and its controls. User hides it, adds context, or forwards it (links only).
@@ -89,13 +89,13 @@ A two-panel editor. The left panel shows the page **as an agent receives it**, a
 
 The two in-place modifications. **Hide from AI** removes an element and everything inside it from the agent output (it stays visible but ghosted in the preview, so it can be undone). **Add context** attaches a short plain-text note for AI agents to any element, such as what a chart shows or what a button does, inserted as labeled text right where the agent will read it.
 
-### 6.4 Forward a link
+### 6.4 Save & load configs
+
+A Save button stores the page's configuration; saving again replaces it. One list shows every modification on the page, where each can be removed. The start screen lists saved pages, and opening a page restores its configuration. A modification whose element can no longer be found with confidence is never applied to a different element; it's flagged for the user instead.
+
+### 6.5 Forward a link
 
 For a selected link, the server fetches the page it points to and inserts its main content right after the link, so an agent gets the answer instead of a pointer. Forwarding is one level deep, always fetched live, and bounded by per-link and per-page size limits so forwarded content can't drown the page.
-
-### 6.5 Save & review changes
-
-One list of every modification on the page, grouped by status (active, inactive, needs attention), where each can be located or removed. Saving stores the configuration for the page URL; reopening restores it. A modification whose element can no longer be found with confidence is never applied to a different element; it's flagged for the user instead.
 
 ### 6.6 Agent View
 

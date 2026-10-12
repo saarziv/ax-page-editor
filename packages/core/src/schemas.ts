@@ -96,3 +96,36 @@ export type Modification = z.infer<typeof modificationSchema>;
 export const modificationStatusSchema = z.enum(['active', 'inactive', 'unmatched', 'overBudget', 'failed']);
 
 export type ModificationStatus = z.infer<typeof modificationStatusSchema>;
+
+// The editor removes a modification by its id, so two with one id would be removed together.
+const modificationListSchema = z.array(modificationSchema).refine(
+  (modifications) => new Set(modifications.map((modification) => modification.id)).size === modifications.length,
+  { message: 'Modification ids must be unique' },
+);
+
+// What Save sends. The server adds version and updatedAt, so one clock orders the saved pages.
+export const saveConfigRequestSchema = z.object({
+  url: z.string().min(1),
+  modifications: modificationListSchema,
+});
+
+export type SaveConfigRequest = z.infer<typeof saveConfigRequestSchema>;
+
+// The stored document, one per normalized page URL (global spec §8).
+export const configSchema = z.object({
+  version: z.literal(1),
+  url: z.string().min(1),
+  updatedAt: z.iso.datetime(),
+  modifications: modificationListSchema,
+});
+
+export type Config = z.infer<typeof configSchema>;
+
+// One row of the start screen's Saved pages list. The api sends only this, not whole configurations.
+export const savedPageSummarySchema = z.object({
+  url: z.string().min(1),
+  updatedAt: z.iso.datetime(),
+  modificationCount: z.number().int().min(0),
+});
+
+export type SavedPageSummary = z.infer<typeof savedPageSummarySchema>;

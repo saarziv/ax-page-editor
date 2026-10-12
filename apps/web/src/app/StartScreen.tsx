@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { DEMO_URL } from '@/editor/demo';
 import { useEditorStore } from '@/state/store';
+import { SavedPages } from './SavedPages';
 
 export function StartScreen() {
   const setUrl = useEditorStore((state) => state.setUrl);
@@ -34,7 +35,7 @@ export function StartScreen() {
           <Button variant="link" className="px-0" onClick={() => setUrl(DEMO_URL)}>
             Try a sample
           </Button>
-          {/* Recent row stays hidden: GET /api/configs returns [] until 05. */}
+          <SavedPages />
         </CardContent>
       </Card>
     </main>

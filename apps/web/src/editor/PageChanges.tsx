@@ -1,7 +1,10 @@
+import { X } from 'lucide-react';
+import type { Modification } from '@ax/core';
+import { Button } from '@/components/ui/button';
 import { useEditorStore } from '@/state/store';
 import { MODIFICATION_LABELS } from './modificationLabels';
 
-// A simple flat list; 05 groups it by status and marks the ones that no longer match the page.
+// A simple flat list; the restore task groups it by status and adds "Needs attention" for changes that no longer match.
 export function PageChanges() {
   const modificationsDraft = useEditorStore((state) => state.modificationsDraft);
 
@@ -13,13 +16,43 @@ export function PageChanges() {
       ) : (
         <ul className="mt-1 flex flex-col gap-1">
           {modificationsDraft.map((modification) => (
-            <li key={modification.id} className="truncate text-sm" title={modification.target.text}>
-              <span className="font-medium">{MODIFICATION_LABELS[modification.type]}</span>
-              <span className="text-muted-foreground"> · {modification.target.text}</span>
-            </li>
+            <PageChangeRow key={modification.id} modification={modification} />
           ))}
         </ul>
       )}
     </section>
+  );
+}
+
+function PageChangeRow({ modification }: { modification: Modification }) {
+  const removeModification = useEditorStore((state) => state.removeModification);
+  const label = MODIFICATION_LABELS[modification.type];
+  const snippet = modification.target.text;
+
+  return (
+    <li className="flex items-start gap-1 text-sm">
+      <div className="min-w-0 flex-1">
+        <p className="truncate" title={snippet}>
+          <span className="font-medium">{label}</span>
+          <span className="text-muted-foreground"> · {snippet}</span>
+        </p>
+        {modification.type === 'context' && (
+          <p className="truncate text-muted-foreground" title={modification.note}>
+            {modification.note}
+          </p>
+        )}
+      </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-xs"
+        className="cursor-pointer"
+        // Every row has the same ✕, so the label names what it removes.
+        aria-label={`Remove ${label}: ${snippet}`}
+        onClick={() => removeModification(modification.id)}
+      >
+        <X />
+      </Button>
+    </li>
   );
 }

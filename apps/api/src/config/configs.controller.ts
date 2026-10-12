@@ -1,12 +1,45 @@
-import { Controller, Get } from '@nestjs/common';
-
-export type RecentConfig = { url: string; updatedAt: string; count: number };
+import { BadRequestException, Controller, Get, NotFoundException, Param, Put } from '@nestjs/common';
+import { InvalidUrlError, normalizeUrl, saveConfigRequestSchema, type Config, type SaveConfigRequest, type SavedPageSummary } from '@ax/core';
+import { ZodBody } from '../common/zod-body.decorator.js';
+import { ConfigRepository } from './config.repository.js';
 
 @Controller('configs')
 export class ConfigsController {
-  // Stub: the repository that backs the recent list is built in 05.
+  constructor(private readonly configRepository: ConfigRepository) {}
+
   @Get()
-  listRecent(): RecentConfig[] {
-    return [];
+  listSummaries(): SavedPageSummary[] {
+    return this.configRepository.listSummaries();
+  }
+
+  // Normalized like a save, so any equivalent address finds the page's configuration.
+  @Get(':url')
+  findByUrl(@Param('url') rawUrl: string): Config {
+    const url = normalizeConfigUrl(rawUrl);
+    const config = this.configRepository.findByUrl(url);
+    if (!config) throw new NotFoundException({ code: 'NOT_FOUND', message: `No configuration is saved for ${url}` });
+    return config;
+  }
+
+  // The server sets version and updatedAt, and normalizes the url, so every client saves under the same key and one clock orders saves.
+  @Put()
+  save(@ZodBody(saveConfigRequestSchema) request: SaveConfigRequest): Config {
+    const config: Config = {
+      version: 1,
+      url: normalizeConfigUrl(request.url),
+      updatedAt: new Date().toISOString(),
+      modifications: request.modifications,
+    };
+    this.configRepository.save(config);
+    return config;
+  }
+}
+
+function normalizeConfigUrl(rawUrl: string): string {
+  try {
+    return normalizeUrl(rawUrl);
+  } catch (error) {
+    if (error instanceof InvalidUrlError) throw new BadRequestException({ code: 'INVALID_REQUEST', message: error.message });
+    throw error;
   }
 }

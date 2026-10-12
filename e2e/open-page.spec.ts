@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 // The sample is loaded from disk, so these tests never depend on the internet.
 test('typing a URL and clicking Open shows the page in the editor', async ({ page }) => {
@@ -54,5 +54,20 @@ test('opening another page clears the changes', async ({ page }) => {
 
   await page.getByLabel('Page URL').fill('http://localhost:3001');
   await page.getByRole('button', { name: 'Open', exact: true }).click();
-  await expect(pageChanges.getByText('No changes yet.')).toBeVisible();
+  // The editor shows its loading state until the page tree query gives up after its retries.
+  await expect(pageChanges.getByText('No changes yet.')).toBeVisible({ timeout: 15_000 });
+});
+
+test('when the saved configuration fails to load, the editor shows an error and nothing to edit', async ({ page }) => {
+  await page.route('**/api/configs/*', (route) =>
+    route.request().method() === 'GET' ? route.fulfill({ status: 500, body: '{}' }) : route.continue(),
+  );
+  await page.goto('/');
+  await page.getByText('Try a sample').click();
+
+  // TanStack Query retries a failed request a few times before showing the error.
+  await expect(page.getByRole('alert')).toHaveText("Your saved changes couldn't be loaded.", { timeout: 15_000 });
+  await expect(page.getByRole('region', { name: 'Preview' })).toHaveCount(0);
+  await expect(page.getByRole('complementary', { name: 'Inspector' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Save' })).toBeDisabled();
 });
