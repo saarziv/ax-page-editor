@@ -81,9 +81,9 @@ Each feature below is described in full (behavior, acceptance criteria, edge cas
 
 A focused start screen whose only job is to get a page on screen: enter a URL or pick the demo page. The page is fetched server-side exactly as an agent would fetch it (no JavaScript), cleaned, and shown in the editor. Every failure is explained in plain language.
 
-### 6.2 See & select the page
+### 6.2 See, select & inspect
 
-A two-panel editor. The left panel shows the page **as an agent receives it**, as a clean, readable layout (like a browser's Reader Mode) with every modification visibly marked, or, via a **Page | Markdown** toggle, the literal Markdown the agent will read. The right panel is the inspector: hover an element to see what it is in plain words, click to select it, and climb to containers with a breadcrumb.
+A two-panel editor. The left panel shows the page **as an agent receives it**, as a clean, readable layout (like a browser's Reader Mode) with every modification visibly marked. The right panel is the inspector: hover an element to see what it is in plain words, click to select it with a clear highlight, see its type, text and current modifications, and climb to containers with a breadcrumb.
 
 ### 6.3 Hide & add context
 

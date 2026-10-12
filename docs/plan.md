@@ -87,7 +87,7 @@ type PageTree = { url: string; title: string; root: PageNode };
 ```
 
 `kind` drives everything:
-- the plain-language label (See & select)
+- the plain-language label (See, select & inspect)
 - context placement: container vs leaf (Hide & add context)
 - rendering in the preview, Markdown and HTML
 
@@ -99,7 +99,7 @@ Every consumer must clean identically, or saved selectors break (D11). So these 
 
 - Parse with htmlparser2.
 - **Drop:** `head` (after reading the title), `script`, `style`, `noscript`, `iframe`, `object`, `embed`, `svg` internals, `template`, `hr`, comments, hidden inputs, all `on*` attributes. `br` becomes a space.
-- **Map** tags to `kind` with this whitelist. Unwrap any other element (`div`, `span`, `strong`, `label`, `thead`, etc.), keeping its children. This yields "only meaningful elements" (See & select).
+- **Map** tags to `kind` with this whitelist. Unwrap any other element (`div`, `span`, `strong`, `label`, `thead`, etc.), keeping its children. This yields "only meaningful elements" (See, select & inspect).
 
 | Tags | kind | attrs |
 |---|---|---|
