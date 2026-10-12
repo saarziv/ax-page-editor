@@ -10,7 +10,7 @@ test('typing a URL and clicking Open shows the page in the editor', async ({ pag
   await expect(page.getByText('sample:demo', { exact: true })).toBeVisible();
 });
 
-test('the editor shows the top bar, preview and the empty inspector', async ({ page }) => {
+test('the editor shows the top bar, preview and the inspector with the demo changes', async ({ page }) => {
   await page.goto('/');
   await page.getByLabel('Page URL').fill('sample:demo');
   await page.getByRole('button', { name: 'Open', exact: true }).click();
@@ -22,7 +22,12 @@ test('the editor shows the top bar, preview and the empty inspector', async ({ p
   const inspector = page.getByRole('complementary', { name: 'Inspector' });
   await expect(inspector.getByText('Click an element in the preview to inspect it.')).toBeVisible();
   const pageChanges = inspector.getByRole('region', { name: 'Changes on this page' });
-  await expect(pageChanges.getByText('No changes yet.')).toBeVisible();
+  // The demo opens with the mock modifications until 03 adds real controls.
+  await expect(pageChanges.getByRole('listitem')).toHaveText([
+    'Hidden from AI · We use cookies to improve your experience. By continuing you',
+    'Context · Customer growth',
+    'Forwarded · guide to web analytics',
+  ]);
   for (const controlName of ['Hide from AI', 'Context for AI', 'Forward this link']) {
     await expect(page.getByRole('button', { name: controlName })).toHaveCount(0);
   }
@@ -40,4 +45,20 @@ test('the sample page renders as a clean document, with no scripts or hidden fie
   await expect(preview).not.toContainText('dataLayer');
   await expect(preview.locator('[value="do-not-show"]')).toHaveCount(0);
   await expect(preview).not.toContainText('do-not-show');
+});
+
+// The mock belongs to the demo only. localhost is blocked by the api, so this needs no network.
+test('opening another page clears the demo changes, and reopening the demo restores them', async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Try a sample').click();
+  const pageChanges = page.getByRole('region', { name: 'Changes on this page' });
+  await expect(pageChanges.getByRole('listitem')).toHaveCount(3);
+
+  await page.getByLabel('Page URL').fill('http://localhost:3001');
+  await page.getByRole('button', { name: 'Open', exact: true }).click();
+  await expect(pageChanges.getByText('No changes yet.')).toBeVisible();
+
+  await page.getByLabel('Page URL').fill('sample:demo');
+  await page.getByRole('button', { name: 'Open', exact: true }).click();
+  await expect(pageChanges.getByRole('listitem')).toHaveCount(3);
 });

@@ -53,7 +53,8 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
   **Verify:**
   1. Click "Try a sample": with nothing selected, "Changes on this page" lists three lines, starting "Hidden from AI · We use cookies…", "Context · Customer growth" and "Forwarded · guide to web analytics".
   2. Open `https://example.com` from the top bar: the list says "No changes yet." Open the demo again: the three lines are back.
-  3. `pnpm e2e` passes. The 01 test that expected "No changes yet." on the demo now expects the three lines.
+  3. `pnpm test` passes. New core tests check that `modificationSchema` accepts one modification of each type, and rejects an empty or 501-character note, a relative or `javascript:` forward href, and a target text over 60 characters.
+  4. `pnpm e2e` passes. The 01 test that expected "No changes yet." on the demo now expects the three lines. A new test opens the demo, then a blocked URL (`http://localhost:3001`, so no network is needed) and checks "No changes yet.", then reopens the demo and checks the three lines are back.
 
 - [ ] **S2 – List the selected element's changes (K8)**
 
