@@ -1,5 +1,12 @@
 import { z } from 'zod';
 
+// Why a page couldn't be loaded. The api sends it as `{ code, message }`; the web maps it to the spec's plain-language messages.
+export const fetchErrorCodeSchema = z.enum(['INVALID_URL', 'BLOCKED', 'NOT_HTML', 'TOO_LARGE', 'TIMEOUT', 'UNREACHABLE']);
+
+export type FetchErrorCode = z.infer<typeof fetchErrorCodeSchema>;
+
+export const forwardStateSchema = z.enum(['loading', 'loaded', 'failed']);
+
 export const nodeKindSchema = z.enum([
   'heading', 'paragraph', 'link', 'image', 'list', 'listItem',
   'table', 'row', 'cell', 'form', 'field', 'button', 'quote', 'code',
@@ -17,8 +24,10 @@ export type PageNode = {
   text?: string;
   attrs?: {
     href?: string; src?: string; alt?: string; level?: number; label?: string; inputType?: string; width?: number; height?: number;
-    // annotation only: the element the note explains, and its target text when the note sits after an enclosing block.
+    // annotation and forwarded: the element they belong to. annotation only: its target text when the note sits after an enclosing block.
     forId?: string; about?: string;
+    // forwarded only: whether its page has arrived, and why it failed.
+    forwardState?: z.infer<typeof forwardStateSchema>; errorCode?: FetchErrorCode;
   };
   children?: PageNode[];
   // Set by markModificationsInTree on a hidden element, which stays in place so the preview can still draw it.
@@ -45,6 +54,8 @@ export const pageNodeSchema: z.ZodType<PageNode> = z.lazy(() =>
         height: z.number().optional(),
         forId: z.string().optional(),
         about: z.string().optional(),
+        forwardState: forwardStateSchema.optional(),
+        errorCode: fetchErrorCodeSchema.optional(),
       })
       .optional(),
     children: z.array(pageNodeSchema).optional(),
@@ -59,11 +70,6 @@ export const pageTreeSchema = z.object({
 });
 
 export type PageTree = z.infer<typeof pageTreeSchema>;
-
-// Why a page couldn't be loaded. The api sends it as `{ code, message }`; the web maps it to the spec's plain-language messages.
-export const fetchErrorCodeSchema = z.enum(['INVALID_URL', 'BLOCKED', 'NOT_HTML', 'TOO_LARGE', 'TIMEOUT', 'UNREACHABLE']);
-
-export type FetchErrorCode = z.infer<typeof fetchErrorCodeSchema>;
 
 // A saved pointer to one element: its selector in the clean tree plus a text snippet that must still match (global plan §3.3).
 export const targetSchema = z.object({

@@ -104,10 +104,11 @@ function renderList(list: PageNode): string[] {
   const blocksByItem: string[][] = [];
   for (const child of list.children ?? []) {
     const previousItemBlocks = blocksByItem.at(-1);
-    if (child.kind !== 'annotation') blocksByItem.push(renderContentBlocks(child));
-    // A note on an item comes right after it, so it's written inside that item, under its text.
-    else if (previousItemBlocks) previousItemBlocks.push(renderNote(child));
-    else notesBeforeList.push(renderNote(child));
+    const isNoteOrForward = child.kind === 'annotation' || child.kind === 'forwarded';
+    if (!isNoteOrForward) blocksByItem.push(renderContentBlocks(child));
+    // A note or forward on an item comes right after it, so it's written inside that item, under its text.
+    else if (previousItemBlocks) previousItemBlocks.push(...renderBlock(child));
+    else notesBeforeList.push(...renderBlock(child));
   }
 
   const items = blocksByItem.map((itemBlocks, index) => {

@@ -136,6 +136,12 @@ describe('renderMarkdown', () => {
       expect(renderMarkdown(page(list))).toBe('1. Home\n   > **Context:** The landing page.\n2. Blog\n');
     });
 
+    it('writes nothing for a loading forward after an item, and adds no empty item', () => {
+      const loadingForward = node('forwarded', { tag: 'section', attrs: { href: 'https://acme.com/home', forwardState: 'loading' } });
+      const list = node('list', { tag: 'ul', children: [listItem(link('Home', 'https://acme.com/home')), loadingForward, listItem(text('Blog'))] });
+      expect(renderMarkdown(page(list))).toBe('- [Home](https://acme.com/home)\n- Blog\n');
+    });
+
     it('writes a table\'s note just before the table', () => {
       const table = node('table', { children: [note('Monthly prices.'), row('Plan', 'Price'), row('Pro', '$49')] });
       expect(renderMarkdown(page(table))).toBe('> **Context:** Monthly prices.\n\n| Plan | Price |\n| --- | --- |\n| Pro | $49 |\n');

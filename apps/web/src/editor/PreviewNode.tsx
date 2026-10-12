@@ -6,7 +6,7 @@ const HEADING_TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const;
 const HEADING_SIZES = ['text-3xl', 'text-2xl', 'text-xl', 'text-lg', 'text-base', 'text-sm'];
 
 // A text node is a piece of a sentence, so a click on it should select its parent; page is the whole document.
-// annotation and forwarded are inserted by markModificationsInTree: a callout selects the element it explains instead.
+// annotation and forwarded are inserted by markModificationsInTree: a click on one selects the element it belongs to instead.
 const UNSELECTABLE_KINDS = new Set<PageNode['kind']>(['text', 'page', 'annotation', 'forwarded']);
 
 // Draws one page tree node and, through itself, everything below it.
@@ -68,8 +68,8 @@ export const PreviewNode = memo(function PreviewNode({ node }: { node: PageNode 
           <ul {...selectable} className="my-2 list-disc pl-6">
             {node.text ??
               otherChildren.map((child) =>
-                // A note on a list item comes right after it, inside the list, so it needs its own <li>.
-                child.kind === 'annotation' ? (
+                // A note or forward on a list item comes right after it, inside the list, so it needs its own <li>.
+                child.kind === 'annotation' || child.kind === 'forwarded' ? (
                   <li key={child.id} className="list-none">
                     <PreviewNode node={child} />
                   </li>
@@ -157,9 +157,8 @@ export const PreviewNode = memo(function PreviewNode({ node }: { node: PageNode 
     case 'annotation':
       return <ContextCallout annotation={node} />;
 
-    // Inserted by markModificationsInTree; 06 defines how it looks.
     case 'forwarded':
-      return null;
+      return <ForwardedBlock forwarded={node} />;
 
     default: {
       const unhandledKind: never = node.kind;
@@ -170,20 +169,32 @@ export const PreviewNode = memo(function PreviewNode({ node }: { node: PageNode 
 
 // The note is plain React text, so React escapes it: `<script>` shows as those characters (K9).
 // A <span> drawn as a block, so it stays valid HTML even when the note sits inside a paragraph.
-// data-context-for, not data-node-id: the hover and hidden layers find elements by data-node-id,
+// data-callout-for, not data-node-id: the hover and hidden layers find elements by data-node-id,
 // and two elements with one id would confuse them. Preview reads it to select the element on click.
 function ContextCallout({ annotation }: { annotation: PageNode }) {
   const about = annotation.attrs?.about;
   return (
     <span
       role="note"
-      data-context-for={annotation.attrs?.forId}
+      data-callout-for={annotation.attrs?.forId}
       className="my-2 block cursor-pointer rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-normal not-italic text-foreground hover:border-sky-400 dark:border-sky-900 dark:bg-sky-950/40"
     >
       <span className="block text-[11px] font-medium text-sky-700 dark:text-sky-300">
         Context for AI{about !== undefined && ` (on "${about}")`}
       </span>
       <span className="block whitespace-pre-wrap break-words">{annotation.text}</span>
+    </span>
+  );
+}
+
+// Like a note callout: a <span> drawn as a block, and a click on it selects the link it forwards.
+function ForwardedBlock({ forwarded }: { forwarded: PageNode }) {
+  return (
+    <span
+      data-callout-for={forwarded.attrs?.forId}
+      className="my-2 block cursor-pointer rounded-md border border-dashed bg-muted/40 px-3 py-2 text-sm font-normal not-italic text-muted-foreground"
+    >
+      Loading {forwarded.attrs?.href}…
     </span>
   );
 }
