@@ -149,7 +149,7 @@ Applying a configuration is two steps, run by both the editor and Agent View.
 How the two fit into the editor and Agent View, with an example, is in §6.1. The contract lives here; the rules of each step live in the feature plan that owns it.
 
 ```ts
-type Forwarded = { href: string; tree?: PageTree; error?: ForwardError };
+type Forwarded = { href: string; tree?: PageTree; error?: FetchErrorCode };   // neither yet: still loading
 type Status = 'active' | 'inactive' | 'unmatched' | 'failed';
 type Marked = {
   tree: PageNode;                  // the marked page
@@ -233,7 +233,7 @@ Details live in the owning feature's plan.
 **Server data (TanStack Query):**
 - `usePageTree(url)`
 - `useConfig(url)`
-- `useForward(href)` (see 06)
+- `useForwardedPages(modificationsDraft)` (see 06)
 
 **Editor state (Zustand):**
 
