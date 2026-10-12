@@ -149,9 +149,9 @@ What this gives us:
 
 `PreviewNode` draws an `annotation` node as a light box with a small "Context for AI" label, and the note under it as plain React text. React escapes it, so `<script>` shows as those characters (K9). With `about`, the label reads `Context for AI (on "terms")`.
 
-**Clicking the callout selects its element.** The callout carries `data-context-for={forId}`, and `Preview`'s click handler looks for it as well as `data-node-id`. It deliberately doesn't reuse `data-node-id`: the hover and hidden layers find elements by that attribute, and two elements with one id would confuse them.
+**Clicking the callout selects its element.** The callout carries `data-context-for={forId}`, and `Preview`'s click handler looks for it as well as `data-node-id`. It deliberately doesn't reuse `data-node-id`: the hover and hidden layers find elements by that attribute, and two elements with one id would confuse them. Hovering a callout shows no hover box, because outlining the element around it would point at the wrong thing.
 
-**Lists and tables need care.** A note on a list or table is its first child, but a `<div>` can't sit inside `<ul>` or `<tbody>`. So for those two kinds, `PreviewNode` draws the annotation children just above the `<ul>` or `<table>`, and the rest inside it.
+**Lists and tables need care.** A note on a list or table is its first child, but a `<div>` can't sit inside `<ul>` or `<tbody>`. So for those two kinds, `PreviewNode` draws the leading annotation children just above the `<ul>` or `<table>`, and the rest inside it. A note on a list item (or a link in one) comes right after that item, inside the list, so it's drawn in its own bullet-less `<li>`. A table never has one in the middle, because notes on rows and cells go after the whole table.
 
 **02's amber markers go away.** Hidden elements now have their real look. Context and forward get their own look in their own tasks. The two changes lists still show every modification.
 

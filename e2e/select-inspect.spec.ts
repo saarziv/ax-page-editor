@@ -257,3 +257,65 @@ test('a long note stops at 300 characters, and the box scrolls instead of pushin
   await inspector.getByRole('button', { name: 'Forward this link' }).scrollIntoViewIfNeeded();
   await expect(inspector.getByRole('button', { name: 'Forward this link' })).toBeInViewport();
 });
+
+// Global flow 1, in the preview: hide the banner, explain the chart.
+test('a hidden banner is faded and a note on the chart shows as a callout under it (K5, K6)', async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Try a sample').click();
+
+  const preview = page.getByRole('region', { name: 'Preview' });
+  const inspector = page.getByRole('complementary', { name: 'Inspector' });
+  const contextBox = inspector.getByRole('textbox', { name: 'Context for AI' });
+  const chart = preview.getByRole('img', { name: 'Customer growth' });
+  const callout = preview.getByRole('note');
+
+  await preview.getByText(/^We use cookies/).click();
+  await inspector.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('button', { name: 'Sidebar' }).click();
+  await inspector.getByRole('switch', { name: 'Hide from AI' }).click();
+  await expect(page.locator('[data-veil-for="aside:1"]')).toHaveText('⊘ Hidden from AI');
+
+  await chart.click();
+  await contextBox.fill('Customer growth from 1,200 to 8,500.');
+  await expect(callout.getByText('Context for AI', { exact: true })).toBeVisible();
+  await expect(callout.getByText('Customer growth from 1,200 to 8,500.', { exact: true })).toBeVisible();
+  // Right under the chart, before the caption.
+  const chartRect = await chart.boundingBox();
+  const calloutRect = await callout.boundingBox();
+  const captionRect = await preview.getByText(/^Customers per month/).boundingBox();
+  expect(chartRect && calloutRect && captionRect && calloutRect.y >= chartRect.y + chartRect.height && captionRect.y >= calloutRect.y + calloutRect.height).toBe(true);
+
+  // Clicking the callout selects the chart, and the box shows its note.
+  await page.keyboard.press('Escape');
+  await callout.click();
+  await expect(chart).toHaveAttribute('data-selected', 'true');
+  await expect(contextBox).toHaveValue('Customer growth from 1,200 to 8,500.');
+
+  // A note on a hidden element is never read by the agent, so its callout goes away.
+  await inspector.getByRole('switch', { name: 'Hide from AI' }).click();
+  await expect(callout).toHaveCount(0);
+  await inspector.getByRole('switch', { name: 'Hide from AI' }).click();
+  await expect(callout).toHaveCount(1);
+
+  await contextBox.clear();
+  await expect(callout).toHaveCount(0);
+});
+
+test('a note on a link comes after its paragraph, and the note is shown as typed (K8, K9)', async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Try a sample').click();
+
+  const preview = page.getByRole('region', { name: 'Preview' });
+  const note = '<script>alert(1)</script> # heading [x](y)';
+
+  await preview.getByText('terms of service', { exact: true }).click();
+  await page.getByRole('textbox', { name: 'Context for AI' }).fill(note);
+
+  const callout = preview.getByRole('note');
+  await expect(callout.getByText('Context for AI (on "terms of service")')).toBeVisible();
+  await expect(callout.getByText(note, { exact: true })).toBeVisible();
+  // The sentence stays whole: the callout is the paragraph's next sibling, not inside it.
+  const paragraph = preview.locator('[data-node-id="main:1>section:1>paragraph:1"]');
+  await expect(paragraph).toContainText('Read our terms of service and the guide to web analytics before you subscribe.');
+  await expect(paragraph.getByRole('note')).toHaveCount(0);
+  await expect(paragraph.locator('xpath=following-sibling::*[1]')).toHaveAttribute('role', 'note');
+});

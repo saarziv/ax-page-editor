@@ -6,7 +6,7 @@ export const nodeKindSchema = z.enum([
   'section', 'article', 'nav', 'header', 'footer', 'aside', 'main', 'figure',
   'text',
   'page', // the root only
-  // Inserted by transform, never produced by clean.
+  // Inserted by markModificationsInTree, never produced by clean.
   'annotation', 'forwarded',
 ]);
 
@@ -15,7 +15,11 @@ export type PageNode = {
   kind: z.infer<typeof nodeKindSchema>;
   tag: string;
   text?: string;
-  attrs?: { href?: string; src?: string; alt?: string; level?: number; label?: string; inputType?: string; width?: number; height?: number };
+  attrs?: {
+    href?: string; src?: string; alt?: string; level?: number; label?: string; inputType?: string; width?: number; height?: number;
+    // annotation only: the element the note explains, and its target text when the note sits after an enclosing block.
+    forId?: string; about?: string;
+  };
   children?: PageNode[];
   // Set by markModificationsInTree on a hidden element, which stays in place so the preview can still draw it.
   hidden?: true;
@@ -39,6 +43,8 @@ export const pageNodeSchema: z.ZodType<PageNode> = z.lazy(() =>
         inputType: z.string().optional(),
         width: z.number().optional(),
         height: z.number().optional(),
+        forId: z.string().optional(),
+        about: z.string().optional(),
       })
       .optional(),
     children: z.array(pageNodeSchema).optional(),

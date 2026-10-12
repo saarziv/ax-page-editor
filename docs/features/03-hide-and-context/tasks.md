@@ -6,7 +6,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 - [x] T01 – Show the Hide from AI switch · Covers: the UI part of K1 and K3
 - [x] T02 – Hide an element from AI, and see it in the preview · Covers: K1, K2, K3, K4 (agent output checked on the marked page; the text in 06)
-- [ ] T03 – Add context for AI, and see it in the preview · Covers: K5, K6, K7, K8, K9, K10, K11 (agent output checked on the marked page; the text in 06)
+- [x] T03 – Add context for AI, and see it in the preview · Covers: K5, K6, K7, K8, K9, K10, K11 (agent output checked on the marked page; the text in 06)
 
 ---
 
@@ -130,7 +130,7 @@ Not in this task: the note as Markdown text (06), saving (05).
      - The schema rejects a 301-character note.
   7. `pnpm e2e` passes. A new test types a note on the chart, checks the changes lists, clears it, and checks they're empty. The tests expecting a disabled "Context for AI" button are updated.
 
-- [ ] **S2 – Notes show in the preview, where the agent will read them (K5–K9)**
+- [x] **S2 – Notes show in the preview, where the agent will read them (K5–K9)**
 
   Core's `markModificationsInTree` gets step 3, which inserts each note as an `annotation` node, placed by the element's kind. A note on a hidden element is `inactive` and isn't inserted. The preview draws each annotation as a light "Context for AI" callout that selects its element on click. `PreviewNode` gets `React.memo`, so a keystroke re-renders only the nodes on the path to the edited element.
 
@@ -149,6 +149,9 @@ Not in this task: the note as Markdown text (06), saving (05).
      - A note on a hidden element, or inside one, is `inactive` and not inserted.
      - The note text is kept exactly as typed (K9), and the input page is unchanged.
   9. `pnpm e2e` passes. Global flow 1 lands: hide the cookie banner and add a note to the chart; the banner is faded and the callout shows under the chart. Clearing the note removes the callout.
+
+**Deviations:**
+- A note on a list item sits inside the list after that item, drawn in its own `<li>`; hovering a callout shows no hover box → feature `plan.md` §Drawing the callout
 
 **Done when:** on the demo page, the publisher can add, edit and clear a note on any element, and the preview shows it as a callout placed as the agent will read it. Core tests show every placement rule. `pnpm test`, `typecheck` and `e2e` pass.
 

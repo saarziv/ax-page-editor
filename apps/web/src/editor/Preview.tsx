@@ -13,11 +13,12 @@ export function Preview({ url }: { url: string }) {
 
   // One handler for the whole preview: closest() walks up from the exact element clicked,
   // so the innermost selectable element wins (a link inside a paragraph selects the link).
+  // A click on a "Context for AI" callout selects the element the note explains.
   // A click that no selectable element covers is a click on empty space, and clears the selection.
   function handleClick(event: MouseEvent<HTMLElement>) {
     if (!(event.target instanceof Element)) return;
-    const clickedNodeId = event.target.closest<HTMLElement>('[data-node-id]')?.dataset.nodeId;
-    select(clickedNodeId ?? null);
+    const clickedElement = event.target.closest<HTMLElement>('[data-node-id], [data-context-for]');
+    select(clickedElement?.dataset.nodeId ?? clickedElement?.dataset.contextFor ?? null);
   }
 
   return (
