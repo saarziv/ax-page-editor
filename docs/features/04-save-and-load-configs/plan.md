@@ -2,7 +2,7 @@
 
 How we build the Save & load configs spec. Shared architecture, core contracts and conventions are in the global `plan.md`.
 
-This plan covers saving (T01), the Saved pages list (T02), and the unsaved indicator with the review list (T03). Restoring changes into the editor, and the "Needs attention" group, are added here when their task starts.
+This plan covers saving (T01), the Saved pages list (T02), the unsaved indicator with the review list (T03), and restoring saved changes when a page opens, with the "Needs attention" group (T04).
 
 ---
 
@@ -33,7 +33,7 @@ Example: on the demo page, the publisher hides the cookie banner and clicks Save
 1. **The start screen asks for the list.** It calls `GET /api/configs`.
 2. **The server returns one short summary per saved page**, newest first: `{ url, updatedAt, modificationCount }`. It doesn't send whole configurations, because the list only needs these three things.
 3. **The start screen draws one row per summary**, below "Try a sample": the URL, then "3 changes · saved 2 hours ago". The section isn't drawn when the list is empty.
-4. **Clicking a row opens that page**, the same way as typing its URL. (Restoring its changes into the editor is a later task.)
+4. **Clicking a row opens that page**, the same way as typing its URL, so its changes are restored like on any open (How opening a page restores its changes, below).
 
 Example: after saving the demo with one hide, the list is `[{ url: 'sample:demo', updatedAt: '2026-10-12T09:00:00.000Z', modificationCount: 1 }]`, and the row reads "sample:demo · 1 change · saved just now".
 
@@ -49,6 +49,23 @@ Example: the demo is saved with a hide on the cookie banner and a note on the ch
 - After Save, the stored row's `modifications` holds only `b2`, and the Saved pages row says "1 change".
 
 **Why Remove works by id, not by target:** the list already holds the exact entry, and ids are unique within a configuration (Core, below), so removing by id can never take a different change with it.
+
+## How opening a page restores its changes
+
+1. **The page loads first.** The editor asks for the page tree as before (01). The tree's `url` is the normalized address, after redirects, which is exactly the key Save stores under.
+2. **Then its configuration.** With the tree in hand, the editor calls `GET /api/configs/:url` with that `url`. The server answers with the stored configuration, or a 404 when nothing is saved, which the editor reads as "no changes".
+3. **The draft is filled once.** The store's `loadSavedModifications(pageUrl, modifications)` puts the saved list into `modificationsDraft` and into `savedJson`, so the page opens with its changes and no "Unsaved changes". From here, the preview and the list redraw by themselves (global plan §6.1, steps 2–3).
+4. **Nothing shows until then.** The loading state stays until the page and its configuration are both loaded and the draft is filled, so a page never appears without its changes. If the configuration can't be loaded, the editor shows "Your saved changes couldn't be loaded." with a Retry button, and neither the preview nor the inspector, so there's nothing to edit.
+5. **Changes that no longer match are kept, not applied.** `markModificationsInTree` already marks a modification `unmatched` when its target doesn't resolve (global plan §3.3–3.4). The changes list puts those under "Needs attention". They stay in the draft, so the next save keeps them until the publisher removes them.
+
+Example: `sample:demo` was saved with a hide on the cookie banner (`a1`, target `aside:1` + "We use cookies…") and a hide on an old promo (`c3`, target `aside:1` + "Old promo"). The publisher types `sample:demo` and opens it.
+- `GET /api/configs/sample%3Ademo` returns both, and the draft becomes `[a1, c3]`, with no "Unsaved changes".
+- `a1` resolves, so the banner is drawn faded. `c3`'s selector exists, but its text is now "We use cookies…", so it resolves to nothing and is `unmatched`: nothing else is hidden.
+- The list shows "Hidden from AI · We use cookies…" as a change, and under "Needs attention", "Hidden from AI · Old promo" with "Not found on this page" and a Remove button.
+
+**Why the configuration is loaded after the page, not alongside it:** the page tree's `url` is the one Save uses, after normalizing and following redirects. Loading by that same `url` means a page is always loaded from the key it's saved under. Loading in parallel by the typed URL would miss the configuration whenever the page redirects. It costs one short request after the page arrives.
+
+**Why the store remembers which page the draft was restored for (`restoredPageUrl`):** filling the draft is a one-time step per opened page. Without that marker, a second render (React's StrictMode, or the query delivering the same data again) would fill it again and wipe the edits made since. `setUrl` clears the marker, so opening any page, even the same one again, restores it fresh.
 
 ## Core
 
@@ -67,18 +84,20 @@ Example: the demo is saved with a hide on the cookie banner and a note on the ch
 |---|---|---|---|
 | PUT | `/api/configs` | `{ url, modifications }` | the stored `Config` |
 | GET | `/api/configs` | | `SavedPageSummary[]`, newest first |
+| GET | `/api/configs/:url` | the page URL, URI-encoded | the stored `Config`, or 404 `{ code: 'NOT_FOUND' }` |
 
 - `PUT` uses `@ZodBody(saveConfigRequestSchema)`, so an invalid body never reaches the controller (400 `INVALID_REQUEST`). A URL that `normalizeUrl` refuses is also a 400 `INVALID_REQUEST`.
 - `GET` replaces the 01 stub, which always returned `[]`.
-- Loading one page's configuration gets its own endpoint (`GET /api/configs/:url`) in a later task.
+- `GET /api/configs/:url` normalizes the URL like `PUT` does, so `acme.com/pricing/?utm_source=x` finds the configuration saved for `https://acme.com/pricing` whatever the client sends (AC11). A URL that `normalizeUrl` refuses is a 400 `INVALID_REQUEST`.
 
 ### `ConfigRepository` (SQLite)
 
-The controller talks to a `ConfigRepository` with two methods: `save(config)` and `listSummaries()`. It hides SQLite, so the controller stays simple and the database could be swapped later (P10).
+The controller talks to a `ConfigRepository` with three methods: `save(config)`, `listSummaries()` and `findByUrl(url)`. It hides SQLite, so the controller stays simple and the database could be swapped later (P10).
 
 - **Table:** `page_configs(url TEXT PRIMARY KEY, config TEXT NOT NULL, updated_at TEXT NOT NULL)`. `config` is the whole configuration as JSON. `updated_at` is copied out of it so the list can be sorted without reading every document.
 - **`save` replaces, never duplicates (AC2):** it writes with `INSERT … ON CONFLICT(url) DO UPDATE`. `url` is the primary key, so a second row for the same page is impossible.
 - **`listSummaries`** reads `url`, `updated_at` and the number of modifications, sorted by `updated_at`, newest first. SQLite counts the modifications itself with `json_array_length(config, '$.modifications')`, so no document is parsed.
+- **`findByUrl`** returns the stored configuration for one URL, or `null`. It parses the row with `configSchema` before returning it (global plan §7, validation on read), so a damaged row fails the request instead of reaching the editor.
 - **The database file** is opened from `DB_PATH`, and its folder is created if missing. The table is created on start if it doesn't exist. Tests open an in-memory database (`:memory:`), so they never touch the real file.
 
 ## Web
@@ -101,7 +120,20 @@ The controller talks to a `ConfigRepository` with two methods: `save(config)` an
 - `PageChanges` keeps reading `modificationsDraft`. Each row shows `MODIFICATION_LABELS[type]`, then the target's text snippet, and for context, the note on its own line. Long text is cut to one line, with the full text in a tooltip.
 - Each row has a Remove button (an ✕ icon) labelled for screen readers with what it removes, for example "Remove Hidden from AI: We use cookies…", so the buttons can be told apart.
 - **`removeModification(id)`** is a new store action that drops the entry with that id. It doesn't touch `savedJson`, so the change shows as unsaved until the next save.
-- Changes inside a hidden element are listed like any other (spec, Out of scope). The grouping by status, with "Needs attention", comes with the restore task, because only a loaded configuration can have changes that no longer match.
+- Changes inside a hidden element are listed like any other (spec, Out of scope).
+
+### Restoring on open (T04)
+
+- A `useConfig(pageUrl)` query calls `GET /api/configs/:url` once the page tree has loaded, and parses the answer with `configSchema`. A 404 becomes `null` (nothing saved); any other failure is an error. It uses the same 10-second timeout as Save, so a hanging server ends in the Retry message, not an endless loading state.
+- **The cache must match what's stored.** The query never refetches by itself (`staleTime: Infinity`), because a refetch could replace the draft under the publisher's edits. So a successful save writes the returned configuration into this query's cache. Without that, going back to the start screen and reopening the page would restore the configuration from before the save.
+- The editor calls `loadSavedModifications` when the configuration arrives and `restoredPageUrl` isn't this page yet. It draws the preview and the inspector only once `restoredPageUrl` equals the page tree's `url`.
+- **Retry** refetches the configuration query. The rest of the editor stays as it is; the page tree isn't fetched again.
+
+### Needs attention (T04)
+
+- `PageChanges` reads `status` from `useMarkedPage()` (03) and splits the draft in two: every modification that isn't `unmatched` stays in "Changes on this page" as before, and the `unmatched` ones go under a "Needs attention" heading, with "Not found on this page" under it. The group isn't drawn when it's empty.
+- Rows in both groups are the same component with the same Remove button. Removing an unmatched change works like any other (`removeModification(id)`), and the next save drops it.
+- The draft's order is kept inside each group, so a restored list reads in the order the changes were made.
 
 ### Saved pages list (T02)
 
@@ -112,7 +144,8 @@ The controller talks to a `ConfigRepository` with two methods: `save(config)` an
 
 ## Tests
 
+- **Core:** nothing new for restoring: `resolve` and the `unmatched` status are already tested (02, 03).
 - **Core:** `configSchema` and `saveConfigRequestSchema` reject an unknown type, a missing field, a 301-character note and a repeated id, and accept a valid list.
-- **API:** the repository and controller run against an in-memory database. Saving stores a full configuration under the normalized URL; saving the same URL twice leaves one row with the second content; the list is newest first with the right counts.
-- **Web:** `formatSavedAgo` for each range, and singular vs plural counts. `removeModification` drops only the entry with that id, and the dirty flag turns on after a remove and off once that draft is saved.
-- **E2E:** removing a change from the list un-fades the element and shows "Unsaved changes"; saving the demo shows "Saved"; after a reload, the demo appears in the Saved pages list and clicking it opens the demo. These tests run against the dev's api (`reuseExistingServer`), so they save `sample:demo` into the dev database, replacing any demo configuration saved by hand. That's acceptable for a demo page; a separate test database is a follow-up if it gets in the way.
+- **API:** the repository and controller run against an in-memory database. Saving stores a full configuration under the normalized URL; saving the same URL twice leaves one row with the second content; the list is newest first with the right counts. `GET /api/configs/:url` returns a saved configuration for an equivalent URL (tracking parameter, trailing slash), and 404 for a URL with nothing saved.
+- **Web:** `formatSavedAgo` for each range, and singular vs plural counts. `removeModification` drops only the entry with that id, and the dirty flag turns on after a remove and off once that draft is saved. `loadSavedModifications` fills the draft with the dirty flag off, and `setUrl` clears `restoredPageUrl`. The config request reads a 404 as `null` and a 500 as a failure.
+- **E2E:** removing a change from the list un-fades the element and shows "Unsaved changes"; saving the demo shows "Saved"; after a reload, the demo appears in the Saved pages list and clicking it opens the demo with its changes; a saved change that no longer matches is listed under "Needs attention"; a blocked config request shows the load error, and Retry recovers. These tests run against the dev's api (`reuseExistingServer`), so they save `sample:demo` into the dev database, replacing any demo configuration saved by hand. That's acceptable for a demo page; a separate test database is a follow-up if it gets in the way.

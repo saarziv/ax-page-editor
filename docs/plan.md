@@ -242,9 +242,10 @@ Details live in the owning feature's plan.
   url: string | null;
   modificationsDraft: Modification[];          // the only editable source of truth
   savedJson: string;              // last saved draft, for the dirty flag
+  restoredPageUrl: string | null; // the page whose saved configuration the draft was filled from (04)
   selectedId: string | null;
   view: 'page' | 'markdown';
-  actions: { load, select, toggleHide, setContext, toggleForward, removeModification, markSaved }
+  actions: { setUrl, loadSavedModifications, select, toggleHide, setContext, toggleForward, removeModification, markSaved }
 }
 ```
 Actions enforce the spec rules: one modification per type per element, an empty note removes the context modification, forward only on links, and the page forward budget. Each action is specified in the plan of the feature that uses it.
