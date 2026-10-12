@@ -89,3 +89,29 @@ test('the breadcrumb shows the path and selects a container', async ({ page }) =
   await expect(inspector.getByRole('heading', { name: 'Main content' })).toBeVisible();
   await expect(breadcrumb).toBeHidden();
 });
+
+test('hovering an element outlines it and names its type', async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Try a sample').click();
+
+  const preview = page.getByRole('region', { name: 'Preview' });
+  const hoverBox = page.getByTestId('hover-box');
+
+  // The innermost element wins: the box sits on the link, not the paragraph around it.
+  const termsLink = preview.getByText('terms of service', { exact: true });
+  await termsLink.hover();
+  await expect(hoverBox).toHaveText('Link');
+  const linkRect = await termsLink.boundingBox();
+  const boxRect = await hoverBox.boundingBox();
+  expect(boxRect?.width).toBeCloseTo(linkRect?.width ?? 0, 0);
+
+  await preview.getByRole('heading', { name: 'Analytics that scale with you' }).hover();
+  await expect(hoverBox).toHaveText('Heading');
+
+  await preview.getByRole('img', { name: 'Customer growth' }).hover();
+  await expect(hoverBox).toHaveText('Image');
+
+  // Leaving the preview hides the box.
+  await page.getByLabel('Page URL').hover();
+  await expect(hoverBox).toBeHidden();
+});

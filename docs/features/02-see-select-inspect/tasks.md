@@ -5,7 +5,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 ## Roadmap
 
 - [x] T01 – Select an element and inspect it · Covers: K1, K2, K3, K4, K5, K6, K7, K8 (no-changes case), S4
-- [ ] T02 – Deselect, climb with the breadcrumb, and see what you hover · Covers: S1, S2, S3
+- [x] T02 – Deselect, climb with the breadcrumb, and see what you hover · Covers: S1, S2, S3
 - Next tasks are defined after T02. Still to cover: K8 (with changes), B1, B2, B3.
 
 ---
@@ -49,7 +49,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
   3. Click "Main content" in the breadcrumb: the whole main area is selected, and no breadcrumb shows, because only the page is above it.
   4. `pnpm e2e` passes. A new test selects the link, checks the breadcrumb text, clicks "Paragraph" and checks that the paragraph is now the selected element.
 
-- [ ] **S3 – Hover outline with a type label**
+- [x] **S3 – Hover outline with a type label**
 
   Hovering the preview shows a faint outline around the innermost element under the pointer and a small chip above it with its type ("Link", "Image"). It's one overlay box positioned over the hovered element, so it works for images and table rows too. It's visibly lighter than the selection outline, and leaving the preview hides it.
 
@@ -62,6 +62,11 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 **Done when:** on the demo page, Esc and a click on empty space clear the selection, the breadcrumb selects any container around the selected element, and hovering shows a light outline with the element's type. `pnpm test`, `typecheck` and `e2e` pass.
 
+- Breadcrumb receives the path along with the node → plan.md §Breadcrumb
+- Hover state lives in `HoverLayer`, not `Preview` → plan.md §Hover
+
 ---
 
 ## Follow-ups
+
+- The theme's primary color is near-black, so the selection outline, hover outline and breadcrumb links are black/grey rather than a distinct accent color. Consider one accent token for selection, hover and clickable steps.

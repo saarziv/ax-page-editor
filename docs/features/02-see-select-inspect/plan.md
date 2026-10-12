@@ -84,7 +84,7 @@ Example: select "terms of service" on the demo, then click "Section" in the brea
 
 - **Lighter than the selection:** a 1px, half-transparent primary outline with no tint, against the selection's solid 2px outline with a tint. The chip sits just above the element's top-left corner, so it never covers the content.
 - **Label:** the hovered id is looked up with `findNodePath` in the tree the preview already has, and its kind goes through the same `nodeLabels` map as the inspector.
-- **Local state:** the hovered element is `useState` in `Preview`, not in the store. Nothing else reads it, and it changes on every mouse move, so keeping it local re-renders only the preview's overlay.
+- **Local state:** the hovered element's id, label and position are `useState` in `HoverLayer.tsx`, the wrapper around the content column, not in the store. Nothing else reads them, and they change on every mouse move, so keeping them local re-renders only the overlay.
 - **Scrolling:** the box is positioned relative to the content column, which scrolls with the page, so it stays on its element while scrolling. A layout change under a still pointer (an image finishing loading) can leave it slightly off until the next mouse move. That's acceptable for a hover hint.
 
 Example: hovering the "Customer growth" chart shows a faint outline around the image and an "Image" chip above it. Moving onto the "terms of service" link moves the box to the link with "Link", and the paragraph around it isn't outlined.
