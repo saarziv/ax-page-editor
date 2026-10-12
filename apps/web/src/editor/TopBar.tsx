@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useEditorStore } from '@/state/store';
+import { hasUnsavedChanges, useEditorStore } from '@/state/store';
 import { SaveButton } from './SaveButton';
 
 export function TopBar({ url }: { url: string }) {
   const setUrl = useEditorStore((state) => state.setUrl);
+  // The same derived flag that enables Save, so the text and the button always agree.
+  const isDirty = useEditorStore(hasUnsavedChanges);
   const [typedUrl, setTypedUrl] = useState(url);
 
   function handleSubmit(event: FormEvent) {
@@ -21,6 +23,7 @@ export function TopBar({ url }: { url: string }) {
         <Button type="submit">Open</Button>
       </form>
       <SaveButton url={url} />
+      {isDirty && <span className="text-sm text-muted-foreground">Unsaved changes</span>}
     </div>
   );
 }

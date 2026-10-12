@@ -12,6 +12,7 @@ interface EditorState {
   select: (id: string | null) => void;
   toggleHide: (target: Target) => void;
   setContext: (target: Target, note: string) => void;
+  removeModification: (modificationId: string) => void;
   markSaved: (savedModifications: Modification[]) => void;
 }
 
@@ -59,6 +60,12 @@ export const useEditorStore = create<EditorState>()((set) => ({
       const newContext: Modification = { id: crypto.randomUUID(), type: 'context', target, note };
       return { modificationsDraft: [...modificationsDraft, newContext] };
     }),
+  // By id, not by target: ids are unique within a configuration, so a remove can never take another change with it.
+  // savedJson stays as it was, so the removal shows as unsaved until the next save.
+  removeModification: (modificationId) =>
+    set(({ modificationsDraft }) => ({
+      modificationsDraft: modificationsDraft.filter((modification) => modification.id !== modificationId),
+    })),
   // Takes the modifications that were sent, not the current draft: edits made while the save ran stay unsaved.
   markSaved: (savedModifications) => set({ savedJson: JSON.stringify(savedModifications) }),
 }));

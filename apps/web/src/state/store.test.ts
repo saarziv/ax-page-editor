@@ -5,7 +5,7 @@ import { hasUnsavedChanges, useEditorStore } from './store';
 const chart: Target = { selector: 'main:1>figure:1>image:1', text: 'Customer growth' };
 const banner: Target = { selector: 'aside:1', text: 'We use cookies to improve your experience. By continuing you' };
 
-const { markSaved, setContext, setUrl, toggleHide } = useEditorStore.getState();
+const { markSaved, removeModification, setContext, setUrl, toggleHide } = useEditorStore.getState();
 const modificationsDraft = () => useEditorStore.getState().modificationsDraft;
 
 describe('setContext', () => {
@@ -55,6 +55,29 @@ describe('setContext', () => {
   });
 });
 
+describe('removeModification', () => {
+  beforeEach(() => setUrl('sample:demo'));
+
+  it('drops only the entry with that id', () => {
+    toggleHide(banner);
+    setContext(chart, 'Customer growth');
+    const [bannerHide, chartContext] = modificationsDraft();
+
+    removeModification(bannerHide!.id);
+
+    expect(modificationsDraft()).toEqual([chartContext]);
+  });
+
+  it('leaves the draft unchanged for an unknown id', () => {
+    toggleHide(banner);
+    const draftBefore = modificationsDraft();
+
+    removeModification('not-a-real-id');
+
+    expect(modificationsDraft()).toEqual(draftBefore);
+  });
+});
+
 describe('hasUnsavedChanges', () => {
   beforeEach(() => setUrl('sample:demo'));
   const isDirty = () => hasUnsavedChanges(useEditorStore.getState());
@@ -85,6 +108,14 @@ describe('hasUnsavedChanges', () => {
     markSaved(modificationsDraft());
     toggleHide(banner);
 
+    expect(isDirty()).toBe(true);
+  });
+
+  it('is true after removing a saved change', () => {
+    toggleHide(banner);
+    markSaved(modificationsDraft());
+
+    removeModification(modificationsDraft()[0]!.id);
     expect(isDirty()).toBe(true);
   });
 
