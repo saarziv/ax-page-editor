@@ -2,7 +2,7 @@
 
 Save the changes made on a page, review and remove them, and open saved pages again with their changes in place. Part of AX Editor: see the global `spec.md` for the problem, users, core concepts, configuration format and trust & safety rules.
 
-The configuration is the product's real output: everything else (preview, agent output) is derived from page + configuration. This feature makes it last beyond one editing session. Hide and Context (03) are the only modifications so far; Forward, the Markdown view and Agent View come later.
+The configuration is the product's real output: everything else (preview, agent output) is derived from page + configuration. This feature makes it last beyond one editing session. Hide and Context (03) are the only modifications so far; Forward and Agent View come later.
 
 All ACs are **Key** (must ship), except AC8, AC12 and AC13, which are **follow-ups**.
 
@@ -123,8 +123,8 @@ Start screen                              Editor
 
 ## Out of scope
 
-- Forward a link, and its over-budget and failed statuses in the list: 05.
-- Markdown view and Agent View: 06.
+- Forward a link, and its failed status in the list: 06.
+- Agent View and the View as agent button: 05.
 - Warning before leaving a page with unsaved changes.
 - Deleting a saved configuration from the start screen.
 - Clicking a list item to select its element in the preview.

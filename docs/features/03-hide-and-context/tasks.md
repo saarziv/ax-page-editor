@@ -5,8 +5,8 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 ## Roadmap
 
 - [x] T01 – Show the Hide from AI switch · Covers: the UI part of K1 and K3
-- [x] T02 – Hide an element from AI, and see it in the preview · Covers: K1, K2, K3, K4 (agent output checked on the marked page; the text in 06)
-- [x] T03 – Add context for AI, and see it in the preview · Covers: K5, K6, K7, K8, K9, K10, K11 (agent output checked on the marked page; the text in 06)
+- [x] T02 – Hide an element from AI, and see it in the preview · Covers: K1, K2, K3, K4 (agent output checked on the marked page; the text in 05)
+- [x] T03 – Add context for AI, and see it in the preview · Covers: K5, K6, K7, K8, K9, K10, K11 (agent output checked on the marked page; the text in 05)
 
 ---
 
@@ -45,7 +45,7 @@ The flow (`plan.md` → How hiding works):
 
 S1 builds steps 1 and 2. S2 builds steps 3 and 4.
 
-Not in this task: the Markdown view and removing hidden parts from what the agent reads (06), and saving (04). Until then, core tests check the marked page instead.
+Not in this task: the Markdown view and removing hidden parts from what the agent reads (05), and saving (04). Until then, core tests check the marked page instead.
 
 **Implements:** `plan.md` → `targetFor(node)`, `markModificationsInTree` steps 1 and 2, Hide switch, Store: `toggleHide(target)`, and Rendering the preview.
 
@@ -109,7 +109,7 @@ The flow (`plan.md` → How adding context works):
 
 S1 builds steps 1 and 2. S2 builds steps 3 and 4.
 
-Not in this task: the note as Markdown text (06), saving (04).
+Not in this task: the note as Markdown text (05), saving (04).
 
 **Implements:** `plan.md` → `markModificationsInTree` step 3, Context box, Store: `setContext(target, note)`, Drawing the callout.
 

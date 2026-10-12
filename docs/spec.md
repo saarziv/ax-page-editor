@@ -66,9 +66,9 @@ Implications:
 4. User hovers elements to see what they are, clicks one to select it.
 5. The inspector shows the element and its controls. User hides it, adds context, or forwards it (links only).
 6. The change appears in the preview immediately. User repeats across the page.
-7. User switches to the **Markdown** view at any time to see exactly what an agent will read.
-8. User reviews all changes in the changes list and removes any they don't want.
-9. User saves. Reopening the URL later restores everything.
+7. User reviews all changes in the changes list and removes any they don't want.
+8. User saves. Reopening the URL later restores everything.
+9. User clicks **View as agent** to open, in a new tab, exactly what an agent will read.
 10. A downstream consumer (Agent View) can now serve the modified page to agents.
 
 ---
@@ -93,13 +93,13 @@ The two in-place modifications. **Hide from AI** removes an element and everythi
 
 A Save button stores the page's configuration; saving again replaces it. One list shows every modification on the page, where each can be removed. The start screen lists saved pages, and opening a page restores its configuration. A modification whose element can no longer be found with confidence is never applied to a different element; it's flagged for the user instead.
 
-### 6.5 Forward a link
+### 6.5 Agent View
 
-For a selected link, the server fetches the page it points to and inserts its main content right after the link, so an agent gets the answer instead of a pointer. Forwarding is one level deep, always fetched live, and bounded by per-link and per-page size limits so forwarded content can't drown the page.
+A public endpoint returns the **live** page with its saved configuration applied, as Markdown: exactly what an agent should receive. It's the downstream consumer, proving the configuration works without the editor. A **View as agent** button in the editor opens it in a new tab.
 
-### 6.6 Agent View
+### 6.6 Forward a link
 
-A public endpoint that returns the **live** page with its saved configuration applied, as Markdown or semantic HTML: exactly what an agent should receive. It's the downstream consumer, proving the configuration works without the editor, and it reports any modification it couldn't apply.
+For a selected link, the server fetches the page it points to and inserts its main content right after the link, so an agent gets the answer instead of a pointer. Forwarding is one level deep, always fetched live, and capped in size per link so one long page can't drown the main content.
 
 ---
 
@@ -211,7 +211,7 @@ The reasoning behind each product decision, with the alternatives rejected, live
 - **Page summary:** a page-level context note placed at the top of the output.
 - **Multi-select:** apply one modification to several elements at once.
 - **Structured data (JSON-LD)** for exact facts like prices and plans.
-- **Agent detection and serving** in production (described in the Agent View feature spec).
+- **Agent detection and serving** in production (described in `spec-decisions.md` D14).
 - **More robust targeting** that survives larger page redesigns.
-- **Linking Markdown lines to elements:** click a line in the Markdown view to select its element.
+- **Semantic HTML from Agent View**, and a report of skipped modifications in its response.
 - Undo/redo history, mobile layout, accounts and teams, publishing workflow, rendering JavaScript-built pages.

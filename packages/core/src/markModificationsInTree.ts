@@ -18,7 +18,7 @@ type NotePlacement = { anchorId: string; position: 'firstInside' | 'after'; name
 
 /**
  * Applies every modification once and returns the marked page plus a status per modification (global plan §3.4).
- * Built so far: step 1 (resolve), step 2 (hide) and step 3 (context). Forward comes with 05.
+ * Built so far: step 1 (resolve), step 2 (hide) and step 3 (context). Forward comes with 06.
  */
 export function markModificationsInTree(root: PageNode, modifications: Modification[]): Marked {
   const status: Marked['status'] = {};

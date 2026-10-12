@@ -9,9 +9,9 @@ Why the spec is the way it is. Each entry: the decision, why, and what was rejec
 - **Why:** That's what agents see. A JavaScript-built page that comes back empty is a real finding worth showing the publisher, not hiding.
 - **Rejected:** Headless browser rendering. Inaccurate to agents and heavier.
 
-### D2. Preview = clean semantic page with the editor's own styling, plus a Markdown view of the literal output
+### D2. Preview = clean semantic page with the editor's own styling; the literal output opens in Agent View
 
-The preview is where the publisher works. The **Page | Markdown** toggle shows the exact Markdown an agent receives (D5). Both draw the same clean tree with the same `clean` and `markModificationsInTree`, so they can differ in looks but never in content.
+The preview is where the publisher works. The **View as agent** button opens Agent View in a new tab, showing the exact Markdown an agent receives for the saved configuration (D5). Both use the same `clean` and `markModificationsInTree`, so they can differ in looks but never in content.
 
 - **Why a clean page, not the site's design:**
   - The assignment asks for the preview "as it would be served to an agent after modification", and agents don't see CSS.
@@ -24,9 +24,11 @@ The preview is where the publisher works. The **Page | Markdown** toggle shows t
   - Notes, forwards and hidden parts need visible markers where they sit. In Markdown they'd be just more text.
   - Publishers aren't developers (D3). A table and an image are easier to scan than `| Plan | Price |` and `![Customer growth](…)`.
 - **Why still show the Markdown:** it's what the agent actually reads, so the publisher can check the literal result, copy it, and compare it with other tools.
+- **Why a new tab on Agent View, not a Markdown view inside the editor:** the publisher sees the real output from the real endpoint, the way an agent gets it, and there's no second view to build. The cost: it shows only saved changes, so the button is disabled until the publisher saves.
 - **Rejected:**
   - The original page in a frame with its CSS. It shows the human page, not the agent one, and modifications break layouts.
   - Markdown as the only view. It's the true output, but a poor surface for selecting, undoing and seeing modifications.
+  - A Preview | Markdown toggle in the editor. It shows unsaved edits, but it's a second view to build and keep equal to Agent View.
 
 
 
@@ -38,7 +40,7 @@ The preview is where the publisher works. The **Page | Markdown** toggle shows t
 
 ### D4. Hidden elements are ghosted in the preview but removed in the output
 
-- **Why:** Users must be able to click a hidden element to undo it. Agents must not see it at all. The preview is a readable, near-agent view with every modification visible; the **Page | Markdown** toggle shows the literal agent output, so no extra "agent-exact" preview switch is needed.
+- **Why:** Users must be able to click a hidden element to undo it. Agents must not see it at all. The preview is a readable, near-agent view with every modification visible; **View as agent** shows the literal agent output, so no extra "agent-exact" preview switch is needed.
 - **Rejected:**
   - Removing hidden elements from the preview. They couldn't be undone.
   - CSS hiding or `aria-hidden` in the output. Agents read the source, so it's still visible.
@@ -97,13 +99,13 @@ The preview is where the publisher works. The **Page | Markdown** toggle shows t
 
 
 
-### D10. Forwarding is one level deep, with per-link and per-page size limits
+### D10. Forwarding is one level deep, with a per-link size limit
 
 - **Why:** Every forward adds to what the agent must read. Unbounded forwarding dilutes the main content and makes cost unpredictable.
   - **Per link: 3,000 tokens.** Longer content is truncated and marked "(truncated)", so one huge page can't dominate but the agent still gets most of the answer.
-  - **Per page: 10,000 tokens.** Filled in page order. Forwards that don't fit are not added: they stay plain links and are flagged as over budget, in the editor and in Agent View's report.
-  - Page order makes the result predictable: the publisher can see which forwards win.
-- **Rejected:** Recursive forwarding, and unlimited size.
+- **Rejected:**
+  - Recursive forwarding, and unlimited size.
+  - A page-wide budget (e.g. 10,000 tokens, filled in page order). It needs an extra status, ordering rules and budget UI, for the rare page with many long forwards. The per-link cap already bounds the common case.
 
 
 

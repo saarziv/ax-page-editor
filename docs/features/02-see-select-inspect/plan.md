@@ -30,7 +30,7 @@ Two small, pure tree helpers in `packages/core/src/tree.ts`. They're in core bec
 
 Example: in `<p data-node-id="…paragraph:3">Read our <span data-node-id="…link:1">terms of service</span> …</p>`, a click on "terms" finds the span first and selects the link. A click on "Read our" finds the paragraph.
 
-**What's selectable:** every kind that `clean` produces except `text` and `page`. A `text` node is a piece of a sentence, so a click on it selects its parent, which is what a publisher means. `page` is the whole document. `annotation` and `forwarded` come with 03 and 05.
+**What's selectable:** every kind that `clean` produces except `text` and `page`. A `text` node is a piece of a sentence, so a click on it selects its parent, which is what a publisher means. `page` is the whole document. `annotation` and `forwarded` come with 03 and 06.
 
 **The highlight:** a selected node gets `data-selected="true"`, styled as a 2px primary-colored `outline` with an offset and a very light tint. An outline, unlike a border, takes no space, so the page doesn't shift when the selection moves. The same attribute is what the e2e test checks. Selectable nodes get `cursor-pointer`.
 
@@ -48,7 +48,7 @@ Example: in `<p data-node-id="…paragraph:3">Read our <span data-node-id="…li
   - **Text:** `nodeText(node)`. Text over about 200 characters is clamped to four lines with a "Show more" / "Show less" toggle. For images, the description `attrs.alt`, or "No description" when missing. For fields, `attrs.label`.
   - for links, the destination `attrs.href`, as plain text (not a link, so nothing leaves the editor)
   - "Changes on this element": the element's modifications, see Modification markers
-  - a divider, then the three modification buttons, still disabled. 03 and 05 make them work.
+  - a divider, then the three modification buttons, still disabled. 03 and 06 make them work.
 
 **Plain-language labels** live in `apps/web/src/editor/nodeLabels.ts` as a `Record<NodeKind, string>` ("Link", "Heading", "Image", "List item", "Form field", "Navigation", …). They're words for the screen, so they stay in the web app. Typing the map as a `Record` over every kind means TypeScript flags a missing label when a kind is added. The later hover task reuses the same map.
 

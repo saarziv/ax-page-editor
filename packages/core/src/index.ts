@@ -1,6 +1,8 @@
 export const CORE_VERSION = '0.0.0';
 export { clean } from './clean/index.js';
 export { markModificationsInTree, type Marked } from './markModificationsInTree.js';
+export { prune } from './prune.js';
+export { renderMarkdown } from './renderMarkdown.js';
 export { matchesTarget, resolve, targetFor, targetSnippet } from './target.js';
 export { findNodePath, isContainerKind, nodeText } from './tree.js';
 export { InvalidUrlError, normalizeUrl } from './url.js';

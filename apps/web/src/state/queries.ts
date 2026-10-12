@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { configSchema, pageTreeSchema, savedPageSummarySchema, type Config, type PageTree, type SaveConfigRequest, type SavedPageSummary } from '@ax/core';
 
-const API_URL = 'http://localhost:3001/api';
+export const API_ORIGIN = 'http://localhost:3001';
+const API_URL = `${API_ORIGIN}/api`;
 
 async function fetchHealth(): Promise<unknown> {
   const response = await fetch(`${API_URL}/health`);

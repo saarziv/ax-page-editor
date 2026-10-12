@@ -2,7 +2,7 @@
 
 The two in-place modifications: remove an element from what agents read, or explain it to them. Part of AX Editor: see the global `spec.md` for the problem, users, core concepts, agent output format and trust & safety rules.
 
-Both are applied from the inspector on the selected element (02), and both show up in the preview immediately, in the same spot where the agent output has them. This feature replaces the Hide and Context stubs with real controls and removes the demo page's mock modifications from 02. Forward stays a stub until 05.
+Both are applied from the inspector on the selected element (02), and both show up in the preview immediately, in the same spot where the agent output has them. This feature replaces the Hide and Context stubs with real controls and removes the demo page's mock modifications from 02. Forward stays a stub until 06.
 
 All ACs are **Key** (must ship). Error handling is basic: no control fails silently or crashes the editor.
 
@@ -115,7 +115,7 @@ Semantic HTML gets the same note in the same position, as a labeled block of rea
 
 ## Out of scope
 
-- **Markdown view** (Page | Markdown toggle) and turning the output into Markdown text: 06. Until then, the agent output ACs are checked on the editor's marked page, which holds every decision about the output: hidden parts flagged, notes in place, note text unchanged. 06 checks that hidden parts are actually gone from the text.
+- Turning the output into Markdown text, and viewing it (View as agent): 05. Until then, the agent output ACs are checked on the editor's marked page, which holds every decision about the output: hidden parts flagged, notes in place, note text unchanged. 05 checks that hidden parts are actually gone from the text.
 - Saving, and the full changes list with statuses and remove buttons: 04.
 - **Inside a hidden element:** the "Hidden because a parent is hidden from AI" message, and showing context or forward inside a hidden element as inactive (D18): later.
 - **Page summary:** a page-level note at the top of the output.

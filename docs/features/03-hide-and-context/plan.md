@@ -9,7 +9,7 @@ How we build the Hide & add context spec. Shared architecture, core contracts an
 - The modification flow (global plan §6.1).
 - From 02: `resolve` and `targetSnippet` (§3.3), the `modificationsDraft` list in the store, `useNodeModifications`, and the overlay that draws boxes over elements (02 plan → Modification markers).
 - First built here: `markModificationsInTree` steps 1, 2 and 3 (§3.4), `useMarkedPage()` (§5.1), and the `toggleHide` and `setContext` store actions (§5.1).
-- Not built here: `prune`, which removes hidden parts from what the agent reads. It comes with 06.
+- Not built here: `prune`, which removes hidden parts from what the agent reads. It comes with 05.
 
 ## How hiding works
 
@@ -51,7 +51,7 @@ It lives in core, next to `resolve`. That way, the code that creates a target an
 
 ### `markModificationsInTree`, steps 1 and 2
 
-`markModificationsInTree(root, modifications)` takes the page and the list of modifications. It returns the marked page, plus a status for each modification (contract in global plan §3.4). This feature builds its first three steps. 05 adds step 4 and the `forwards` argument.
+`markModificationsInTree(root, modifications)` takes the page and the list of modifications. It returns the marked page, plus a status for each modification (contract in global plan §3.4). This feature builds its first three steps. 06 adds step 4 and the `forwards` argument.
 
 1. **Find each element.** `markModificationsInTree` looks up each modification's element with `resolve`. If the element can't be found, the modification gets the status `unmatched`, and nothing is applied. Otherwise its status is `active`.
 2. **Hide.** For each hide that was found, `markModificationsInTree` sets `hidden: true` on that element's node. The node and everything inside it stay in the tree. This lets the preview still draw it, so the publisher can click it and turn Hide off. A modification whose element sits inside a hidden element gets the status `inactive` and isn't applied, because the agent never reads that part. Example: with the section hidden, a hide on the image inside it is `inactive`, and only the section is flagged.
@@ -78,7 +78,7 @@ Example: a note on "terms" in `paragraph[text "Read our ", link "terms", text " 
 
 **The note is never parsed** (K9). It's stored as the annotation's `text`, and every renderer escapes it.
 
-**How we check what the agent gets, before 06:** there's no Markdown view yet, so K2 and K4 are checked on the marked page (spec, Out of scope).
+**How we check what the agent gets, before 05:** there's no Markdown output yet, so K2 and K4 are checked on the marked page (spec, Out of scope).
 - K2: the hidden flag is set on the element itself, so everything inside it (text, links, images) is inside the hidden part.
 - K4: with no modifications, `markModificationsInTree` returns a page equal to the original. So turning Hide off leaves nothing behind.
 - K6–K8: the annotation sits at the right spot in the marked page, which is the order `renderMarkdown` will read it in.
@@ -91,7 +91,7 @@ In the inspector, the disabled "Hide from AI" button becomes a row with the labe
 
 The switch's state is never stored. It's on when the selected element has a hide in `modificationsDraft`. The inspector already knows this from `useNodeModifications` (02). So when the publisher clicks an element that's already hidden, the switch shows on (K3) without extra code.
 
-"Forward this link" stays a disabled button until 05.
+"Forward this link" stays a disabled button until 06.
 
 ### Store: `toggleHide(target)`
 

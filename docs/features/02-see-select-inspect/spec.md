@@ -2,7 +2,7 @@
 
 Click an element in the preview to select it, and see what it is in the inspector. Part of AX Editor: see the global `spec.md` for the problem, users, core concepts and trust & safety rules.
 
-Selection is the entry point to every modification (03, 05), so it must be obvious to a non-developer which element is selected and what it is.
+Selection is the entry point to every modification (03, 06), so it must be obvious to a non-developer which element is selected and what it is.
 
 ACs are in priority order: **Key** first (must ship), then **Secondary** (must ship, after the key ones), then **Bonus** (if time allows). Error handling is basic: nothing selectable fails silently or crashes the editor.
 
@@ -52,7 +52,7 @@ The two-panel editor from 01 stays: preview on the left, inspector on the right.
 └────────────────────────────────────────┴─────────────────────────┘
 ```
 
-The disabled Hide / Context / Forward stubs from 01 show only when an element is selected, below its details. 03 and 05 make them work.
+The disabled Hide / Context / Forward stubs from 01 show only when an element is selected, below its details. 03 and 06 make them work.
 
 ## 2. Select an element (Key)
 
@@ -114,7 +114,7 @@ The disabled Hide / Context / Forward stubs from 01 show only when an element is
 **Behavior**
 
 - A modified element gets a subtle marker, such as a soft outline or tint, plus a small badge naming the change: "Hidden from AI", "Context", "Forwarded". The marker looks different from the hover and selection styles, and an element can be both modified and selected.
-- Keep it simple: no ghosting, no inline notes. 03 and 05 refine how each type looks.
+- Keep it simple: no ghosting, no inline notes. 03 and 06 refine how each type looks.
 - **Mock for testing:** until 03 adds real controls, the demo page opens with a few sample modifications (e.g. the cookie banner hidden, context on the chart image). Real URLs open with none. The mock goes away when 03 lands.
 
 **Bonus acceptance criteria**
@@ -125,7 +125,7 @@ The disabled Hide / Context / Forward stubs from 01 show only when an element is
 
 ## Out of scope
 
-- **Markdown view** (Page | Markdown toggle, token count, copy/download): moved to a later feature.
+- **Seeing the agent's Markdown** (View as agent): 05.
 - **Select parent button:** the breadcrumb covers it.
 - Landmark region labels and the "Open original" link in the preview.
 - Multi-select. Linking Markdown lines to elements.
