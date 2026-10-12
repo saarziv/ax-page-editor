@@ -35,7 +35,7 @@ Start screen                              Editor
 **The editor shell**
 
 - **Top bar:** a URL field and an Open button, so another page can be opened at any time.
-- **Left panel:** the clean tree rendered as a basic readable page (headings, paragraphs, lists, links, images, tables). Links don't navigate. The full preview (reading layout, landmark labels, modification markers) is built in 02 See & select.
+- **Left panel:** the clean tree rendered as a basic readable page (headings, paragraphs, lists, links, images, tables). Links don't navigate. The full preview (reading layout, landmark labels, modification markers) is built in 02 See, select & inspect.
 - **Right panel:** the modification controls (Hide from AI, Context for AI, Forward this link), shown as disabled stubs. 02 wires them to the selected element, and 03 and 04 make them work.
 
 **Demo page**
@@ -66,6 +66,6 @@ Start screen                              Editor
 
 ## Out of scope
 
-- Hover, selection, inspector, landmark labels and the Markdown view: 02 See & select.
+- Hover, selection and inspector: 02 See, select & inspect. Landmark labels and the Markdown view: later.
 - Restoring a saved configuration on open, and the unsaved-changes warning: 05 Save & review changes.
 - Recent pages list and the "built with JavaScript" banner: follow-ups in `tasks.md`.

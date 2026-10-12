@@ -2,7 +2,7 @@
 
 Turn a link into the content it points to, so an agent gets the answer instead of a pointer. Part of AX Editor: see the global `spec.md` for the problem, users, core concepts, agent output format, configuration format and trust & safety rules.
 
-Applied from the inspector on a selected link (see the See & select spec).
+Applied from the inspector on a selected link (see the See, select & inspect spec).
 
 ---
 

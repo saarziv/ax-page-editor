@@ -2,10 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { DEMO_URL } from '@/editor/demoMock';
 import { useEditorStore } from '@/state/store';
-
-// Served from disk by the api (samples/demo.html), so it opens without any network fetch.
-const DEMO_URL = 'sample:demo';
 
 export function StartScreen() {
   const setUrl = useEditorStore((state) => state.setUrl);

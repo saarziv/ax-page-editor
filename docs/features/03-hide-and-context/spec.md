@@ -2,7 +2,7 @@
 
 The two in-place modifications: remove an element from what agents read, or explain it to them. Part of AX Editor: see the global `spec.md` for the problem, users, core concepts, agent output format, configuration format and trust & safety rules.
 
-Both are applied from the inspector on the selected element (see the See & select spec), and both show up immediately in the preview and the Markdown view.
+Both are applied from the inspector on the selected element (see the See, select & inspect spec), and both show up immediately in the preview and the Markdown view.
 
 ---
 

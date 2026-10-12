@@ -1,16 +1,26 @@
-import { Button } from '@/components/ui/button';
+import { findNodePath } from '@ax/core';
+import { usePageTree } from '@/state/queries';
+import { useEditorStore } from '@/state/store';
+import { ElementDetails } from './ElementDetails';
+import { PageChanges } from './PageChanges';
 
-const MODIFICATION_CONTROLS = ['Hide from AI', 'Context for AI', 'Forward this link'];
+export function Inspector({ url }: { url: string }) {
+  // Same query as the preview, so the tree comes from the cache with no second request.
+  const pageTreeQuery = usePageTree(url);
+  const selectedId = useEditorStore((state) => state.selectedId);
+  const selectedPath = pageTreeQuery.data && selectedId ? findNodePath(pageTreeQuery.data.root, selectedId) : null;
+  const selectedNode = selectedPath?.at(-1);
 
-// Disabled until 02 connects the controls to the selected element.
-export function Inspector() {
   return (
-    <aside aria-label="Inspector" className="flex w-72 shrink-0 flex-col gap-2 border-l p-4">
-      {MODIFICATION_CONTROLS.map((controlName) => (
-        <Button key={controlName} variant="outline" disabled>
-          {controlName}
-        </Button>
-      ))}
+    <aside aria-label="Inspector" className="flex w-72 shrink-0 flex-col overflow-y-auto border-l p-4">
+      {selectedPath && selectedNode ? (
+        <ElementDetails key={selectedNode.id} path={selectedPath} node={selectedNode} />
+      ) : (
+        <>
+          <p className="text-sm text-muted-foreground">Click an element in the preview to inspect it.</p>
+          <PageChanges />
+        </>
+      )}
     </aside>
   );
 }

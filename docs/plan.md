@@ -87,7 +87,7 @@ type PageTree = { url: string; title: string; root: PageNode };
 ```
 
 `kind` drives everything:
-- the plain-language label (See & select)
+- the plain-language label (See, select & inspect)
 - context placement: container vs leaf (Hide & add context)
 - rendering in the preview, Markdown and HTML
 
@@ -99,7 +99,7 @@ Every consumer must clean identically, or saved selectors break (D11). So these 
 
 - Parse with htmlparser2.
 - **Drop:** `head` (after reading the title), `script`, `style`, `noscript`, `iframe`, `object`, `embed`, `svg` internals, `template`, `hr`, comments, hidden inputs, all `on*` attributes. `br` becomes a space.
-- **Map** tags to `kind` with this whitelist. Unwrap any other element (`div`, `span`, `strong`, `label`, `thead`, etc.), keeping its children. This yields "only meaningful elements" (See & select).
+- **Map** tags to `kind` with this whitelist. Unwrap any other element (`div`, `span`, `strong`, `label`, `thead`, etc.), keeping its children. This yields "only meaningful elements" (See, select & inspect).
 
 | Tags | kind | attrs |
 |---|---|---|
@@ -129,6 +129,9 @@ Every consumer must clean identically, or saved selectors break (D11). So these 
 - **Deterministic:** the same HTML always produces the same tree. Required for targeting.
 
 ### 3.3 Selectors & targets
+
+`resolve` and the target snippet are first built in 02.
+
 - `selector` = path in the **clean tree**: `kind:nth` steps, e.g. `main:1>section:2>paragraph:3` (format defined in the global spec, Configuration). It's computed over the clean tree, not the raw DOM, so wrapper churn (`div` soup) on the live site doesn't break it.
 - `target.text` = first 60 chars of the node's normalized text (or `alt` for images).
 - `resolve(tree, target) → node | null`: find by selector, then require that the snippet still matches. Otherwise return `null` (unmatched, see Save & review changes). Never fall back to a guess.
@@ -170,6 +173,8 @@ Both first built in 02. The formats for `annotation` and `forwarded` nodes are d
 - **zod schemas** for `Config` and `Modification`. They're the single source of the TS types and are used by both api validation and web.
 
 ### 3.7 Config type
+
+`Target` and `Modification` are first built in 02 (for the demo mock), `Config` in 05.
 
 ```ts
 type Target = { selector: string; text: string };

@@ -55,3 +55,27 @@ export type PageTree = z.infer<typeof pageTreeSchema>;
 export const fetchErrorCodeSchema = z.enum(['INVALID_URL', 'BLOCKED', 'NOT_HTML', 'TOO_LARGE', 'TIMEOUT', 'UNREACHABLE']);
 
 export type FetchErrorCode = z.infer<typeof fetchErrorCodeSchema>;
+
+// A saved pointer to one element: its selector in the clean tree plus a text snippet that must still match (global plan §3.3).
+export const targetSchema = z.object({
+  selector: z.string(),
+  text: z.string().max(60),
+});
+
+export type Target = z.infer<typeof targetSchema>;
+
+const absoluteHttpUrlSchema = z.string().refine(isAbsoluteHttpUrl, { message: 'Must be an absolute http(s) URL' });
+
+function isAbsoluteHttpUrl(value: string): boolean {
+  if (!URL.canParse(value)) return false;
+  const { protocol } = new URL(value);
+  return protocol === 'http:' || protocol === 'https:';
+}
+
+export const modificationSchema = z.discriminatedUnion('type', [
+  z.object({ id: z.string(), type: z.literal('hide'), target: targetSchema }),
+  z.object({ id: z.string(), type: z.literal('context'), target: targetSchema, note: z.string().min(1).max(500) }),
+  z.object({ id: z.string(), type: z.literal('forward'), target: targetSchema, href: absoluteHttpUrlSchema }),
+]);
+
+export type Modification = z.infer<typeof modificationSchema>;

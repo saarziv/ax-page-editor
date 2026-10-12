@@ -122,3 +122,12 @@
     @apply bg-background text-foreground;
     }
 }
+/* Preview selection. An outline takes no space, so the page doesn't shift when the selection moves. */
+[data-node-id] {
+    cursor: pointer;
+}
+[data-selected="true"] {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    background-color: color-mix(in oklab, var(--color-primary) 5%, transparent);
+}
