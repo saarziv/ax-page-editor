@@ -36,7 +36,7 @@ export function StartScreen() {
             <form onSubmit={handleSubmit} className="flex gap-2">
               <Input
                 aria-label="Page URL"
-                placeholder="https://example.com/page"
+                placeholder="Paste a page URL…"
                 className="h-10 bg-background shadow-xs"
                 value={typedUrl}
                 onChange={(event) => setTypedUrl(event.target.value)}

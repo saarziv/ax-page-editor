@@ -12,7 +12,7 @@ export function Inspector({ url }: { url: string }) {
   const selectedNode = selectedPath?.at(-1);
 
   return (
-    <aside aria-label="Inspector" className="flex w-72 shrink-0 flex-col overflow-y-auto border-l bg-sidebar p-4">
+    <aside aria-label="Inspector" className="flex w-88 shrink-0 flex-col overflow-y-auto border-l bg-sidebar p-4">
       {pageTreeQuery.data && selectedPath && selectedNode ? (
         <ElementDetails key={selectedNode.id} path={selectedPath} node={selectedNode} pageUrl={pageTreeQuery.data.url} />
       ) : (
