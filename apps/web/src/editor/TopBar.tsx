@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useEditorStore } from '@/state/store';
+import { SaveButton } from './SaveButton';
 
 export function TopBar({ url }: { url: string }) {
   const setUrl = useEditorStore((state) => state.setUrl);
@@ -14,9 +15,12 @@ export function TopBar({ url }: { url: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 border-b p-3">
-      <Input aria-label="Page URL" value={typedUrl} onChange={(event) => setTypedUrl(event.target.value)} />
-      <Button type="submit">Open</Button>
-    </form>
+    <div className="flex items-center gap-4 border-b p-3">
+      <form onSubmit={handleSubmit} className="flex flex-1 gap-2">
+        <Input aria-label="Page URL" value={typedUrl} onChange={(event) => setTypedUrl(event.target.value)} />
+        <Button type="submit">Open</Button>
+      </form>
+      <SaveButton url={url} />
+    </div>
   );
 }
