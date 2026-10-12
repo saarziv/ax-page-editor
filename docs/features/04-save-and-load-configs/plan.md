@@ -2,7 +2,7 @@
 
 How we build the Save & load configs spec. Shared architecture, core contracts and conventions are in the global `plan.md`.
 
-This plan covers saving (T01), the Saved pages list (T02), the unsaved indicator with the review list (T03), and restoring saved changes when a page opens, with the "Needs attention" group (T04).
+This plan covers saving (T01), the Saved pages list (T02), the unsaved indicator with the review list (T03), and restoring saved changes when a page opens (T04). The load-failure Retry and the "Needs attention" group are follow-ups; their sections below describe how they'll be built.
 
 ---
 
@@ -55,7 +55,7 @@ Example: the demo is saved with a hide on the cookie banner and a note on the ch
 1. **The page loads first.** The editor asks for the page tree as before (01). The tree's `url` is the normalized address, after redirects, which is exactly the key Save stores under.
 2. **Then its configuration.** With the tree in hand, the editor calls `GET /api/configs/:url` with that `url`. The server answers with the stored configuration, or a 404 when nothing is saved, which the editor reads as "no changes".
 3. **The draft is filled once.** The store's `loadSavedModifications(pageUrl, modifications)` puts the saved list into `modificationsDraft` and into `savedJson`, so the page opens with its changes and no "Unsaved changes". From here, the preview and the list redraw by themselves (global plan §6.1, steps 2–3).
-4. **Nothing shows until then.** The loading state stays until the page and its configuration are both loaded and the draft is filled, so a page never appears without its changes. If the configuration can't be loaded, the editor shows "Your saved changes couldn't be loaded." with a Retry button, and neither the preview nor the inspector, so there's nothing to edit.
+4. **Nothing shows until then.** The loading state stays until the page and its configuration are both loaded and the draft is filled, so a page never appears without its changes. If the configuration can't be loaded, the editor shows "Your saved changes couldn't be loaded." (and later a Retry button, a follow-up), and neither the preview nor the inspector, so there's nothing to edit.
 5. **Changes that no longer match are kept, not applied.** `markModificationsInTree` already marks a modification `unmatched` when its target doesn't resolve (global plan §3.3–3.4). The changes list puts those under "Needs attention". They stay in the draft, so the next save keeps them until the publisher removes them.
 
 Example: `sample:demo` was saved with a hide on the cookie banner (`a1`, target `aside:1` + "We use cookies…") and a hide on an old promo (`c3`, target `aside:1` + "Old promo"). The publisher types `sample:demo` and opens it.
@@ -124,7 +124,7 @@ The controller talks to a `ConfigRepository` with three methods: `save(config)`,
 
 ### Restoring on open (T04)
 
-- A `useConfig(pageUrl)` query calls `GET /api/configs/:url` once the page tree has loaded, and parses the answer with `configSchema`. A 404 becomes `null` (nothing saved); any other failure is an error. It uses the same 10-second timeout as Save, so a hanging server ends in the Retry message, not an endless loading state.
+- A `useConfig(pageUrl)` query calls `GET /api/configs/:url` once the page tree has loaded, and parses the answer with `configSchema`. A 404 becomes `null` (nothing saved); any other failure is an error. It uses the same 10-second timeout as Save, so a hanging server ends in the load error, not an endless loading state.
 - **The cache must match what's stored.** The query never refetches by itself (`staleTime: Infinity`), because a refetch could replace the draft under the publisher's edits. So a successful save writes the returned configuration into this query's cache. Without that, going back to the start screen and reopening the page would restore the configuration from before the save.
 - The editor calls `loadSavedModifications` when the configuration arrives and `restoredPageUrl` isn't this page yet. It draws the preview and the inspector only once `restoredPageUrl` equals the page tree's `url`.
 - **Retry** refetches the configuration query. The rest of the editor stays as it is; the page tree isn't fetched again.

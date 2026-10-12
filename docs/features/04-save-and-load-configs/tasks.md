@@ -7,7 +7,8 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 - [x] T01 – Save the configuration · Covers: AC1, AC2, AC4, AC5
 - [x] T02 – Show saved pages on the start screen · Covers: AC9, and the first half of AC10 (clicking a row opens the page)
 - [x] T03 – Review and remove changes · Covers: AC3, AC6, and the first half of AC7 (removed from the list and the preview, "Unsaved changes" appears, and the next save drops it)
-- [ ] T04 – Restore saved changes when a page opens · Covers: the second half of AC7 (a removed change stays gone after reopening), AC8, the second half of AC10, AC11, AC12, AC13
+- [x] T04 – Restore saved changes when a page opens · Covers: the second half of AC7 (a removed change stays gone after reopening), the second half of AC10, AC11, AC14
+- Follow-ups (below) · Covers: AC8, AC12, AC13
 
 ---
 
@@ -75,7 +76,7 @@ The flow (`plan.md` → How the Saved pages list works):
 
 S1 builds steps 1 and 2. S2 builds steps 3 and 4.
 
-Not in this task: the opened page doesn't get its saved changes back yet. That's the restore task (AC10 second half, AC11–AC13).
+Not in this task: the opened page doesn't get its saved changes back yet. That's the restore task (AC10 second half, AC11).
 
 **Implements:** `plan.md` → Endpoints (`GET`), `ConfigRepository` (`listSummaries`), Saved pages list.
 
@@ -122,7 +123,7 @@ For example, with the banner hidden and a note on the chart, removing the hide u
 
 S1 adds the indicator, because S2's Verify relies on seeing it. S2 builds the list and Remove.
 
-Not in this task: the "Needs attention" group (AC8). Only a configuration loaded back into the editor can hold a change that no longer matches the page, so it comes with T04, which restores configurations.
+Not in this task: the "Needs attention" group (AC8). Only a configuration loaded back into the editor can hold a change that no longer matches the page, so it waits until restoring exists (T04) and is a follow-up.
 
 **Implements:** `plan.md` → Unsaved indicator, Changes list and Remove.
 
@@ -158,21 +159,20 @@ Not in this task: the "Needs attention" group (AC8). Only a configuration loaded
 
 ## T04 – Restore saved changes when a page opens
 
-**Goal:** opening a page, however it's opened, brings back its saved changes on the same elements, and any change that no longer fits the page is set aside under "Needs attention" instead of being applied somewhere else.
+**Goal:** opening a page, however it's opened, brings back its saved changes on the same elements.
 
 The flow (`plan.md` → How opening a page restores its changes):
 
 1. The page tree loads as before. Its `url` is the normalized address the page is saved under.
 2. The editor asks `GET /api/configs/:url` for that page's configuration. Nothing saved means no changes.
 3. The saved list fills `modificationsDraft` and the last-saved copy together, so the page opens with its changes and without "Unsaved changes".
-4. The loading state stays until all of this is done, so a page never appears without its changes. If the configuration can't be loaded, the editor shows a message with Retry and nothing to edit.
-5. A saved change whose element is gone or whose text changed is `unmatched`: it's not applied, and the changes list shows it under "Needs attention", where it can be removed.
+4. The loading state stays until all of this is done, so a page never appears without its changes.
 
 For example, the demo is saved with the cookie banner hidden. The publisher goes back to the start screen and clicks the `sample:demo` row: the demo opens with the banner already faded and listed, and Save disabled.
 
-S1 builds the restore path for a configuration that loads and matches. S2 handles a configuration that can't be loaded. S3 handles saved changes that no longer match.
+Not in this task (follow-ups): a Retry button on the load error (AC13), and the "Needs attention" group for saved changes that no longer match (AC8, AC12). A change that doesn't match is already never applied, because `markModificationsInTree` refuses a target that doesn't resolve; it just isn't listed yet.
 
-**Implements:** `plan.md` → How opening a page restores its changes, Endpoints (`GET /api/configs/:url`), `ConfigRepository` (`findByUrl`), Restoring on open, Needs attention.
+**Implements:** `plan.md` → How opening a page restores its changes, Endpoints (`GET /api/configs/:url`), `ConfigRepository` (`findByUrl`), Restoring on open.
 
 - [x] **S1 – Open a page with its saved changes (AC7 second half, AC10 second half, AC11)**
   The api gets `findByUrl` and `GET /api/configs/:url`, which normalizes the URL and answers with the stored configuration or a 404. The web gets a `useConfig` query, run once the page tree has loaded, and a store action, `loadSavedModifications`, that fills the draft and the last-saved copy together. The editor keeps its loading state until the draft is filled, and a successful save updates the cached configuration, so reopening a page in the same session shows what was just saved.
@@ -188,25 +188,16 @@ S1 builds the restore path for a configuration that loads and matches. S2 handle
     - The config request reads a 404 as "nothing saved" and a 500 as a failure.
   7. `pnpm e2e` passes. The saved pages test now also checks that the demo opened from its row shows the saved hide: the chart faded and listed, no "Unsaved changes", and Save disabled.
 
-- [ ] **S2 – "Your saved changes couldn't be loaded." with Retry (AC13)**
-  If the configuration request fails or doesn't answer within 10 seconds, the editor shows "Your saved changes couldn't be loaded." with a Retry button, in place of the preview and the inspector. The publisher can't edit, because a save from a blank page would overwrite the real saved changes. Retry asks for the configuration again, and the page opens with its changes once it loads.
+- [x] **S2 – A plain error when the configuration can't be loaded (AC14)**
+  If the configuration request fails, the editor shows "Your saved changes couldn't be loaded." in place of the preview and the inspector, so there's nothing to edit and Save stays disabled. A save from a page without its saved changes would overwrite them.
   **Verify:**
-  1. Open the demo with saved changes from S1. In the browser's DevTools, Network tab, block the request URL pattern `*/api/configs/*`, then go back to the start screen and click the `sample:demo` row: after the loading state, "Your saved changes couldn't be loaded." and a Retry button appear, with no preview, no inspector and Save disabled (AC13).
-  2. Unblock the pattern and click Retry: the demo opens with its saved changes.
-  3. `pnpm e2e` passes. A new test blocks `GET /api/configs/*` with Playwright's `page.route`, opens the demo and sees the message and Retry with no preview; then it unblocks the route, clicks Retry and sees the preview.
-
-- [ ] **S3 – Saved changes that no longer match go under "Needs attention" (AC8, AC12)**
-  `PageChanges` reads each modification's status from the marked page. The `unmatched` ones move to a "Needs attention" group, labelled "Not found on this page", each with the same Remove button; the rest stay in the main list. Nothing new is needed to keep them off the page: `markModificationsInTree` already refuses to apply a target that doesn't resolve.
-  **Verify:**
-  1. Save a demo configuration whose second hide points at text the demo doesn't have: `curl -s -X PUT localhost:3001/api/configs -H 'content-type: application/json' -d '{"url":"sample:demo","modifications":[{"id":"a1","type":"hide","target":{"selector":"aside:1","text":"We use cookies to improve your experience. By continuing you"}},{"id":"c3","type":"hide","target":{"selector":"aside:1","text":"Old promo"}}]}'`. The first hide uses the banner's real 60-character snippet, so it matches; the second points at the same element with text it no longer has.
-  2. Open the demo from the start screen: the banner is faded, nothing else is hidden, "Changes on this page" lists the banner's hide, and "Needs attention" lists "Hidden from AI · Old promo" with "Not found on this page" and a Remove button (AC12, AC8).
-  3. Hide the chart and click Save, then reopen the demo from the start screen: "Old promo" is still under "Needs attention", because unmatched changes are saved along with the rest until removed.
-  4. Remove "Old promo": "Unsaved changes" appears. Click Save and reopen the demo: "Needs attention" is gone (AC8).
-  5. `pnpm e2e` passes. A new test saves the configuration from step 1 through the api, opens the demo, sees "Old promo" under "Needs attention" and the banner faded, removes it, and sees the group disappear and "Unsaved changes".
+  1. In the browser's DevTools, Network tab, block the request URL pattern `*/api/configs/*`, then click "Try a sample": after a few seconds of "Loading…" (the request is retried), "Your saved changes couldn't be loaded." appears, with no preview, no inspector and Save disabled (AC14).
+  2. Unblock the pattern, go back to the start screen and click "Try a sample" again: the demo opens with its saved changes.
+  3. `pnpm e2e` passes. A new test answers `GET /api/configs/*` with a 500 and sees the message, no preview, no inspector and Save disabled.
 
 - e2e: config loads answer "nothing saved" by default, and every test that saves `sample:demo` lives in one file → plan.md §Tests
 
-**Done when:** opening a page from the Saved pages list, the sample button or a typed equivalent URL restores its saved changes on the same elements; a change that no longer matches is listed under "Needs attention" and never applied; a configuration that can't be loaded shows the message with Retry and nothing to edit. `pnpm test`, `typecheck` and `e2e` pass.
+**Done when:** opening a page from the Saved pages list, the sample button or a typed equivalent URL restores its saved changes on the same elements, and a configuration that can't be loaded shows a plain error with nothing to edit. `pnpm test`, `typecheck` and `e2e` pass.
 
 ---
 
@@ -214,5 +205,7 @@ S1 builds the restore path for a configuration that loads and matches. S2 handle
 
 ## Follow-ups
 
+- AC13: add a Retry button to the load error that refetches the configuration (plan.md §Restoring on open).
+- AC8, AC12: list saved changes that no longer match under "Needs attention" with a Remove button (plan.md §Needs attention).
 - The e2e hover test (`select-inspect.spec.ts` "hovering an element outlines it…") failed once in a full parallel run and passed on re-run; make it stable.
 

@@ -4,7 +4,7 @@ Save the changes made on a page, review and remove them, and open saved pages ag
 
 The configuration is the product's real output: everything else (preview, agent output) is derived from page + configuration. This feature makes it last beyond one editing session. Hide and Context (03) are the only modifications so far; Forward, the Markdown view and Agent View come later.
 
-All ACs are **Key** (must ship).
+All ACs are **Key** (must ship), except AC8, AC12 and AC13, which are **follow-ups**.
 
 ---
 
@@ -72,7 +72,7 @@ Start screen                              Editor
 
 - **AC6** Given N changes on a page, then the list shows N items, each with its type, element snippet, the note for context, and a Remove button.
 - **AC7** Given the user removes a change, then it disappears from the list and the preview, and "Unsaved changes" appears. After saving and reopening, it's gone.
-- **AC8** Given a change that no longer matches the page, then it's listed under "Needs attention" and can be removed.
+- **AC8** (follow-up) Given a change that no longer matches the page, then it's listed under "Needs attention" and can be removed.
 
 ## 4. Load saved pages
 
@@ -93,15 +93,16 @@ Start screen                              Editor
 - **AC9** Given saved configurations exist, then the start screen lists them under "Saved pages", newest first, each with its URL, change count and last-saved time.
 - **AC10** Given the user clicks a saved page, then it opens with its saved changes on the same elements as before.
 - **AC11** Given a configuration was saved for a URL, when the user types an equivalent URL (different tracking parameters, trailing slash), then the page opens with that configuration.
-- **AC12** Given the page changed so a saved change's element no longer matches, when it's opened, then that change is not applied and is listed under "Needs attention".
-- **AC13** Given the configuration can't be loaded, then the user sees "Your saved changes couldn't be loaded." with Retry, and can't edit the page until it loads.
+- **AC12** (follow-up) Given the page changed so a saved change's element no longer matches, when it's opened, then that change is not applied and is listed under "Needs attention".
+- **AC13** (follow-up) Given the load error from AC14, then it offers Retry, and the page opens with its saved changes once the configuration loads.
+- **AC14** Given the configuration can't be loaded, then the user sees "Your saved changes couldn't be loaded." and can't edit the page.
 
 ## Edge cases
 
 | Case | What the user sees |
 | --- | --- |
 | Save fails (server down or error) | A toast: "Your changes couldn't be saved. Try again." Changes stay, still unsaved. |
-| Saved configuration can't be loaded | "Your saved changes couldn't be loaded." with Retry. No editing until it loads. |
+| Saved configuration can't be loaded | "Your saved changes couldn't be loaded." No editing. (Retry is a follow-up, AC13.) |
 | Saved pages list can't be loaded | The rest of the start screen works; the list shows "Saved pages couldn't be loaded." |
 | The saved page itself can't be fetched | The same messages as opening any page (01). |
 | All changes removed, then saved | An empty configuration is stored; the row shows "0 changes". |

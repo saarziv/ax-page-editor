@@ -36,7 +36,12 @@ export function Editor({ url }: { url: string }) {
       <TopBar url={url} />
       <div className="flex min-h-0 flex-1">
         {/* A page is never drawn without its saved changes. A page that failed to load shows its own error in the preview. */}
-        {isRestored || pageTreeQuery.isError ? (
+        {configQuery.isError ? (
+          // No preview and no inspector: a save from a page without its saved changes would overwrite them.
+          <p role="alert" className="p-6 text-destructive">
+            Your saved changes couldn't be loaded.
+          </p>
+        ) : isRestored || pageTreeQuery.isError ? (
           <>
             <Preview url={url} />
             <Inspector url={url} />
