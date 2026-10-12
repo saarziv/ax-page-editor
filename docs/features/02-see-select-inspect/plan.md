@@ -25,7 +25,7 @@ Two small, pure tree helpers in `packages/core/src/tree.ts`. They're in core bec
 
 **The idea:** the store holds only `selectedId`. The preview tells the store what was clicked, and each node checks "am I selected?". Everything else (which node, its text, its label) is derived from the tree, never stored.
 
-**One click handler on the preview, not one per node.** Every selectable element carries `data-node-id`. The preview's `onClick` takes `event.target.closest('[data-node-id]')` and selects that id. `closest` walks up from the exact element clicked, so the innermost selectable element always wins (K2) with no `stopPropagation` juggling. A later task can treat a click that finds no id as a click on empty space (S2).
+**One click handler on the preview, not one per node.** Every selectable element carries `data-node-id`. The preview's `onClick` takes `event.target.closest('[data-node-id]')` and selects that id. `closest` walks up from the exact element clicked, so the innermost selectable element always wins (K2) with no `stopPropagation` juggling. A click that finds no id is a click on empty space (see Deselect).
 
 Example: in `<p data-node-id="…paragraph:3">Read our <span data-node-id="…link:1">terms of service</span> …</p>`, a click on "terms" finds the span first and selects the link. A click on "Read our" finds the paragraph.
 
@@ -57,7 +57,39 @@ Example: in `<p data-node-id="…paragraph:3">Read our <span data-node-id="…li
 - `PageChanges.tsx` holds the empty list.
 - `Editor.tsx` passes `url` to the inspector.
 
+### Deselect
+
+**The idea:** two ways back to "nothing selected", both calling `select(null)`. Esc does it from anywhere, and so does a click on empty preview space.
+
+- **Esc:** one `keydown` listener on `window`, added by `Editor` while it's mounted. It's on the window, not the preview, because the preview isn't focusable, so a key press there would never reach it.
+- **Empty space:** the click handler moves from the content column to the whole preview `section`, and a click whose `closest('[data-node-id]')` finds nothing now selects `null` instead of being ignored. That covers the margins around the content column, the page title header and the gaps between top-level landmarks.
+
+**The tricky part, what counts as empty:** containers like `main` and `section` are selectable and fill their whole box, so a click in the gap between two paragraphs inside a section selects the section. That's the innermost rule doing its job, not a bug, and the breadcrumb is how you get back down. Only space that no selectable element covers clears the selection. Example on the demo: a click to the right of the content column clears it, and a click in the gap between the "Plans" table and the paragraph below it selects the "Plans" section.
+
+### Breadcrumb
+
+**The idea:** a click always picks the innermost element, so containers are hard to click directly. The breadcrumb at the top of the selected element's details shows the path down to it, and each step selects that ancestor. It comes straight from `findNodePath`, which the inspector already computes.
+
+- The steps are the path minus the `page` root, each named with its plain-language label: `Main content › Section › Paragraph › Link`. The ancestors are buttons that call `select(ancestor.id)`. The last step is the current element, plain text, marked `aria-current`.
+- An element whose only ancestor is `page` (e.g. the demo's `main`) has nothing to climb to, so it shows no breadcrumb.
+- It lives in `Breadcrumb.tsx`, and `ElementDetails` receives the path instead of just the node.
+
+Example: select "terms of service" on the demo, then click "Section" in the breadcrumb. The outline moves to the whole section, and the breadcrumb becomes `Main content › Section`.
+
+### Hover
+
+**The idea:** hovering shows a light outline around the innermost selectable element under the pointer, with a small label chip naming its type ("Link", "Image"). It's drawn by one overlay box in the preview, not by the nodes themselves.
+
+**Why one overlay, not a style on each node:** the label has to sit inside or on the element, and some elements can't hold extra content. An `<img>` has no children, and a chip inside a `<tr>` or `<ul>` breaks the markup. A CSS `:hover` style also can't help, because hovering a link inside a paragraph matches both of them. So the content column gets an `onMouseOver` that finds the hovered element with the same `closest('[data-node-id]')` as the click. The preview positions one absolutely placed box over that element's bounding rect. The box ignores the pointer (`pointer-events: none`), and `onMouseLeave` hides it.
+
+- **Lighter than the selection:** a 1px, half-transparent primary outline with no tint, against the selection's solid 2px outline with a tint. The chip sits just above the element's top-left corner, so it never covers the content.
+- **Label:** the hovered id is looked up with `findNodePath` in the tree the preview already has, and its kind goes through the same `nodeLabels` map as the inspector.
+- **Local state:** the hovered element is `useState` in `Preview`, not in the store. Nothing else reads it, and it changes on every mouse move, so keeping it local re-renders only the preview's overlay.
+- **Scrolling:** the box is positioned relative to the content column, which scrolls with the page, so it stays on its element while scrolling. A layout change under a still pointer (an image finishing loading) can leave it slightly off until the next mouse move. That's acceptable for a hover hint.
+
+Example: hovering the "Customer growth" chart shows a faint outline around the image and an "Image" chip above it. Moving onto the "terms of service" link moves the box to the link with "Link", and the paragraph around it isn't outlined.
+
 ## Tests
 
 - **Core unit tests** for `findNodePath` and `nodeText` (cases in `tasks.md`).
-- **E2E:** a new `e2e/select-inspect.spec.ts`. The 01 test that checked the disabled buttons is updated to the new empty state. The web app has no unit test setup. These components only display what core computes, so e2e covers them.
+- **E2E:** a new `e2e/select-inspect.spec.ts`. The 01 test that checked the disabled buttons is updated to the new empty state. T02 adds tests there for Esc and empty-space deselect, the breadcrumb and the hover overlay. The web app has no unit test setup. These components only display what core computes, so e2e covers them.

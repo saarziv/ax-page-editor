@@ -5,7 +5,8 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 ## Roadmap
 
 - [x] T01 – Select an element and inspect it · Covers: K1, K2, K3, K4, K5, K6, K7, K8 (no-changes case), S4
-- Next tasks are defined after T01. Still to cover: S1, S2, S3, K8 (with changes), B1, B2, B3.
+- [ ] T02 – Deselect, climb with the breadcrumb, and see what you hover · Covers: S1, S2, S3
+- Next tasks are defined after T02. Still to cover: K8 (with changes), B1, B2, B3.
 
 ---
 
@@ -15,29 +16,51 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 **Implements:** `plan.md` → Selection, and Inspector.
 
-- [x] **S1 – Inspector: the "nothing selected" state (UI only)**
-
-  The right panel changes from three disabled buttons to the spec's empty state: a hint at the top ("Click an element in the preview to inspect it.") and a "Changes on this page" section at the bottom that says "No changes yet." Nothing can be selected yet, so this is the only state, and the modification buttons are gone for now. They come back in S2, under a selected element's details.
-
-  **Verify:**
-  1. Click "Try a sample": the inspector shows the hint at the top and "Changes on this page · No changes yet." at the bottom, with no Hide / Context / Forward buttons.
-  2. `pnpm e2e` passes. The 01 test that expected the disabled buttons now expects the empty state instead.
-
-- [x] **S2 – Click to select, and show the element in the inspector**
-
-  Clicking an element in the preview selects it: it gets a clear outline, and the inspector shows its details at the top, with the disabled modification buttons below them. A click picks the innermost element, so clicking "terms of service" selects the link, not the paragraph around it. Clicking another element moves the selection, and opening another page clears it. The rules for what's selectable, the highlight and what the inspector shows are in `plan.md` → Selection and Inspector.
-
-  **Verify:**
-  1. `pnpm test` passes. The new core tests check that:
-     - `findNodePath` returns the chain from the root to a node: for the "terms of service" link in the demo it's `page › main › … › paragraph › link`, and it returns `null` for an id that's not in the tree
-     - `nodeText` joins a node's text with its children's: `paragraph[text "Read our ", link "terms of service", text " and…"]` gives "Read our terms of service and…", with spaces tidied
-  2. Click "Try a sample" and click "terms of service": only that link is outlined, and the page doesn't navigate. The inspector shows "Link", "Tag: `<a>`", the text "terms of service", the destination `iana.org/help/example-domains`, "No changes on this element.", and below them the three buttons, disabled.
-  3. Click the "Customer growth" chart image: the outline moves to it, and the inspector shows "Image", "Tag: `<img>`" and its description "Customer growth".
-  4. Open `https://en.wikipedia.org/wiki/Web_page` and click its first long paragraph: the inspector shows the text cut short with "Show more", which expands it. (The demo has no paragraph long enough.)
-  5. Open another page from the top bar: nothing is selected, and the inspector is back to the hint.
-  6. `pnpm e2e` passes. A new `select-inspect` test clicks the link, checks the highlight and the inspector details, then clicks the heading and checks that the highlight moved.
+- [x] **S1 – Inspector: the "nothing selected" state (UI only)**: the inspector shows the hint and an empty "Changes on this page" list instead of the three disabled buttons.
+- [x] **S2 – Click to select, and show the element in the inspector**: one click handler on the preview selects the innermost element and outlines it. The inspector shows its type, tag, text, link destination and the disabled buttons. Core gained `findNodePath` and `nodeText`.
 
 **Done when:** on the demo page, any element can be clicked and is clearly highlighted, the inspector shows its type, tag, text and "No changes on this element.", and with nothing selected it shows the hint and the empty page changes list. `pnpm test`, `typecheck` and `e2e` pass.
+
+---
+
+## T02 – Deselect, climb with the breadcrumb, and see what you hover
+
+**Goal:** the selection becomes easy to steer. Esc or a click on empty preview space clears it. A breadcrumb in the inspector (`Main content › Section › Paragraph › Link`) lets the user select any container around the element, which a click can't reach because it always picks the innermost element. Hovering shows a light outline and a small type label before the user clicks, so they know what a click will select. No new core logic: everything comes from `findNodePath` and the label map T01 built.
+
+**Implements:** `plan.md` → Deselect, Breadcrumb, and Hover.
+
+- [ ] **S1 – Clear the selection with Esc or a click on empty space**
+
+  Pressing Esc anywhere in the editor clears the selection, and so does a click on preview space that no element covers. The click handler moves up to the whole preview, and a click that finds no element now selects nothing instead of being ignored. A click in a gap inside a section still selects that section. That's by design, and `plan.md` → Deselect explains why.
+
+  **Verify:**
+  1. Click "Try a sample", click "terms of service", then press Esc: the outline disappears and the inspector is back to the hint.
+  2. Select the link again, then click to the right of the page content: the selection clears the same way.
+  3. Select the link, then click in the gap between the "Plans" table and the paragraph below it: the "Plans" section is selected, outlined as a whole, and the inspector says "Section".
+  4. `pnpm e2e` passes. New tests in `select-inspect` select the link, then check that Esc clears it and that a click on empty preview space clears it.
+
+- [ ] **S2 – Breadcrumb to select a container**
+
+  The top of the selected element's details shows the path from the page down to it, named in plain words, like `Main content › Section › Paragraph › Link`. Every step except the last is clickable and selects that container. The last step is the current element. A top-level element with nothing above it shows no breadcrumb.
+
+  **Verify:**
+  1. Click "Try a sample" and click "terms of service": the inspector shows `Main content › Section › Paragraph › Link` above "Link".
+  2. Click "Section" in the breadcrumb: the outline moves to the whole section, the inspector says "Section", and the breadcrumb becomes `Main content › Section`.
+  3. Click "Main content" in the breadcrumb: the whole main area is selected, and no breadcrumb shows, because only the page is above it.
+  4. `pnpm e2e` passes. A new test selects the link, checks the breadcrumb text, clicks "Paragraph" and checks that the paragraph is now the selected element.
+
+- [ ] **S3 – Hover outline with a type label**
+
+  Hovering the preview shows a faint outline around the innermost element under the pointer and a small chip above it with its type ("Link", "Image"). It's one overlay box positioned over the hovered element, so it works for images and table rows too. It's visibly lighter than the selection outline, and leaving the preview hides it.
+
+  **Verify:**
+  1. Click "Try a sample" and hover the "Customer growth" chart: a faint outline and an "Image" chip appear. Nothing moves or shifts.
+  2. Move onto "terms of service": the box jumps to the link with "Link", and the paragraph around it is not outlined.
+  3. Click the link, then keep hovering it: the solid selection outline is clearly stronger than the hover outline.
+  4. Scroll the preview while hovering, then move the mouse out of the preview: the box follows its element while scrolling and disappears when the mouse leaves.
+  5. `pnpm e2e` passes. A new test hovers the link and checks that the hover chip says "Link", then hovers the heading and checks that it says "Heading".
+
+**Done when:** on the demo page, Esc and a click on empty space clear the selection, the breadcrumb selects any container around the selected element, and hovering shows a light outline with the element's type. `pnpm test`, `typecheck` and `e2e` pass.
 
 ---
 
