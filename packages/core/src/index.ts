@@ -4,6 +4,7 @@ export { markModificationsInTree, type Marked } from './markModificationsInTree.
 export { prune } from './prune.js';
 export { renderMarkdown } from './renderMarkdown.js';
 export { matchesTarget, resolve, targetFor, targetSnippet } from './target.js';
+export { NOT_A_PAGE_REASON, forwardBlockReason } from './forward.js';
 export { findNodePath, isContainerKind, nodeText } from './tree.js';
 export { InvalidUrlError, normalizeUrl } from './url.js';
 export { CONTEXT_NOTE_MAX_LENGTH, configSchema, fetchErrorCodeSchema, modificationSchema, modificationStatusSchema, nodeKindSchema, pageNodeSchema, pageTreeSchema, saveConfigRequestSchema, savedPageSummarySchema, targetSchema } from './schemas.js';

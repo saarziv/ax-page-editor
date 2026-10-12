@@ -30,7 +30,7 @@ Full details in our [terms of service](https://acme.com/terms).
 - A **Forward to AI** switch in the inspector. It replaces the disabled "Forward this link" stub.
 - **Only a link can be forwarded.** The switch appears only when the selected element is a link. Any other element shows no Forward control at all, so there's nothing to click.
 - **Only a link to a page.** For a link that doesn't lead to a page (`#anchor`, `mailto:`, `tel:`, `javascript:`), the switch is shown but disabled, and hovering it shows the reason: "This link doesn't lead to a page."
-- **Tooltip.** Hovering the enabled switch briefly explains what it does: "AI agents get the main content of the linked page, right after this link."
+- **Tooltip.** Hovering the enabled switch briefly explains what it does and why it helps: "AI agents get the main content of the linked page, right after this link. Useful because most agents don't follow links."
 - Turning it on fetches the linked page the same way a page is loaded: server-side, no JavaScript, same safety checks.
 - Only the page's **main content** is kept: navigation, header, footer and sidebars are dropped.
 - **Placement** follows the context rule (03): right after the link, or after the enclosing paragraph when the link sits inside a sentence. The link itself stays.
@@ -50,7 +50,7 @@ Full details in our [terms of service](https://acme.com/terms).
 - **K6.** Given a forwarded page longer than 3,000 tokens, then the content is cut at about 3,000 tokens and ends with "(truncated)".
 - **K7.** Given a forward whose page fails to load, then the preview block shows the reason, Agent View shows the plain link only, and the forward stays in the changes list.
 - **K8.** Given a saved forward, then the configuration holds only its `href`, and Agent View shows the page's current content.
-- **K9.** Given a link to a page is selected, when the user hovers the Forward to AI switch, then a tooltip says "AI agents get the main content of the linked page, right after this link."
+- **K9.** Given a link to a page is selected, when the user hovers the Forward to AI switch, then a tooltip says "AI agents get the main content of the linked page, right after this link. Useful because most agents don't follow links."
 
 ## Out of scope
 

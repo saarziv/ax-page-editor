@@ -98,7 +98,7 @@ A `ForwardSwitch` row in the inspector, replacing the disabled "Forward this lin
 
 - **Only for links:** the row is rendered only when the selected node's `kind` is `link` (K1). For any other element there's no row, so nothing can be clicked.
 - **Disabled:** when `forwardBlockReason(href, pageUrl)` returns a reason.
-- **Tooltip:** shadcn `Tooltip`, with the wrapper trigger from the View as agent button, because a disabled switch gets no hover. Enabled, it says "AI agents get the main content of the linked page, right after this link." (K9). Disabled, it shows the reason.
+- **Tooltip:** shadcn `Tooltip`, with the wrapper trigger from the View as agent button, because a disabled switch gets no hover. Enabled, it says "AI agents get the main content of the linked page, right after this link. Useful because most agents don't follow links." (K9). Disabled, it shows the reason.
 - It calls `toggleForward(targetFor(node), href)`.
 
 ### Store: `toggleForward(target, href)`

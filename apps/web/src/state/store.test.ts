@@ -4,8 +4,10 @@ import { hasUnsavedChanges, useEditorStore } from './store';
 
 const chart: Target = { selector: 'main:1>figure:1>image:1', text: 'Customer growth' };
 const banner: Target = { selector: 'aside:1', text: 'We use cookies to improve your experience. By continuing you' };
+const termsLink: Target = { selector: 'main:1>paragraph:2>link:1', text: 'terms of service' };
+const termsHref = 'https://www.iana.org/help/example-domains';
 
-const { loadSavedModifications, markSaved, removeModification, setContext, setUrl, toggleHide } = useEditorStore.getState();
+const { loadSavedModifications, markSaved, removeModification, setContext, setUrl, toggleForward, toggleHide } = useEditorStore.getState();
 const modificationsDraft = () => useEditorStore.getState().modificationsDraft;
 
 describe('setContext', () => {
@@ -51,6 +53,38 @@ describe('setContext', () => {
     expect(modificationsDraft()).toEqual([
       { id: expect.any(String), type: 'hide', target: chart },
       { id: expect.any(String), type: 'context', target: banner, note: 'Cookie notice' },
+    ]);
+  });
+});
+
+describe('toggleForward', () => {
+  beforeEach(() => setUrl('sample:demo'));
+
+  it('adds one forward with the link’s href, and removes it on the next call', () => {
+    toggleForward(termsLink, termsHref);
+    expect(modificationsDraft()).toEqual([{ id: expect.any(String), type: 'forward', target: termsLink, href: termsHref }]);
+
+    toggleForward(termsLink, termsHref);
+    expect(modificationsDraft()).toEqual([]);
+  });
+
+  it('never gives a link two forwards', () => {
+    toggleForward(termsLink, termsHref);
+    toggleForward(termsLink, termsHref);
+    toggleForward(termsLink, termsHref);
+
+    expect(modificationsDraft().filter((modification) => modification.type === 'forward')).toHaveLength(1);
+  });
+
+  it('leaves a hide and a note on the same link alone', () => {
+    toggleHide(termsLink);
+    setContext(termsLink, 'Our refund rules');
+    toggleForward(termsLink, termsHref);
+    toggleForward(termsLink, termsHref);
+
+    expect(modificationsDraft()).toEqual([
+      { id: expect.any(String), type: 'hide', target: termsLink },
+      { id: expect.any(String), type: 'context', target: termsLink, note: 'Our refund rules' },
     ]);
   });
 });

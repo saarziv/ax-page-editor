@@ -4,7 +4,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 ## Roadmap
 
-- [ ] T01 – Forward to AI switch · Covers: K1, K9, and the "only its `href`" part of K8
+- [x] T01 – Forward to AI switch · Covers: K1, K9, and the "only its `href`" part of K8
 - [ ] T02 – Forwarded block in the preview · Covers: K2, K4, K5, and the preview part of K7
 - [ ] T03 – Forwarded content for agents · Covers: K3, K6, the Agent View part of K7, and the "current content" part of K8
 
@@ -17,7 +17,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 Three rules decide what the publisher sees:
 
 - **Not a link:** no Forward row at all, so there's nothing to click. Example: selecting the chart shows Hide and Context only.
-- **A link to a page:** the switch is enabled. Hovering it says "AI agents get the main content of the linked page, right after this link."
+- **A link to a page:** the switch is enabled. Hovering it says "AI agents get the main content of the linked page, right after this link. Useful because most agents don't follow links."
 - **A link that doesn't lead to a page** (`mailto:`, `tel:`, an anchor on this page): the switch is disabled, and hovering it says "This link doesn't lead to a page."
 
 Turning the switch on adds `{ type: 'forward', target, href }` to `modificationsDraft`, and turning it off removes it. Nothing is fetched yet, so the preview doesn't change; T02 adds the forwarded block.
@@ -26,11 +26,11 @@ S1 builds the switch and its tooltips. S2 makes it add and remove the forward.
 
 **Implements:** `plan.md` → `forwardBlockReason`, Forward to AI switch, Store: `toggleForward`.
 
-- [ ] **S1 – The switch appears on links only, with its tooltip (K1, K9)**
+- [x] **S1 – The switch appears on links only, with its tooltip (K1, K9)**
   Core gets `forwardBlockReason(href, pageUrl)`, which tells a link to a page apart from one that isn't. The inspector's disabled "Forward this link" button becomes a Forward to AI switch row, shown only for links and disabled with its reason when the link doesn't lead to a page. The demo page gets a `mailto:` link at the end of its footer, so there's a non-page link to try; it goes last so no existing selector shifts.
   **Verify:**
   1. With `pnpm dev` running, click "Try a sample", then click the "Customer growth" chart: the inspector shows Hide from AI and Context for AI, and no Forward row (K1).
-  2. Click "terms of service": a "Forward to AI" switch, off and enabled. Hover it: the tooltip says "AI agents get the main content of the linked page, right after this link." (K9).
+  2. Click "terms of service": a "Forward to AI" switch, off and enabled. Hover it: the tooltip says "AI agents get the main content of the linked page, right after this link. Useful because most agents don't follow links." (K9).
   3. Click the new email link in the footer: the switch is disabled. Hover it: the tooltip says "This link doesn't lead to a page." (K1).
   4. `pnpm test` passes. New tests check `forwardBlockReason`:
     - `mailto:hi@acme.com` and `tel:+123` are blocked with "This link doesn't lead to a page."
@@ -38,7 +38,7 @@ S1 builds the switch and its tooltips. S2 makes it add and remove the forward.
     - `https://acme.com/terms#refunds` on that same page is allowed, because it's another page.
   5. `pnpm e2e` passes. The tests that expected a disabled "Forward this link" button now expect no Forward row on non-links, and an enabled "Forward to AI" switch on "terms of service".
 
-- [ ] **S2 – The switch adds and removes the forward in the draft (K8)**
+- [x] **S2 – The switch adds and removes the forward in the draft (K8)**
   The store gets `toggleForward(target, href)`, which works like `toggleHide`: the first call adds one forward, the next removes it, so a link can never have two. The switch reads its state from the draft, so a forwarded link shows on when selected again.
   **Verify:**
   1. Open the demo, select "terms of service" and turn Forward to AI on: "Changes on this element" shows "Forwarded: https://www.iana.org/help/example-domains", and Save is enabled.
@@ -48,6 +48,8 @@ S1 builds the switch and its tooltips. S2 makes it add and remove the forward.
   5. `pnpm test` passes. New store tests check that `toggleForward` adds one forward with the given `href`, removes it on the second call, and leaves a hide or note on the same link alone.
 
 **Done when:** links, and only links, show the Forward to AI switch with the right tooltip, it's disabled with its reason for non-page links, and turning it on adds a forward that saves as only its `href`. `pnpm test`, `typecheck` and `e2e` pass.
+
+- Enabled tooltip also says why it helps: "Useful because most agents don't follow links." → spec.md §Behavior, K9
 
 ---
 
