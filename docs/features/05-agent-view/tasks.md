@@ -115,4 +115,4 @@ S1 builds the button and the tab it opens. S2 adds the disabled state and both t
 
 ## Follow-ups
 
-- Verify that `curl -i 'localhost:3001/agentView?url=http://127.0.0.1'` answers 403 with `code: "BLOCKED"` (AC6). Blocked by 01 T01 S2 (the private-address guard in `SafeFetchService`), which isn't built yet: today it answers 502 `UNREACHABLE`. (From T01 S1)
+- Verify that `curl -i 'localhost:3001/agentView?url=http://127.0.0.1'` answers 403 with `code: "BLOCKED"` (AC6). Blocked by the private-address guard in `SafeFetchService` (an 01 follow-up), which isn't built yet: today it answers 502 `UNREACHABLE`. (From T01 S1)

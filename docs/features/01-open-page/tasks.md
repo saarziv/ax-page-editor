@@ -7,8 +7,9 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 - [x] T01 – Running skeleton · Covers: —
 - [x] T02 – Editor shell · Covers: AC2
 - [x] T03 – Demo page in the preview · Covers: AC3, AC7
-- [ ] T04 – Real pages, loading and errors · Covers: AC1, AC4, AC5, AC6
-- [ ] T05 – Preview fixes · Covers: AC1
+- [x] T04 – Real pages in the preview · Covers: AC1
+- [x] T05 – Preview fixes · Covers: AC1
+- Follow-ups (below) · Covers: AC4, AC5, AC6
 
 ---
 
@@ -114,11 +115,11 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 ---
 
-## T04 – Real pages, loading and errors
+## T04 – Real pages in the preview ✓
 
-**Goal:** opening any real URL works end to end. While it loads you see a spinner. When it's done you see the page, or a plain-language message saying why it couldn't load (with Retry when trying again might help). Opening another URL from the top bar replaces whatever is showing.
+**Goal:** opening any real URL fetches it through `SafeFetchService` and shows its clean tree in the preview. The private-address guard, the loading spinner and the plain-language errors were moved to Follow-ups.
 
-**Implements:** `plan.md` → Web → Loading and Error mapping, and API → Page tree (SafeFetch, global plan §4.1).
+**Implements:** `plan.md` → API → Page tree (SafeFetch, global plan §4.1).
 
 - [x] **S1 – Load real pages into the preview**
 
@@ -137,48 +138,16 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
   4. Open 2–3 real sites you know (a blog post, a news article). The preview reads like the page's content, with no code or CSS showing.
   5. `pnpm e2e` passes. The e2e tests that expected "Stub page" now open the sample instead, so they don't depend on the internet.
 
-- [ ] **S2 – Block private and local addresses**
-
-  The fetcher now refuses anything that points inside our own network. Before every request, including each redirect, it looks up the address and refuses private, loopback, link-local and reserved IPs. It follows redirects itself, up to 5. Without this, anyone could use the server to reach machines that should be private. Each rule gets its own test, written first (rules: `plan.md` §4.1).
-
-  **Verify:**
-  1. `pnpm test` passes. The guard tests fake DNS and check that:
-     - `127.0.0.1`, `192.168.x.x`, `10.x.x.x`, `169.254.x.x` and their IPv6 versions (`::1`, `fc00::`) are `BLOCKED`
-     - a public URL that redirects to a private one is also `BLOCKED`
-     - a chain of more than 5 redirects is `BLOCKED`
-  2. Send `http://localhost:5173` and you get `BLOCKED`.
-  3. The Wikipedia page from S1 still opens in the app.
-
-- [ ] **S3 – Spinner while loading, and a new URL replaces the old page**
-
-  While the page tree is loading, the preview shows a spinner in place of the page, never the previous page. Opening another URL from the top bar starts a new load for that URL, so the old page disappears right away.
-
-  **Verify:**
-  1. Open the sample, then type `en.wikipedia.org/wiki/Web_page` in the top bar and press Enter. The demo is replaced by the Wikipedia page.
-  2. `pnpm e2e` passes. A new test slows down the `/api/page-tree` response, checks that the spinner shows and the previous page is gone, then that the new page appears.
-
-- [ ] **S4 – Plain-language error messages with Retry**
-
-  The web reads the server's `{ code, message }` and shows the spec's message for that code in the preview, never the code itself (messages: `spec.md` → Edge cases). Timeouts and unreachable sites get a Retry button that loads again. Any other failure, like the api being down, gets the generic message with Retry. A failed load is no longer retried 3 times automatically, because that delayed the message by up to 40s and Retry is now the user's choice.
-
-  **Verify:**
-  1. Open `ftp://x` and you see "That doesn't look like a web address.", and `http://localhost:5173` shows "This address can't be opened for security reasons.". No error code is on screen.
-  2. Stop the api and open a URL. You see the generic message with Retry. Start the api again, click Retry, and the page loads.
-  3. `pnpm e2e` passes. The new tests fake the api response for each code and check that:
-     - each code shows its spec message, and the code itself is never on screen
-     - `TIMEOUT` and `UNREACHABLE` show Retry, and clicking it loads the page
-     - `BLOCKED`, `NOT_HTML` and `TOO_LARGE` show no Retry
-
 **How to send a URL:** with `pnpm dev` running,
 `curl -X POST localhost:3001/api/page-tree -H 'content-type: application/json' -d '{"url":"<URL>"}'`
 
-**Done when:** a real website renders in the preview. Every failure in the spec's table shows its message, with Retry only for timeout and unreachable. Loading shows a spinner, never the old page. `pnpm test`, `typecheck` and `e2e` pass.
+**Done when:** a real website renders in the preview. `pnpm test`, `typecheck` and `e2e` pass.
 
 ---
 
-## T05 – Preview fixes
+## T05 – Preview fixes ✓
 
-**Goal:** the preview shows exactly what an agent gets, without misleading the publisher. Real sites surface things the demo didn't. For example, checkboxes and radio buttons show as empty text boxes, and decorative logos fill the screen. Each refinement either changes what `clean` keeps or how the preview draws it, but never hides real content. New refinements found on real pages are added here as steps.
+**Goal:** the preview shows exactly what an agent gets, without misleading the publisher. Real sites surface things the demo didn't. For example, checkboxes and radio buttons show as empty text boxes, and decorative logos fill the screen. Each refinement either changes what `clean` keeps or how the preview draws it, but never hides real content. New refinements found on real pages go to Follow-ups.
 
 **Implements:** global `plan.md` §3.2, and `plan.md` → Preview rendering (including Refinements from real pages).
 
@@ -213,34 +182,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
   2. Open `https://en.wikipedia.org/wiki/Web_page`. The "WIKIPEDIA 25" wordmark and the "25 years of the free encyclopedia" tagline are small, about the size they are on the real page.
   3. Click "Try a sample": the chart image looks as before, and `pnpm e2e` passes.
 
-- [ ] **S3 – Keep line breaks where block wrappers were unwrapped**
-
-  `clean` throws away wrapper `div`s and keeps their content, but it also threw away the line break the `div` made. So on Wikipedia, "Main menu", the "move to sidebar" and "hide" buttons, and "Navigation" all run together on one line, while lynx and the browser show three lines. This matters beyond looks, because the Markdown output would glue them together too. Now an unwrapped block wrapper leaves a boundary, and loose text on either side of it becomes its own paragraph. Text that's the whole content of its parent, like `<li><div>One</div></li>`, is left alone (rules: global `plan.md` §3.2 → Block boundaries are kept).
-
-  **Verify:**
-  1. `pnpm test` passes. The new `clean` tests check that:
-     - `<div>A</div><div>B</div>` gives two paragraphs "A" and "B", not one text "AB" or "A B"
-     - `<div>Main menu</div><div><button>hide</button></div><div>Navigation</div>` gives paragraph, button, paragraph
-     - `<div>Read <a>terms</a> now</div><p>Next</p>` keeps the sentence whole in one paragraph: [text, link, text]
-     - `<li><div>One</div></li>` is still listItem "One", and `<p>Hello <span>big</span> world</p>` is still one paragraph
-     - the existing test still holds: wrapping a paragraph in extra `div`s doesn't change its address
-  2. Open Wikipedia next to `lynx -dump https://en.wikipedia.org/wiki/Web_page`. "Main menu", the two buttons and "Navigation" are on separate lines, as in lynx.
-  3. Click "Try a sample": the demo looks as before, and `pnpm e2e` passes.
-
-- [ ] **S4 – Say a field's name once**
-
-  A `<label>` names its field, and `clean` already copies that name onto the field. But the label element's own text also stayed in the tree as loose text, so the name shows twice. On Wikipedia every menu checkbox ("Main menu", "Appearance", "Toggle the table of contents", "94 languages"…) appears twice, where lynx shows it once. The demo's form shows "Work email" and "Company size" twice too. Now a label whose text is already its field's label is dropped. A label that says something different, because `aria-label` won, stays, so nothing is lost (rules: global `plan.md` §3.2 → Fields). This doesn't need the `aria-hidden` follow-up: it applies whether or not the label is hidden.
-
-  **Verify:**
-  1. `pnpm test` passes. The new `clean` tests check that:
-     - `<label for="e">Email</label><input id="e">` gives just the field labelled "Email", with no loose "Email" text
-     - `<label>City <input></label>` gives just the field labelled "City"
-     - `<label for="e">Email</label><input id="e" aria-label="Your email">` keeps the text "Email" and the field labelled "Your email"
-     - a `label` that points at no field keeps its text
-  2. Open Wikipedia: each menu checkbox shows its name once, next to the box, like `[ ] Main menu` in lynx.
-  3. Click "Try a sample": the form shows "Work email" and "Company size" once each, above their boxes, and `pnpm e2e` passes.
-
-**Done when:** the preview of Wikipedia has no misleading text boxes, no screen-filling images, and no names said twice, and its order and line breaks match `lynx -dump`. The sample is unchanged except that its form labels show once. `pnpm test`, `typecheck` and `e2e` pass.
+**Done when:** the preview of Wikipedia has no misleading text boxes and no screen-filling images. The sample is unchanged. `pnpm test`, `typecheck` and `e2e` pass.
 
 **Deviations:**
 
@@ -255,3 +197,8 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 - Recent pages list on the start screen (pages with a saved configuration and their change counts). The `GET /api/configs` stub from T01 exists for it. Needs 04.
 - "Built with JavaScript" banner when a page's visible text is nearly empty.
 - `aria-hidden` on elements other than images (e.g. whole menus): should `clean` drop them too? It would hide much more than decoration, so it needs its own look. (From T05 S1)
+- Block private and local addresses (was T04 S2): before every request and each redirect, `SafeFetchService` looks up the address and refuses private, loopback, link-local and reserved IPs with `BLOCKED`, and follows redirects itself, up to 5 (global `plan.md` §4.1). Example: `http://localhost:5173` gives `BLOCKED`.
+- Spinner while loading, and a new URL replaces the old page (was T04 S3, AC4, AC5): while the page tree loads, the preview shows a spinner, never the previous page.
+- Plain-language error messages with Retry (was T04 S4, AC6): the web shows the spec's message for each error code (`spec.md` → Edge cases), never the code. `TIMEOUT`, `UNREACHABLE` and unknown failures get Retry. Drop TanStack Query's 3 automatic retries.
+- Keep line breaks where block wrappers were unwrapped (was T05 S3): an unwrapped wrapper `div` leaves a boundary, so `<div>A</div><div>B</div>` gives two paragraphs, not "AB" (global `plan.md` §3.2 → Block boundaries are kept).
+- Say a field's name once (was T05 S4): drop a `<label>`'s loose text when it's already its field's label, so Wikipedia's menu checkboxes and the demo's "Work email" don't show their names twice (global `plan.md` §3.2 → Fields).
