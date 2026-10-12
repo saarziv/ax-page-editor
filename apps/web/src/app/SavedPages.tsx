@@ -10,8 +10,10 @@ export function SavedPages() {
   if (savedPages.isError) {
     return (
       <section aria-label="Saved pages" className="space-y-2">
-        <h2 className="text-sm font-medium">Saved pages</h2>
-        <p className="text-sm text-muted-foreground">Saved pages couldn't be loaded.</p>
+        <h2 className="text-sm font-medium text-muted-foreground">Saved pages</h2>
+        <p className="rounded-lg border bg-background px-4 py-3 text-sm text-muted-foreground">
+          Saved pages couldn't be loaded.
+        </p>
       </section>
     );
   }
@@ -20,16 +22,16 @@ export function SavedPages() {
   const now = new Date();
   return (
     <section aria-label="Saved pages" className="space-y-2">
-      <h2 className="text-sm font-medium">Saved pages</h2>
-      <ul className="space-y-1">
+      <h2 className="text-sm font-medium text-muted-foreground">Saved pages</h2>
+      <ul className="divide-y overflow-hidden rounded-lg border bg-background">
         {savedPages.data.map((summary) => (
           <li key={summary.url}>
             <button
               type="button"
-              className="w-full cursor-pointer rounded-md px-2 py-1.5 text-left hover:bg-muted"
+              className="w-full cursor-pointer px-4 py-3 text-left hover:bg-muted"
               onClick={() => setUrl(summary.url)}
             >
-              <span className="block truncate text-sm">{summary.url}</span>
+              <span className="block truncate text-sm font-medium">{summary.url}</span>
               <span className="block text-xs text-muted-foreground">
                 {formatChangeCount(summary.modificationCount)} · saved {formatSavedAgo(summary.updatedAt, now)}
               </span>
