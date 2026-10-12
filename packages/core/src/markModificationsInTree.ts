@@ -1,6 +1,7 @@
 import type { FetchErrorCode, Modification, ModificationStatus, PageNode, PageTree } from './schemas.js';
 import { resolve } from './target.js';
-import { findNodePath, isContainerKind } from './tree.js';
+import { findNodePath, isContainerKind, textAsChildren } from './tree.js';
+import { truncateTree } from './truncateTree.js';
 
 export type Marked = {
   /** The marked page: the original tree, with hidden elements flagged and still in place, and notes and forwards inserted. */
@@ -10,6 +11,9 @@ export type Marked = {
 
 /** One forwarded page, by its `href`. With neither `tree` nor `error` it's still loading. */
 export type Forwarded = { href: string; tree?: PageTree; error?: FetchErrorCode };
+
+// About 3,000 tokens, at the 4 characters per token `estimateTokens` counts (P9).
+const FORWARDED_CONTENT_MAX_CHARS = 12_000;
 
 type ContextModification = Extract<Modification, { type: 'context' }>;
 type ForwardModification = Extract<Modification, { type: 'forward' }>;
@@ -23,7 +27,6 @@ type NotePlacement = { anchorId: string; position: 'firstInside' | 'after'; name
 /**
  * Applies every modification once and returns the marked page plus a status per modification (global plan §3.4).
  * `forwards` holds the fetched pages by `href`; a forward whose page isn't in it yet is still loading.
- * The size limit on forwarded content isn't applied yet.
  */
 export function markModificationsInTree(
   root: PageNode,
@@ -111,7 +114,8 @@ function forwardedNodeFor(
   if (forwarded?.error) {
     node = { id, kind: 'forwarded', tag: 'section', attrs: { ...attrs, forwardState: 'failed', errorCode: forwarded.error } };
   } else if (forwarded?.tree) {
-    const contentRoot = forwarded.tree.root;
+    // Cut here, not in the api, so the preview and Agent View end at the same word (K6).
+    const contentRoot = truncateTree(forwarded.tree.root, FORWARDED_CONTENT_MAX_CHARS);
     const content = contentRoot.children ?? textAsChildren(contentRoot);
     node = {
       id,
@@ -206,6 +210,3 @@ function markNode(
   return markedNode;
 }
 
-function textAsChildren(node: PageNode): PageNode[] {
-  return node.text === undefined ? [] : [{ id: `${node.id}>text:1`, kind: 'text', tag: '#text', text: node.text }];
-}

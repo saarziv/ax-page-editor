@@ -343,6 +343,32 @@ describe('markModificationsInTree, step 4: forwards', () => {
     expect(marked.status).toEqual({ f1: 'active', f2: 'unmatched' });
   });
 
+  // K6: cut here, so the preview and Agent View, which both draw this tree, end at the same word.
+  it('cuts a long loaded forward to about 3,000 tokens, ending with "(truncated)"', () => {
+    const longText = 'word '.repeat(5_000); // 25,000 characters
+    const longPage: PageTree = {
+      ...termsPage,
+      root: { id: 'main:1', kind: 'main', tag: 'main', children: [{ id: 'main:1>paragraph:1', kind: 'paragraph', tag: 'p', text: longText }] },
+    };
+    const forwards = new Map<string, Forwarded>([[termsHref, { href: termsHref, tree: longPage }]]);
+
+    const marked = markModificationsInTree(contextPage, [forwardModification('f1', termsLink)], forwards);
+
+    const content = nodeAt(marked.tree, 'forward:f1')?.children ?? [];
+    expect(content.map((child) => child.id)).toEqual(['forward:f1>main:1>paragraph:1', 'forward:f1>main:1>truncated']);
+    expect(content[0]?.text?.length).toBeLessThanOrEqual(12_000);
+    expect(content[0]?.text?.length).toBeGreaterThan(11_990);
+    expect(content[1]?.text).toBe('(truncated)');
+  });
+
+  it('keeps a short loaded forward whole, with no "(truncated)"', () => {
+    const forwards = new Map<string, Forwarded>([[termsHref, { href: termsHref, tree: termsPage }]]);
+
+    const marked = markModificationsInTree(contextPage, [forwardModification('f1', termsLink)], forwards);
+
+    expect(nodeAt(marked.tree, 'forward:f1')?.children?.at(-1)?.id).toBe('forward:f1>main:1>paragraph:1');
+  });
+
   it('makes a forward inside a hidden element inactive and does not insert it', () => {
     const marked = markModificationsInTree(contextPage, [
       hideModification('hideSection', plansSection.id, targetFor(plansSection).text),

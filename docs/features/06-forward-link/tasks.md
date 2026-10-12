@@ -6,7 +6,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 - [x] T01 – Forward to AI switch · Covers: K1, K9, and the "only its `href`" part of K8
 - [ ] T02 – Forwarded block in the preview · Covers: K2, K4, K5, and the "stays in the changes list" part of K7
-- [ ] T03 – Forwarded content for agents · Covers: K3, K6, the Agent View part of K7, and the "current content" part of K8
+- [x] T03 – Forwarded content for agents · Covers: K3, K6, the Agent View part of K7, and the "current content" part of K8
 
 **Not covered yet:** the "preview block shows the reason" part of K7. A failed block says only "Couldn't forward <href>" (see Follow-ups).
 
@@ -148,16 +148,16 @@ S1 writes the block, S2 handles failed forwards, and S3 adds the size limit.
   2. Run `curl 'localhost:3001/api/configs/sample%3Ademo'`: the Privacy forward is still saved.
   3. `pnpm test` passes. New Agent View tests check that a forward to a `BLOCKED` stubbed address gives the page with the plain link and no forwarded block, and that an error that isn't a `FetchError` still fails the request.
 
-- [ ] **S3 – Long forwarded content is cut at about 3,000 tokens (K6)**
-  Core gets `truncateTree(root, maxChars)`, and `markModificationsInTree` step 4 applies it with 12,000 characters to every loaded forward. Because the cut happens there, the preview and Agent View end at exactly the same word.
+- [x] **S3 – Long forwarded content is cut at about 3,000 tokens, in the preview and for agents (K6)**
+  Today the preview's forwarded block shows a long page in full, and so would Agent View. Core gets `truncateTree(root, maxChars)`, and `markModificationsInTree` step 4 applies it with 12,000 characters to every loaded forward. The editor's preview and Agent View both build their tree with that same call, so both are cut, and at exactly the same word. The preview draws the "(truncated)" paragraph like any other paragraph inside the expanded block, so `PreviewNode` needs no change.
   **Verify:**
-  1. In the editor, forward "guide to web analytics" (the Wikipedia article, well over 12,000 characters) and expand its block. It ends with a "(truncated)" line, partway through the article.
+  1. In the editor, forward "guide to web analytics" (the Wikipedia article, well over 12,000 characters) and expand its block in the preview. It no longer shows the whole article: it stops partway through and its last line is "(truncated)".
   2. Save and click "View as agent". The forwarded block ends with "> (truncated)", right after the same words the preview ended with (K6).
-  3. "terms of service" is short, so its block in both places ends with the page's last paragraph and no "(truncated)".
+  3. "terms of service" is short, so its block in both the preview and Agent View ends with the page's last paragraph and no "(truncated)".
   4. `pnpm test` passes. New tests check:
     - `truncateTree` returns a tree under 12,000 characters unchanged
     - a longer one is cut at the last space before the limit, ends with a "(truncated)" paragraph, and drops containers left empty: a section whose text all came after the cut disappears
-    - `markModificationsInTree` truncates a long loaded forward, so its `forwarded` node ends with "(truncated)"
+    - `markModificationsInTree` truncates a long loaded forward, so its `forwarded` node ends with "(truncated)". This is the tree the preview draws and Agent View renders.
 
 **Done when:** Agent View shows each saved forward's current content right after its link as a quoted "Forwarded content from <url>:" block, a failed forward leaves just the link, and long content is cut at about 3,000 tokens with "(truncated)", the same in the preview and for agents. `pnpm test`, `typecheck` and `e2e` pass.
 
