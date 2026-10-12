@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { saveConfig, SAVE_TIMEOUT_MS } from './queries';
+import { fetchConfig, REQUEST_TIMEOUT_MS, saveConfig } from './queries';
 
 const saveRequest = { url: 'sample:demo', modifications: [] };
 
@@ -30,7 +30,7 @@ describe('saveConfig', () => {
 
     const pendingSave = saveConfig(saveRequest);
     const saveFailure = expect(pendingSave).rejects.toThrow();
-    await vi.advanceTimersByTimeAsync(SAVE_TIMEOUT_MS);
+    await vi.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS);
 
     await saveFailure;
   });
@@ -46,8 +46,33 @@ describe('saveConfig', () => {
     );
 
     void saveConfig(saveRequest);
-    await vi.advanceTimersByTimeAsync(SAVE_TIMEOUT_MS - 1);
+    await vi.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS - 1);
 
     expect(aborted).toBe(false);
+  });
+});
+
+describe('fetchConfig', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('reads a 404 as nothing saved', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{"code":"NOT_FOUND"}', { status: 404 })));
+
+    await expect(fetchConfig('sample:demo')).resolves.toBeNull();
+  });
+
+  it('fails when the server answers with an error status', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 500 })));
+
+    await expect(fetchConfig('sample:demo')).rejects.toThrow('failed with 500');
+  });
+
+  it('asks for the url encoded as one path segment, and returns the saved configuration', async () => {
+    const savedConfig = { version: 1, url: 'https://acme.com/pricing', updatedAt: '2026-10-12T09:00:00.000Z', modifications: [] };
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(savedConfig), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchConfig('https://acme.com/pricing')).resolves.toEqual(savedConfig);
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/api/configs/https%3A%2F%2Facme.com%2Fpricing', expect.anything());
   });
 });

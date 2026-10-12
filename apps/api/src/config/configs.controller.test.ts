@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import Database from 'better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { configSchema, type Modification } from '@ax/core';
@@ -51,5 +51,31 @@ describe('ConfigsController.save', () => {
   it('rejects a url that is not a web address with a 400 INVALID_REQUEST', () => {
     expect(() => controller.save({ url: 'ftp://acme.com', modifications: [] })).toThrow(BadRequestException);
     expect(storedRows()).toHaveLength(0);
+  });
+});
+
+describe('ConfigsController.findByUrl', () => {
+  let controller: ConfigsController;
+
+  beforeEach(() => {
+    const database = new Database(':memory:');
+    createConfigTable(database);
+    controller = new ConfigsController(new ConfigRepository(database));
+  });
+
+  it('returns the configuration saved for an equivalent url (tracking parameter, trailing slash)', () => {
+    const saved = controller.save({ url: 'https://acme.com/pricing', modifications: [hide, context] });
+
+    expect(controller.findByUrl('acme.com/pricing/?utm_source=x')).toEqual(saved);
+  });
+
+  it('answers 404 NOT_FOUND for a url with nothing saved', () => {
+    controller.save({ url: 'https://acme.com/pricing', modifications: [hide] });
+
+    expect(() => controller.findByUrl('https://acme.com/terms')).toThrow(NotFoundException);
+  });
+
+  it('rejects a url that is not a web address with a 400 INVALID_REQUEST', () => {
+    expect(() => controller.findByUrl('ftp://acme.com')).toThrow(BadRequestException);
   });
 });

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 // The sample is loaded from disk, so these tests never depend on the internet.
 test('typing a URL and clicking Open shows the page in the editor', async ({ page }) => {
@@ -54,5 +54,6 @@ test('opening another page clears the changes', async ({ page }) => {
 
   await page.getByLabel('Page URL').fill('http://localhost:3001');
   await page.getByRole('button', { name: 'Open', exact: true }).click();
-  await expect(pageChanges.getByText('No changes yet.')).toBeVisible();
+  // The editor shows its loading state until the page tree query gives up after its retries.
+  await expect(pageChanges.getByText('No changes yet.')).toBeVisible({ timeout: 15_000 });
 });

@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { Target } from '@ax/core';
+import type { Modification, Target } from '@ax/core';
 import { hasUnsavedChanges, useEditorStore } from './store';
 
 const chart: Target = { selector: 'main:1>figure:1>image:1', text: 'Customer growth' };
 const banner: Target = { selector: 'aside:1', text: 'We use cookies to improve your experience. By continuing you' };
 
-const { markSaved, removeModification, setContext, setUrl, toggleHide } = useEditorStore.getState();
+const { loadSavedModifications, markSaved, removeModification, setContext, setUrl, toggleHide } = useEditorStore.getState();
 const modificationsDraft = () => useEditorStore.getState().modificationsDraft;
 
 describe('setContext', () => {
@@ -124,5 +124,36 @@ describe('hasUnsavedChanges', () => {
     setUrl('https://example.com');
 
     expect(isDirty()).toBe(false);
+  });
+});
+
+describe('loadSavedModifications', () => {
+  beforeEach(() => setUrl('sample:demo'));
+  const savedModifications: Modification[] = [
+    { id: 'a1', type: 'hide', target: banner },
+    { id: 'b2', type: 'context', target: chart, note: 'Customer growth' },
+  ];
+
+  it('fills the draft with the saved changes, with the dirty flag off', () => {
+    loadSavedModifications('sample:demo', savedModifications);
+
+    expect(modificationsDraft()).toEqual(savedModifications);
+    expect(useEditorStore.getState().restoredPageUrl).toBe('sample:demo');
+    expect(hasUnsavedChanges(useEditorStore.getState())).toBe(false);
+  });
+
+  it('counts an edit after the restore as unsaved', () => {
+    loadSavedModifications('sample:demo', savedModifications);
+    removeModification('a1');
+
+    expect(hasUnsavedChanges(useEditorStore.getState())).toBe(true);
+  });
+
+  it('is undone by opening a page, so the next page is restored fresh', () => {
+    loadSavedModifications('sample:demo', savedModifications);
+    setUrl('sample:demo');
+
+    expect(useEditorStore.getState().restoredPageUrl).toBeNull();
+    expect(modificationsDraft()).toEqual([]);
   });
 });

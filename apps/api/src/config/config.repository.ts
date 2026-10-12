@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import Database from 'better-sqlite3';
-import { savedPageSummarySchema, type Config, type SavedPageSummary } from '@ax/core';
+import { configSchema, savedPageSummarySchema, type Config, type SavedPageSummary } from '@ax/core';
 
 /** Opens the SQLite file at `databasePath`, creating its folder and the table on first run. */
 export function openConfigDatabase(databasePath: string): Database.Database {
@@ -45,5 +45,11 @@ export class ConfigRepository {
       )
       .all();
     return savedPageSummarySchema.array().parse(rows);
+  }
+
+  // Parsed on read, so a damaged row fails the request instead of reaching the editor.
+  findByUrl(url: string): Config | null {
+    const row = this.database.prepare('SELECT config FROM page_configs WHERE url = ?').get(url) as { config: string } | undefined;
+    return row ? configSchema.parse(JSON.parse(row.config)) : null;
   }
 }

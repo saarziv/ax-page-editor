@@ -174,19 +174,19 @@ S1 builds the restore path for a configuration that loads and matches. S2 handle
 
 **Implements:** `plan.md` → How opening a page restores its changes, Endpoints (`GET /api/configs/:url`), `ConfigRepository` (`findByUrl`), Restoring on open, Needs attention.
 
-- [ ] **S1 – Open a page with its saved changes (AC7 second half, AC10 second half, AC11)**
+- [x] **S1 – Open a page with its saved changes (AC7 second half, AC10 second half, AC11)**
   The api gets `findByUrl` and `GET /api/configs/:url`, which normalizes the URL and answers with the stored configuration or a 404. The web gets a `useConfig` query, run once the page tree has loaded, and a store action, `loadSavedModifications`, that fills the draft and the last-saved copy together. The editor keeps its loading state until the draft is filled, and a successful save updates the cached configuration, so reopening a page in the same session shows what was just saved.
   **Verify:**
   1. With `pnpm dev` running, open the demo, hide the cookie banner, add a note to the chart and click Save. Go back to the start screen and click the `sample:demo` row: the demo opens with the banner faded, the note under the chart, both listed under "Changes on this page", no "Unsaved changes", and Save disabled (AC10).
   2. Reload the browser and open the demo again with "Try a sample": the same two changes are there.
   3. Remove the hide from the list, click Save, then reopen the demo from the start screen: only the note is there (AC7).
-  4. Open `https://example.com`, hide its heading and click Save. Then type `EXAMPLE.com/?utm_source=x#top` in the top bar and click Open: the page opens with the heading hidden (AC11).
+  4. Open `https://example.com`, hide its paragraph (the page's only selectable element) and click Save. Then type `EXAMPLE.com/?utm_source=x#top` in the top bar and click Open: the page opens with the paragraph hidden (AC11).
   5. Open a page with nothing saved, e.g. `https://example.org`: it opens with "No changes yet." and no error.
   6. `pnpm test` passes. New tests check:
     - `GET /api/configs/:url` with `acme.com/pricing/?utm_source=x` returns the configuration saved for `https://acme.com/pricing`, and a URL with nothing saved gets a 404.
     - `loadSavedModifications` fills the draft with the dirty flag off, and `setUrl` clears `restoredPageUrl`, so the next page is restored fresh.
     - The config request reads a 404 as "nothing saved" and a 500 as a failure.
-  7. `pnpm e2e` passes. The saved pages test now also checks that the demo opened from its row shows the saved hide: the banner faded and listed, and no "Unsaved changes".
+  7. `pnpm e2e` passes. The saved pages test now also checks that the demo opened from its row shows the saved hide: the chart faded and listed, no "Unsaved changes", and Save disabled.
 
 - [ ] **S2 – "Your saved changes couldn't be loaded." with Retry (AC13)**
   If the configuration request fails or doesn't answer within 10 seconds, the editor shows "Your saved changes couldn't be loaded." with a Retry button, in place of the preview and the inspector. The publisher can't edit, because a save from a blank page would overwrite the real saved changes. Retry asks for the configuration again, and the page opens with its changes once it loads.
@@ -203,6 +203,8 @@ S1 builds the restore path for a configuration that loads and matches. S2 handle
   3. Hide the chart and click Save, then reopen the demo from the start screen: "Old promo" is still under "Needs attention", because unmatched changes are saved along with the rest until removed.
   4. Remove "Old promo": "Unsaved changes" appears. Click Save and reopen the demo: "Needs attention" is gone (AC8).
   5. `pnpm e2e` passes. A new test saves the configuration from step 1 through the api, opens the demo, sees "Old promo" under "Needs attention" and the banner faded, removes it, and sees the group disappear and "Unsaved changes".
+
+- e2e: config loads answer "nothing saved" by default, and every test that saves `sample:demo` lives in one file → plan.md §Tests
 
 **Done when:** opening a page from the Saved pages list, the sample button or a typed equivalent URL restores its saved changes on the same elements; a change that no longer matches is listed under "Needs attention" and never applied; a configuration that can't be loaded shows the message with Retry and nothing to edit. `pnpm test`, `typecheck` and `e2e` pass.
 

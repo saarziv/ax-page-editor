@@ -7,8 +7,11 @@ interface EditorState {
   modificationsDraft: Modification[];
   // The last saved draft as JSON, compared with modificationsDraft to derive the dirty flag.
   savedJson: string;
+  // The page whose saved configuration the draft was filled from, so the fill happens once per opened page.
+  restoredPageUrl: string | null;
   selectedId: string | null;
   setUrl: (url: string | null) => void;
+  loadSavedModifications: (pageUrl: string, savedModifications: Modification[]) => void;
   select: (id: string | null) => void;
   toggleHide: (target: Target) => void;
   setContext: (target: Target, note: string) => void;
@@ -22,9 +25,14 @@ export const useEditorStore = create<EditorState>()((set) => ({
   url: null,
   modificationsDraft: [],
   savedJson: NOTHING_SAVED_JSON,
+  restoredPageUrl: null,
   selectedId: null,
-  // Node ids and modifications belong to one page, so opening another page clears both (loading saved configs comes in 04).
-  setUrl: (url) => set({ url, selectedId: null, modificationsDraft: [], savedJson: NOTHING_SAVED_JSON }),
+  // Node ids and modifications belong to one page, so opening a page clears both, and clearing restoredPageUrl
+  // makes even the same page restore its saved configuration fresh.
+  setUrl: (url) => set({ url, selectedId: null, modificationsDraft: [], savedJson: NOTHING_SAVED_JSON, restoredPageUrl: null }),
+  // Fills the draft and the saved copy together, so the page opens with its changes and nothing unsaved.
+  loadSavedModifications: (pageUrl, savedModifications) =>
+    set({ modificationsDraft: savedModifications, savedJson: JSON.stringify(savedModifications), restoredPageUrl: pageUrl }),
   select: (id) => set({ selectedId: id }),
   // A switch, not an "add": the first call hides the element, the next one un-hides it.
   // So an element can never get two hides, and the caller never has to check first.

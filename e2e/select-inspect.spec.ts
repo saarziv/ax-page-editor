@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('clicking an element selects it and shows it in the inspector', async ({ page }) => {
   await page.goto('/');
