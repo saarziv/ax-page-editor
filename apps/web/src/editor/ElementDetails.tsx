@@ -1,8 +1,9 @@
 import { useId, useState, type ReactNode } from 'react';
-import { nodeText, type PageNode } from '@ax/core';
+import { nodeText, targetFor, type PageNode } from '@ax/core';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useNodeModifications } from '@/state/derived';
+import { useEditorStore } from '@/state/store';
 import { Breadcrumb } from './Breadcrumb';
 import { describeModification } from './modificationLabels';
 import { NODE_LABELS } from './nodeLabels';
@@ -61,9 +62,10 @@ function DetailRow({ label, children }: { label: string; children: ReactNode }) 
   );
 }
 
-// Disabled until T02 lets it change the draft. Its state is read from the draft, never stored.
+// Its state is read from the draft, never stored, so an already-hidden element shows on when selected.
 function HideSwitch({ node }: { node: PageNode }) {
   const switchId = useId();
+  const toggleHide = useEditorStore((state) => state.toggleHide);
   const isHidden = useNodeModifications(node).some((modification) => modification.type === 'hide');
 
   return (
@@ -71,7 +73,7 @@ function HideSwitch({ node }: { node: PageNode }) {
       <label htmlFor={switchId} className="text-sm font-medium">
         Hide from AI
       </label>
-      <Switch id={switchId} checked={isHidden} disabled className="data-[state=checked]:bg-green-600" />
+      <Switch id={switchId} checked={isHidden} onCheckedChange={() => toggleHide(targetFor(node))} className="data-[state=checked]:bg-green-600" />
     </div>
   );
 }

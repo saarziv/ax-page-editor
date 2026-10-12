@@ -9,6 +9,11 @@ export function targetSnippet(node: PageNode): string {
   return text.slice(0, SNIPPET_LENGTH);
 }
 
+/** The target a new modification stores for this node. Built here, next to `resolve`, so creating and finding a target follow the same rules. */
+export function targetFor(node: PageNode): Target {
+  return { selector: node.id, text: targetSnippet(node) };
+}
+
 export function matchesTarget(node: PageNode, target: Target): boolean {
   return node.id === target.selector && targetSnippet(node) === target.text;
 }

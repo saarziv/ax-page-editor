@@ -21,7 +21,7 @@ test('clicking an element selects it and shows it in the inspector', async ({ pa
   await expect(inspector.getByText('https://www.iana.org/help/example-domains')).toBeVisible();
   await expect(inspector.getByText('No changes on this element.')).toBeVisible();
   const hideSwitch = inspector.getByRole('switch', { name: 'Hide from AI' });
-  await expect(hideSwitch).toBeDisabled();
+  await expect(hideSwitch).toBeEnabled();
   await expect(hideSwitch).not.toBeChecked();
   for (const controlName of ['Context for AI', 'Forward this link']) {
     await expect(inspector.getByRole('button', { name: controlName })).toBeDisabled();
@@ -93,16 +93,22 @@ test('the breadcrumb shows the path and selects a container', async ({ page }) =
   await expect(breadcrumb).toBeHidden();
 });
 
-test('the Hide switch is on for an element the draft hides', async ({ page }) => {
+test('the Hide switch is on for a hidden container, not for the text inside it', async ({ page }) => {
   await page.goto('/');
   await page.getByText('Try a sample').click();
 
   const inspector = page.getByRole('complementary', { name: 'Inspector' });
+  const hideSwitch = inspector.getByRole('switch', { name: 'Hide from AI' });
 
-  // The demo mock hides the whole banner, so the switch is on for the banner, not its text.
   await page.getByRole('region', { name: 'Preview' }).getByText(/^We use cookies/).click();
   await inspector.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('button', { name: 'Sidebar' }).click();
-  await expect(inspector.getByRole('switch', { name: 'Hide from AI' })).toBeChecked();
+  await hideSwitch.click();
+  await expect(hideSwitch).toBeChecked();
+
+  // The hide is on the banner, so the paragraph inside it has its own switch, still off.
+  await page.getByRole('region', { name: 'Preview' }).getByText(/^We use cookies/).click();
+  await expect(inspector.getByRole('heading', { name: 'Paragraph' })).toBeVisible();
+  await expect(hideSwitch).not.toBeChecked();
 });
 
 test('hovering an element outlines it and names its type', async ({ page }) => {
@@ -131,34 +137,52 @@ test('hovering an element outlines it and names its type', async ({ page }) => {
   await expect(hoverBox).toBeHidden();
 });
 
-test("the inspector lists the selected element's changes", async ({ page }) => {
+test('the Hide switch adds and removes a hide in both changes lists', async ({ page }) => {
   await page.goto('/');
   await page.getByText('Try a sample').click();
 
   const preview = page.getByRole('region', { name: 'Preview' });
   const elementChanges = page.getByRole('region', { name: 'Selected element' });
+  const pageChanges = page.getByRole('region', { name: 'Changes on this page' });
+  const hideSwitch = page.getByRole('switch', { name: 'Hide from AI' });
+  const chart = preview.getByRole('img', { name: 'Customer growth' });
 
-  await preview.getByRole('img', { name: 'Customer growth' }).click();
-  await expect(elementChanges.getByText(/^Context: Paying customers per month in 2026/)).toBeVisible();
+  await expect(pageChanges.getByText('No changes yet.')).toBeVisible();
 
-  await preview.getByText('terms of service', { exact: true }).click();
+  await chart.click();
+  await hideSwitch.click();
+  await expect(hideSwitch).toBeChecked();
+  await expect(elementChanges.getByText('Hidden from AI', { exact: true })).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(pageChanges.getByRole('listitem')).toHaveText(['Hidden from AI · Customer growth']);
+
+  await chart.click();
+  await hideSwitch.click();
+  await expect(hideSwitch).not.toBeChecked();
   await expect(elementChanges.getByText('No changes on this element.')).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(pageChanges.getByText('No changes yet.')).toBeVisible();
 });
 
-test('modified elements are marked in the preview, and stay clickable', async ({ page }) => {
+// S2 replaces this amber marker with the faded look.
+test('a hidden element is marked in the preview, and stays clickable', async ({ page }) => {
   await page.goto('/');
   await page.getByText('Try a sample').click();
 
-  const preview = page.getByRole('region', { name: 'Preview' });
-  const markers = page.getByTestId('modification-marker');
+  const chart = page.getByRole('region', { name: 'Preview' }).getByRole('img', { name: 'Customer growth' });
+  const chartMarker = page.locator('[data-marker-for="main:1>figure:1>image:1"]');
 
-  await expect(markers).toHaveCount(3);
-  await expect(page.locator('[data-marker-for="aside:1"]')).toHaveText('Hidden from AI');
-  await expect(page.locator('[data-marker-for="main:1>figure:1>image:1"]')).toHaveText('Context');
-  await expect(page.locator('[data-marker-for="main:1>section:1>paragraph:1>link:2"]')).toHaveText('Forwarded');
+  await chart.click();
+  await page.getByRole('switch', { name: 'Hide from AI' }).click();
+  await expect(chartMarker).toHaveText('Hidden from AI');
 
-  // The marker lets the click through, so the image underneath gets selected.
-  const chart = preview.getByRole('img', { name: 'Customer growth' });
+  // The marker lets the click through, so the image underneath is selected again.
+  await page.keyboard.press('Escape');
   await chart.click();
   await expect(chart).toHaveAttribute('data-selected', 'true');
+
+  await page.getByRole('switch', { name: 'Hide from AI' }).click();
+  await expect(chartMarker).toHaveCount(0);
 });

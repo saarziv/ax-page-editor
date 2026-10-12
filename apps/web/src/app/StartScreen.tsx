@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { DEMO_URL } from '@/editor/demoMock';
+import { DEMO_URL } from '@/editor/demo';
 import { useEditorStore } from '@/state/store';
 
 export function StartScreen() {

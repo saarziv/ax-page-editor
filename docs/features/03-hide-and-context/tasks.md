@@ -49,7 +49,7 @@ Not in this task: the Markdown view and removing hidden parts from what the agen
 
 **Implements:** `plan.md` → `targetFor(node)`, `markModificationsInTree` steps 1 and 2, Hide switch, Store: `toggleHide(target)`, and Rendering the preview.
 
-- [ ] **S1 – The switch adds and removes the hide in the draft**
+- [x] **S1 – The switch adds and removes the hide in the draft**
 
   The switch becomes clickable. Turning it on adds a `hide` entry for the selected element to `modificationsDraft`, and turning it off removes it. Core gets `targetFor(node)`, which builds the entry's target.
 
