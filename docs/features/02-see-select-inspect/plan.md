@@ -9,6 +9,7 @@ How we build the See, select & inspect spec. Shared architecture, core contracts
 First built here (contracts in the global plan):
 - `selectedId` and the `select` action in the editor store (§5.1)
 - The plain-language label for each `kind` (§3.1)
+- The `Target` and `Modification` zod schemas (§3.7), `resolve` and the target snippet (§3.3), and `draft` in the editor store (§5.1), for the demo mock (see Modification markers)
 
 Used from 01: the page tree (§3.1), `usePageTree` (§5.1), and `PreviewNode` (01 plan → Preview rendering).
 
@@ -41,12 +42,12 @@ Example: in `<p data-node-id="…paragraph:3">Read our <span data-node-id="…li
 
 **Two states**, chosen by whether `findNodePath(tree, selectedId)` finds a node. The inspector reads the tree with the same `usePageTree(url)` as the preview, so TanStack Query serves it from the cache with no second request. A stale id that isn't in the tree simply shows the empty state.
 
-- **Nothing selected:** the hint at the top, then "Changes on this page" at the bottom: "No changes yet." There are no modifications in the app yet, so the list is always empty until the bonus mock and 03.
+- **Nothing selected:** the hint at the top, then "Changes on this page" at the bottom. What it lists is in Modification markers.
 - **Element selected**, top to bottom:
   - the plain-language type ("Link"), with "Tag: `<a>`" under it, from `node.tag`
   - **Text:** `nodeText(node)`. Text over about 200 characters is clamped to four lines with a "Show more" / "Show less" toggle. For images, the description `attrs.alt`, or "No description" when missing. For fields, `attrs.label`.
   - for links, the destination `attrs.href`, as plain text (not a link, so nothing leaves the editor)
-  - "Changes on this element": "No changes on this element." for now
+  - "Changes on this element": the element's modifications, see Modification markers
   - a divider, then the three modification buttons, still disabled. 03 and 04 make them work.
 
 **Plain-language labels** live in `apps/web/src/editor/nodeLabels.ts` as a `Record<NodeKind, string>` ("Link", "Heading", "Image", "List item", "Form field", "Navigation", …). They're words for the screen, so they stay in the web app. Typing the map as a `Record` over every kind means TypeScript flags a missing label when a kind is added. The later hover task reuses the same map.
@@ -54,7 +55,7 @@ Example: in `<p data-node-id="…paragraph:3">Read our <span data-node-id="…li
 **Files:**
 - `Inspector.tsx` picks the state.
 - `ElementDetails.tsx` holds the selected-element block.
-- `PageChanges.tsx` holds the empty list.
+- `PageChanges.tsx` holds the page's changes list.
 - `Editor.tsx` passes `url` to the inspector.
 
 ### Deselect
@@ -89,7 +90,35 @@ Example: select "terms of service" on the demo, then click "Section" in the brea
 
 Example: hovering the "Customer growth" chart shows a faint outline around the image and an "Image" chip above it. Moving onto the "terms of service" link moves the box to the link with "Link", and the paragraph around it isn't outlined.
 
+### Modification markers
+
+**The idea:** until 03 adds real controls, opening the demo page puts a few sample modifications into the store's `draft`, exactly as if the publisher had made them. Everything else reads `draft`, never the mock, so when 03 deletes the mock the preview markers and both change lists keep working with real modifications.
+
+**The mock** lives in `apps/web/src/editor/demoMock.ts`, next to `DEMO_URL`, which moves there from the start screen. It's three plain `Modification`s, written like a saved config, one of each type, so every badge shows:
+- hide on the cookie banner (`aside:1`)
+- context on the chart image (`main:1>figure:1>image:1`), with a short note
+- forward on the "guide to web analytics" link (`main:1>section:1>paragraph:1>link:2`). Not "terms of service", so that link stays the example of an element with no changes.
+
+`setUrl` sets `draft` to the mock when the url is `DEMO_URL` and to `[]` otherwise. So reopening the demo restores the mock, and a real URL opens with none.
+
+**Core gets the shared types and `resolve` now** (contracts in global plan §3.3 and §3.7), because the hard rule "a modification that can't be confidently resolved is never applied" covers markers too. A marker on the wrong element would tell the publisher something false.
+- `targetSnippet(node)`: the first 60 characters of `nodeText(node)`, or `attrs.alt` for an image.
+- `matchesTarget(node, target)`: the node's id equals `target.selector` and its snippet equals `target.text`.
+- `resolve(root, target)`: `findNodePath` by selector, then `matchesTarget`, else `null`. No fallback.
+
+Example: the mock's hide targets `{ selector: 'aside:1', text: 'We use cookies to improve your experience. By continuing you' }`. If someone edits the banner text in `demo.html`, the snippet no longer matches, and the banner shows no marker instead of a misleading one.
+
+**Per-element changes (K8):** a hook `useNodeModifications(node)` in `apps/web/src/state/derived.ts` returns the draft modifications whose target matches that node. It reads the store with `useShallow`, so a component re-renders only when its own list changes. `ElementDetails` shows one line per modification in plain words: "Hidden from AI", "Context: <note>", "Forwarded: <href>". With none, it keeps "No changes on this element." The words for each type live in `modificationLabels.ts`, next to `nodeLabels.ts`.
+
+**Page changes list (B3):** `PageChanges` lists every draft modification as one line, its type and its target snippet, e.g. "Hidden from AI · We use cookies to improve…". It reads the snippet from the modification itself, so it needs no tree. Statuses and grouping (including "not found on this page") come in 05.
+
+**Preview markers (B1, B2):** one more overlay in the same positioned box as the hover overlay, for the same reason: a badge can't go inside an `<img>` or a `<tr>`. For each draft modification that `resolve`s, `ModificationLayer.tsx` finds the element by `[data-node-id]` (with `CSS.escape`, since ids contain `>` and `:`) and draws one box over its rect: a dashed amber outline with a faint amber tint, and the badges ("Hidden from AI", "Context", "Forwarded") above its top-right corner. An element with two modifications gets one box with two badges.
+- **Different from hover and selection:** both of those use the theme's primary color, solid or faint, with the chip on the left. The marker is dashed, amber and badged on the right, so all three can show on one element at once (B2).
+- **Pointer-transparent:** the boxes have `pointer-events: none`, so a click still reaches the element and selects it.
+- **Staying in place:** rects are measured after each render and again whenever the content box resizes (a `ResizeObserver`), which covers images finishing loading and window resizes.
+- **Interim:** a resolved modification counts as active. When 03 lands `transform`, the markers switch to `result.status` (global plan §5.1), so a modification inside a hidden element shows as inactive.
+
 ## Tests
 
-- **Core unit tests** for `findNodePath` and `nodeText` (cases in `tasks.md`).
-- **E2E:** a new `e2e/select-inspect.spec.ts`. The 01 test that checked the disabled buttons is updated to the new empty state. T02 adds tests there for Esc and empty-space deselect, the breadcrumb and the hover overlay. The web app has no unit test setup. These components only display what core computes, so e2e covers them.
+- **Core unit tests** for `findNodePath`, `nodeText`, `targetSnippet`, `matchesTarget` and `resolve` (cases in `tasks.md`).
+- **E2E:** a new `e2e/select-inspect.spec.ts`. The 01 test that checked the disabled buttons is updated to the new empty state. T02 adds tests there for Esc and empty-space deselect, the breadcrumb and the hover overlay. T03 updates the demo's empty-list check to the mock, and adds tests for the markers, the per-element list and the page list. The web app has no unit test setup. These components only display what core computes, so e2e covers them.

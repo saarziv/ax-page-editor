@@ -6,7 +6,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 - [x] T01 – Select an element and inspect it · Covers: K1, K2, K3, K4, K5, K6, K7, K8 (no-changes case), S4
 - [x] T02 – Deselect, climb with the breadcrumb, and see what you hover · Covers: S1, S2, S3
-- Next tasks are defined after T02. Still to cover: K8 (with changes), B1, B2, B3.
+- [ ] T03 – See the changes on the demo page · Covers: K8 (with changes), B1, B2, B3
 
 ---
 
@@ -29,41 +29,58 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 **Implements:** `plan.md` → Deselect, Breadcrumb, and Hover.
 
-- [x] **S1 – Clear the selection with Esc or a click on empty space**
-
-  Pressing Esc anywhere in the editor clears the selection, and so does a click on preview space that no element covers. The click handler moves up to the whole preview, and a click that finds no element now selects nothing instead of being ignored. A click in a gap inside a section still selects that section. That's by design, and `plan.md` → Deselect explains why.
-
-  **Verify:**
-  1. Click "Try a sample", click "terms of service", then press Esc: the outline disappears and the inspector is back to the hint.
-  2. Select the link again, then click to the right of the page content: the selection clears the same way.
-  3. Select the link, then click in the gap between the "Plans" table and the paragraph below it: the "Plans" section is selected, outlined as a whole, and the inspector says "Section".
-  4. `pnpm e2e` passes. New tests in `select-inspect` select the link, then check that Esc clears it and that a click on empty preview space clears it.
-
-- [x] **S2 – Breadcrumb to select a container**
-
-  The top of the selected element's details shows the path from the page down to it, named in plain words, like `Main content › Section › Paragraph › Link`. Every step except the last is clickable and selects that container. The last step is the current element. A top-level element with nothing above it shows no breadcrumb.
-
-  **Verify:**
-  1. Click "Try a sample" and click "terms of service": the inspector shows `Main content › Section › Paragraph › Link` above "Link".
-  2. Click "Section" in the breadcrumb: the outline moves to the whole section, the inspector says "Section", and the breadcrumb becomes `Main content › Section`.
-  3. Click "Main content" in the breadcrumb: the whole main area is selected, and no breadcrumb shows, because only the page is above it.
-  4. `pnpm e2e` passes. A new test selects the link, checks the breadcrumb text, clicks "Paragraph" and checks that the paragraph is now the selected element.
-
-- [x] **S3 – Hover outline with a type label**
-
-  Hovering the preview shows a faint outline around the innermost element under the pointer and a small chip above it with its type ("Link", "Image"). It's one overlay box positioned over the hovered element, so it works for images and table rows too. It's visibly lighter than the selection outline, and leaving the preview hides it.
-
-  **Verify:**
-  1. Click "Try a sample" and hover the "Customer growth" chart: a faint outline and an "Image" chip appear. Nothing moves or shifts.
-  2. Move onto "terms of service": the box jumps to the link with "Link", and the paragraph around it is not outlined.
-  3. Click the link, then keep hovering it: the solid selection outline is clearly stronger than the hover outline.
-  4. Scroll the preview while hovering, then move the mouse out of the preview: the box follows its element while scrolling and disappears when the mouse leaves.
-  5. `pnpm e2e` passes. A new test hovers the link and checks that the hover chip says "Link", then hovers the heading and checks that it says "Heading".
+- [x] **S1 – Clear the selection with Esc or a click on empty space**: Esc on the window, or a click the preview finds no element under, selects nothing. A click in a gap inside a section still selects the section.
+- [x] **S2 – Breadcrumb to select a container**: the path from the page down to the element, in plain words, with each ancestor clickable. A top-level element shows none.
+- [x] **S3 – Hover outline with a type label**: one overlay box over the innermost hovered element, lighter than the selection, with a type chip above it.
 
 **Done when:** on the demo page, Esc and a click on empty space clear the selection, the breadcrumb selects any container around the selected element, and hovering shows a light outline with the element's type. `pnpm test`, `typecheck` and `e2e` pass.
 
 - Breadcrumb receives the path along with the node → plan.md §Breadcrumb
 - Hover state lives in `HoverLayer`, not `Preview` → plan.md §Hover
+
+---
+
+## T03 – See the changes on the demo page
+
+**Goal:** the publisher can see what has been changed on a page, both at a glance in the preview and in the inspector. There are no real controls until 03, so opening the demo page loads three sample modifications into the draft, one of each type: the cookie banner hidden, a context note on the chart image, and the "guide to web analytics" link forwarded. Each modified element gets an amber dashed marker with a badge naming the change. Selecting it lists its changes in the inspector, and with nothing selected the page's changes list shows all three. Everything reads the draft, not the mock, so it keeps working when 03 replaces the mock with real modifications.
+
+**Implements:** `plan.md` → Modification markers.
+
+- [ ] **S1 – Load the demo mock and list it in "Changes on this page"**
+
+  Core gets the `Target` and `Modification` zod schemas. The store gets `draft`, which `setUrl` fills with the three mock modifications when the demo page opens and empties for any other URL. The page changes list shows one line per modification, its type in plain words and the text of its target, instead of always saying "No changes yet."
+
+  **Verify:**
+  1. Click "Try a sample": with nothing selected, "Changes on this page" lists three lines, starting "Hidden from AI · We use cookies…", "Context · Customer growth" and "Forwarded · guide to web analytics".
+  2. Open `https://example.com` from the top bar: the list says "No changes yet." Open the demo again: the three lines are back.
+  3. `pnpm e2e` passes. The 01 test that expected "No changes yet." on the demo now expects the three lines.
+
+- [ ] **S2 – List the selected element's changes (K8)**
+
+  Core gets `targetSnippet`, `matchesTarget` and `resolve`, which decide whether a modification really belongs to an element: same selector and the same text snippet, never a guess. The inspector's "Changes on this element" uses them to list each of the selected element's modifications in plain words, and keeps "No changes on this element." when there are none.
+
+  **Verify:**
+  1. Click "Try a sample", click the cookie banner's text, then click "Sidebar" in the breadcrumb: the inspector lists "Hidden from AI". The paragraph inside it has no changes of its own, so before the climb it said "No changes on this element."
+  2. Click the chart image: it lists "Context: " followed by the mock note. Click "guide to web analytics": it lists "Forwarded: https://en.wikipedia.org/wiki/Web_analytics".
+  3. Click "terms of service": it still says "No changes on this element."
+  4. `pnpm test` passes. New core tests check:
+     - `targetSnippet` is the first 60 characters of the normalized text, and the alt for an image
+     - `resolve` returns the node when selector and snippet match, e.g. `aside:1` with the banner's first 60 characters
+     - `resolve` returns `null` when the selector exists but the text changed, or when the selector isn't in the tree
+  5. `pnpm e2e` passes. A new test selects the chart image and checks its context line, then selects "terms of service" and checks "No changes on this element."
+
+- [ ] **S3 – Mark modified elements in the preview (B1, B2)**
+
+  One more overlay next to the hover overlay draws a box over every element with a modification that resolves: a dashed amber outline, a faint tint, and badges above its top-right corner. The box lets clicks through and follows its element when images load or the window resizes. See `plan.md` → Modification markers for why it's an overlay and how it stays different from hover and selection.
+
+  **Verify:**
+  1. Click "Try a sample": the cookie banner shows a "Hidden from AI" badge, the chart image a "Context" badge and "guide to web analytics" a "Forwarded" badge. Nothing else is marked, and nothing on the page shifts.
+  2. Click the chart image: the solid selection outline and the amber marker with its "Context" badge both show, and the inspector lists the context line.
+  3. Hover the chart: the hover chip on the left and the "Context" badge on the right are both readable.
+  4. Resize the browser window: each marker stays on its element.
+  5. `pnpm e2e` passes. A new test checks that the demo shows exactly three markers with those three badges, and that clicking the marked image selects it.
+
+**Done when:** the demo page opens with three marked elements, selecting one lists its changes, the nothing-selected list shows all three, and a real URL shows no changes. `pnpm test`, `typecheck` and `e2e` pass.
 
 ---
 

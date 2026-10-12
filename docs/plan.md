@@ -129,6 +129,9 @@ Every consumer must clean identically, or saved selectors break (D11). So these 
 - **Deterministic:** the same HTML always produces the same tree. Required for targeting.
 
 ### 3.3 Selectors & targets
+
+`resolve` and the target snippet are first built in 02.
+
 - `selector` = path in the **clean tree**: `kind:nth` steps, e.g. `main:1>section:2>paragraph:3` (format defined in the global spec, Configuration). It's computed over the clean tree, not the raw DOM, so wrapper churn (`div` soup) on the live site doesn't break it.
 - `target.text` = first 60 chars of the node's normalized text (or `alt` for images).
 - `resolve(tree, target) → node | null`: find by selector, then require that the snippet still matches. Otherwise return `null` (unmatched, see Save & review changes). Never fall back to a guess.
@@ -170,6 +173,8 @@ Both first built in 02. The formats for `annotation` and `forwarded` nodes are d
 - **zod schemas** for `Config` and `Modification`. They're the single source of the TS types and are used by both api validation and web.
 
 ### 3.7 Config type
+
+`Target` and `Modification` are first built in 02 (for the demo mock), `Config` in 05.
 
 ```ts
 type Target = { selector: string; text: string };
