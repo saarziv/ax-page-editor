@@ -8,6 +8,8 @@ All ACs are **Key** (must ship), except AC8, AC12 and AC13, which are **follow-u
 
 ---
 
+
+
 ## 1. The flow
 
 ```
@@ -29,6 +31,8 @@ Start screen                              Editor
 2. Later, they open the page again: from the **Saved pages** list on the start screen, or by typing its URL.
 3. The page opens with its saved changes **restored** on the same elements.
 4. They **review** the changes in the list, **remove** any they don't want, and save again.
+
+
 
 ## 2. Save
 
@@ -55,6 +59,8 @@ Start screen                              Editor
 - **AC4** Given a save fails, then the user sees a toast saying "Your changes couldn't be saved. Try again.", and every change stays in the editor, still marked unsaved.
 - **AC5** Given an invalid configuration (unknown type, missing field, note over 300 characters), when it's sent to the server, then it's rejected and nothing is stored.
 
+
+
 ## 3. Review & remove changes
 
 **What:** One list of every change on the page, where each one can be removed.
@@ -73,6 +79,8 @@ Start screen                              Editor
 - **AC6** Given N changes on a page, then the list shows N items, each with its type, element snippet, the note for context, and a Remove button.
 - **AC7** Given the user removes a change, then it disappears from the list and the preview, and "Unsaved changes" appears. After saving and reopening, it's gone.
 - **AC8** (follow-up) Given a change that no longer matches the page, then it's listed under "Needs attention" and can be removed.
+
+
 
 ## 4. Load saved pages
 
@@ -97,15 +105,21 @@ Start screen                              Editor
 - **AC13** (follow-up) Given the load error from AC14, then it offers Retry, and the page opens with its saved changes once the configuration loads.
 - **AC14** Given the configuration can't be loaded, then the user sees "Your saved changes couldn't be loaded." and can't edit the page.
 
+
+
 ## Edge cases
 
-| Case | What the user sees |
-| --- | --- |
-| Save fails (server down or error) | A toast: "Your changes couldn't be saved. Try again." Changes stay, still unsaved. |
-| Saved configuration can't be loaded | "Your saved changes couldn't be loaded." No editing. (Retry is a follow-up, AC13.) |
-| Saved pages list can't be loaded | The rest of the start screen works; the list shows "Saved pages couldn't be loaded." |
-| The saved page itself can't be fetched | The same messages as opening any page (01). |
-| All changes removed, then saved | An empty configuration is stored; the row shows "0 changes". |
+
+| Case                                   | What the user sees                                                                   |
+| -------------------------------------- | ------------------------------------------------------------------------------------ |
+| Save fails (server down or error)      | A toast: "Your changes couldn't be saved. Try again." Changes stay, still unsaved.   |
+| Saved configuration can't be loaded    | "Your saved changes couldn't be loaded." No editing. (Retry is a follow-up, AC13.)   |
+| Saved pages list can't be loaded       | The rest of the start screen works; the list shows "Saved pages couldn't be loaded." |
+| The saved page itself can't be fetched | The same messages as opening any page (01).                                          |
+| All changes removed, then saved        | An empty configuration is stored; the row shows "0 changes".                         |
+
+
+
 
 ## Out of scope
 
@@ -115,3 +129,4 @@ Start screen                              Editor
 - Deleting a saved configuration from the start screen.
 - Clicking a list item to select its element in the preview.
 - Showing changes inside a hidden element as inactive (03, Out of scope).
+
