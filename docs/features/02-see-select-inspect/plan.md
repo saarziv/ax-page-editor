@@ -9,7 +9,7 @@ How we build the See, select & inspect spec. Shared architecture, core contracts
 First built here (contracts in the global plan):
 - `selectedId` and the `select` action in the editor store (§5.1)
 - The plain-language label for each `kind` (§3.1)
-- The `Target` and `Modification` zod schemas (§3.7), `resolve` and the target snippet (§3.3), and `draft` in the editor store (§5.1), for the demo mock (see Modification markers)
+- The `Target` and `Modification` zod schemas (§3.7), `resolve` and the target snippet (§3.3), and `modificationsDraft` in the editor store (§5.1), for the demo mock (see Modification markers)
 
 Used from 01: the page tree (§3.1), `usePageTree` (§5.1), and `PreviewNode` (01 plan → Preview rendering).
 
@@ -92,14 +92,14 @@ Example: hovering the "Customer growth" chart shows a faint outline around the i
 
 ### Modification markers
 
-**The idea:** until 03 adds real controls, opening the demo page puts a few sample modifications into the store's `draft`, exactly as if the publisher had made them. Everything else reads `draft`, never the mock, so when 03 deletes the mock the preview markers and both change lists keep working with real modifications.
+**The idea:** until 03 adds real controls, opening the demo page puts a few sample modifications into the store's `modificationsDraft`, exactly as if the publisher had made them. Everything else reads `modificationsDraft`, never the mock, so when 03 deletes the mock the preview markers and both change lists keep working with real modifications.
 
 **The mock** lives in `apps/web/src/editor/demoMock.ts`, next to `DEMO_URL`, which moves there from the start screen. It's three plain `Modification`s, written like a saved config, one of each type, so every badge shows:
 - hide on the cookie banner (`aside:1`)
 - context on the chart image (`main:1>figure:1>image:1`), with a short note
 - forward on the "guide to web analytics" link (`main:1>section:1>paragraph:1>link:2`). Not "terms of service", so that link stays the example of an element with no changes.
 
-`setUrl` sets `draft` to the mock when the url is `DEMO_URL` and to `[]` otherwise. So reopening the demo restores the mock, and a real URL opens with none.
+`setUrl` sets `modificationsDraft` to the mock when the url is `DEMO_URL` and to `[]` otherwise. So reopening the demo restores the mock, and a real URL opens with none.
 
 **Core gets the shared types and `resolve` now** (contracts in global plan §3.3 and §3.7), because the hard rule "a modification that can't be confidently resolved is never applied" covers markers too. A marker on the wrong element would tell the publisher something false.
 - `targetSnippet(node)`: the first 60 characters of `nodeText(node)`, or `attrs.alt` for an image.

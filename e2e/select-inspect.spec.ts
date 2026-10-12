@@ -20,7 +20,10 @@ test('clicking an element selects it and shows it in the inspector', async ({ pa
   await expect(inspector.getByText('terms of service', { exact: true })).toBeVisible();
   await expect(inspector.getByText('https://www.iana.org/help/example-domains')).toBeVisible();
   await expect(inspector.getByText('No changes on this element.')).toBeVisible();
-  for (const controlName of ['Hide from AI', 'Context for AI', 'Forward this link']) {
+  const hideSwitch = inspector.getByRole('switch', { name: 'Hide from AI' });
+  await expect(hideSwitch).toBeDisabled();
+  await expect(hideSwitch).not.toBeChecked();
+  for (const controlName of ['Context for AI', 'Forward this link']) {
     await expect(inspector.getByRole('button', { name: controlName })).toBeDisabled();
   }
 
@@ -88,6 +91,18 @@ test('the breadcrumb shows the path and selects a container', async ({ page }) =
   await breadcrumb.getByRole('button', { name: 'Main content' }).click();
   await expect(inspector.getByRole('heading', { name: 'Main content' })).toBeVisible();
   await expect(breadcrumb).toBeHidden();
+});
+
+test('the Hide switch is on for an element the draft hides', async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Try a sample').click();
+
+  const inspector = page.getByRole('complementary', { name: 'Inspector' });
+
+  // The demo mock hides the whole banner, so the switch is on for the banner, not its text.
+  await page.getByRole('region', { name: 'Preview' }).getByText(/^We use cookies/).click();
+  await inspector.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('button', { name: 'Sidebar' }).click();
+  await expect(inspector.getByRole('switch', { name: 'Hide from AI' })).toBeChecked();
 });
 
 test('hovering an element outlines it and names its type', async ({ page }) => {

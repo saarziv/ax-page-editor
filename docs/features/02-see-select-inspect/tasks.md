@@ -48,7 +48,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 - [x] **S1 – Load the demo mock and list it in "Changes on this page"**
 
-  Core gets the `Target` and `Modification` zod schemas. The store gets `draft`, which `setUrl` fills with the three mock modifications when the demo page opens and empties for any other URL. The page changes list shows one line per modification, its type in plain words and the text of its target, instead of always saying "No changes yet."
+  Core gets the `Target` and `Modification` zod schemas. The store gets `modificationsDraft`, which `setUrl` fills with the three mock modifications when the demo page opens and empties for any other URL. The page changes list shows one line per modification, its type in plain words and the text of its target, instead of always saying "No changes yet."
 
   **Verify:**
   1. Click "Try a sample": with nothing selected, "Changes on this page" lists three lines, starting "Hidden from AI · We use cookies…", "Context · Customer growth" and "Forwarded · guide to web analytics".

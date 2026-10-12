@@ -35,7 +35,7 @@ The JSON is validated on save and on read. Saving the same URL replaces the row.
 - Clicking an item selects it and scrolls it into view.
 - **Save:** `PUT /api/configs`; on success `markSaved`; on failure a plain-language error and the draft stays dirty.
 - **Store actions:**
-  - `load(config)`: sets `draft` and `savedJson` from the saved configuration.
+  - `load(config)`: sets `modificationsDraft` and `savedJson` from the saved configuration.
   - `remove(id)`: removes one modification.
   - `markSaved()`: sets `savedJson` to the current draft.
 

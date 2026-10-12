@@ -28,7 +28,8 @@ test('the editor shows the top bar, preview and the inspector with the demo chan
     'Context · Customer growth',
     'Forwarded · guide to web analytics',
   ]);
-  for (const controlName of ['Hide from AI', 'Context for AI', 'Forward this link']) {
+  await expect(page.getByRole('switch', { name: 'Hide from AI' })).toHaveCount(0);
+  for (const controlName of ['Context for AI', 'Forward this link']) {
     await expect(page.getByRole('button', { name: controlName })).toHaveCount(0);
   }
 });

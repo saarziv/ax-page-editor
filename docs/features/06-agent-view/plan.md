@@ -18,7 +18,7 @@ What an agent reads is computed the same way in the editor and in Agent View: `r
 
 ### `prune(root)`
 
-Returns the marked page without its `hidden` subtrees: the agent tree, the only tree the renderers see. Like `mark`, it never changes its input and copies only the nodes on the path to a removed subtree. A container left empty stays, because it renders as nothing. Example: with the cookie banner hidden, `prune` drops `aside:1` and everything in it, and `prune(mark(page, []).tree)` equals the page. This is where 03's K2 and K4 are checked on the real output.
+Returns the marked page without its `hidden` subtrees: the agent tree, the only tree the renderers see. Like `markModificationsInTree`, it never changes its input and copies only the nodes on the path to a removed subtree. A container left empty stays, because it renders as nothing. Example: with the cookie banner hidden, `prune` drops `aside:1` and everything in it, and `prune(markModificationsInTree(page, []).tree)` equals the page. This is where 03's K2 and K4 are checked on the real output.
 
 ### Renderer formats for `annotation`
 
@@ -38,7 +38,7 @@ The Page | Markdown toggle (`view` in the store) switches the preview area to a 
 
 ## API
 
-Agent View runs the same chain on the live page: `renderMarkdown(prune(mark(clean(html), config, forwards).tree))`, or `renderHtml` for `format=html`. The modifications it couldn't apply come from the marked page's `status`.
+Agent View runs the same chain on the live page: `renderMarkdown(prune(markModificationsInTree(clean(html), config, forwards).tree))`, or `renderHtml` for `format=html`. The modifications it couldn't apply come from the marked page's `status`.
 
 ## Tests
 

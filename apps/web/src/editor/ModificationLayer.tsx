@@ -19,12 +19,12 @@ interface MarkerBox extends MarkedElement {
 // It fills the content box exactly (absolute inset-0), so its own rect is the origin for every marker.
 export function ModificationLayer({ root }: { root: PageNode }) {
   const layerRef = useRef<HTMLDivElement>(null);
-  const draft = useEditorStore((state) => state.draft);
+  const modificationsDraft = useEditorStore((state) => state.modificationsDraft);
   const [markerBoxes, setMarkerBoxes] = useState<MarkerBox[]>([]);
 
   // Only modifications that resolve get a marker: a marker on the wrong element would tell the publisher something false.
   // Interim until 03's transform: a resolved modification counts as active.
-  const markedElements = useMemo(() => groupResolvedByNode(root, draft), [root, draft]);
+  const markedElements = useMemo(() => groupResolvedByNode(root, modificationsDraft), [root, modificationsDraft]);
 
   useLayoutEffect(() => {
     const layer = layerRef.current;
@@ -77,9 +77,9 @@ export function ModificationLayer({ root }: { root: PageNode }) {
 }
 
 // One entry per element, so an element with two modifications gets one box with two badges.
-function groupResolvedByNode(root: PageNode, draft: Modification[]): MarkedElement[] {
+function groupResolvedByNode(root: PageNode, modificationsDraft: Modification[]): MarkedElement[] {
   const labelsByNodeId = new Map<string, string[]>();
-  for (const modification of draft) {
+  for (const modification of modificationsDraft) {
     const resolvedNode = resolve(root, modification.target);
     if (!resolvedNode) continue;
     const labels = labelsByNodeId.get(resolvedNode.id) ?? [];
