@@ -120,3 +120,12 @@ export const configSchema = z.object({
 });
 
 export type Config = z.infer<typeof configSchema>;
+
+// One row of the start screen's Saved pages list. The api sends only this, not whole configurations.
+export const savedPageSummarySchema = z.object({
+  url: z.string().min(1),
+  updatedAt: z.iso.datetime(),
+  modificationCount: z.number().int().min(0),
+});
+
+export type SavedPageSummary = z.infer<typeof savedPageSummarySchema>;

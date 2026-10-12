@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import Database from 'better-sqlite3';
-import type { Config } from '@ax/core';
+import { savedPageSummarySchema, type Config, type SavedPageSummary } from '@ax/core';
 
 /** Opens the SQLite file at `databasePath`, creating its folder and the table on first run. */
 export function openConfigDatabase(databasePath: string): Database.Database {
@@ -34,5 +34,16 @@ export class ConfigRepository {
          ON CONFLICT(url) DO UPDATE SET config = excluded.config, updated_at = excluded.updated_at`,
       )
       .run({ url: config.url, config: JSON.stringify(config), updatedAt: config.updatedAt });
+  }
+
+  // SQLite counts the modifications itself, so listing never parses whole configurations.
+  listSummaries(): SavedPageSummary[] {
+    const rows: unknown = this.database
+      .prepare(
+        `SELECT url, updated_at AS updatedAt, json_array_length(config, '$.modifications') AS modificationCount
+         FROM page_configs ORDER BY updated_at DESC`,
+      )
+      .all();
+    return savedPageSummarySchema.array().parse(rows);
   }
 }

@@ -1,5 +1,5 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { configSchema, pageTreeSchema, type Config, type PageTree, type SaveConfigRequest } from '@ax/core';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { configSchema, pageTreeSchema, savedPageSummarySchema, type Config, type PageTree, type SaveConfigRequest, type SavedPageSummary } from '@ax/core';
 
 const API_URL = 'http://localhost:3001/api';
 // Without a limit, a hanging server would leave the Save button disabled forever.
@@ -19,6 +19,12 @@ async function fetchPageTree(url: string): Promise<PageTree> {
   });
   if (!response.ok) throw new Error(`POST ${API_URL}/page-tree for ${url} failed with ${response.status}`);
   return pageTreeSchema.parse(await response.json());
+}
+
+async function fetchSavedPages(): Promise<SavedPageSummary[]> {
+  const response = await fetch(`${API_URL}/configs`);
+  if (!response.ok) throw new Error(`GET ${API_URL}/configs failed with ${response.status}`);
+  return savedPageSummarySchema.array().parse(await response.json());
 }
 
 export async function saveConfig(request: SaveConfigRequest): Promise<Config> {
@@ -53,6 +59,17 @@ export function usePageTree(url: string) {
   });
 }
 
+const SAVED_PAGES_QUERY_KEY = ['saved-pages'];
+
+export function useSavedPages() {
+  return useQuery({ queryKey: SAVED_PAGES_QUERY_KEY, queryFn: fetchSavedPages });
+}
+
 export function useSaveConfig() {
-  return useMutation({ mutationFn: saveConfig });
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: saveConfig,
+    // So the start screen's list is current when the publisher goes back to it.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: SAVED_PAGES_QUERY_KEY }),
+  });
 }
