@@ -6,7 +6,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 - [x] T01 – Select an element and inspect it · Covers: K1, K2, K3, K4, K5, K6, K7, K8 (no-changes case), S4
 - [x] T02 – Deselect, climb with the breadcrumb, and see what you hover · Covers: S1, S2, S3
-- [ ] T03 – See the changes on the demo page · Covers: K8 (with changes), B1, B2, B3
+- [x] T03 – See the changes on the demo page · Covers: K8 (with changes), B1, B2, B3
 
 ---
 
@@ -46,7 +46,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 **Implements:** `plan.md` → Modification markers.
 
-- [ ] **S1 – Load the demo mock and list it in "Changes on this page"**
+- [x] **S1 – Load the demo mock and list it in "Changes on this page"**
 
   Core gets the `Target` and `Modification` zod schemas. The store gets `draft`, which `setUrl` fills with the three mock modifications when the demo page opens and empties for any other URL. The page changes list shows one line per modification, its type in plain words and the text of its target, instead of always saying "No changes yet."
 
@@ -56,7 +56,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
   3. `pnpm test` passes. New core tests check that `modificationSchema` accepts one modification of each type, and rejects an empty or 501-character note, a relative or `javascript:` forward href, and a target text over 60 characters.
   4. `pnpm e2e` passes. The 01 test that expected "No changes yet." on the demo now expects the three lines. A new test opens the demo, then a blocked URL (`http://localhost:3001`, so no network is needed) and checks "No changes yet.", then reopens the demo and checks the three lines are back.
 
-- [ ] **S2 – List the selected element's changes (K8)**
+- [x] **S2 – List the selected element's changes (K8)**
 
   Core gets `targetSnippet`, `matchesTarget` and `resolve`, which decide whether a modification really belongs to an element: same selector and the same text snippet, never a guess. The inspector's "Changes on this element" uses them to list each of the selected element's modifications in plain words, and keeps "No changes on this element." when there are none.
 
@@ -70,7 +70,7 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
      - `resolve` returns `null` when the selector exists but the text changed, or when the selector isn't in the tree
   5. `pnpm e2e` passes. A new test selects the chart image and checks its context line, then selects "terms of service" and checks "No changes on this element."
 
-- [ ] **S3 – Mark modified elements in the preview (B1, B2)**
+- [x] **S3 – Mark modified elements in the preview (B1, B2)**
 
   One more overlay next to the hover overlay draws a box over every element with a modification that resolves: a dashed amber outline, a faint tint, and badges above its top-right corner. The box lets clicks through and follows its element when images load or the window resizes. See `plan.md` → Modification markers for why it's an overlay and how it stays different from hover and selection.
 

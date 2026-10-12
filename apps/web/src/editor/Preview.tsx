@@ -2,6 +2,7 @@ import type { MouseEvent } from 'react';
 import { usePageTree } from '@/state/queries';
 import { useEditorStore } from '@/state/store';
 import { HoverLayer } from './HoverLayer';
+import { ModificationLayer } from './ModificationLayer';
 import { PreviewNode } from './PreviewNode';
 
 export function Preview({ url }: { url: string }) {
@@ -34,6 +35,7 @@ export function Preview({ url }: { url: string }) {
           <div className="max-w-3xl">
             <HoverLayer root={pageTreeQuery.data.root}>
               <PreviewNode node={pageTreeQuery.data.root} />
+              <ModificationLayer root={pageTreeQuery.data.root} />
             </HoverLayer>
           </div>
         </>

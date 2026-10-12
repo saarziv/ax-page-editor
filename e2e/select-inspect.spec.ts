@@ -115,3 +115,35 @@ test('hovering an element outlines it and names its type', async ({ page }) => {
   await page.getByLabel('Page URL').hover();
   await expect(hoverBox).toBeHidden();
 });
+
+test("the inspector lists the selected element's changes", async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Try a sample').click();
+
+  const preview = page.getByRole('region', { name: 'Preview' });
+  const elementChanges = page.getByRole('region', { name: 'Selected element' });
+
+  await preview.getByRole('img', { name: 'Customer growth' }).click();
+  await expect(elementChanges.getByText(/^Context: Paying customers per month in 2026/)).toBeVisible();
+
+  await preview.getByText('terms of service', { exact: true }).click();
+  await expect(elementChanges.getByText('No changes on this element.')).toBeVisible();
+});
+
+test('modified elements are marked in the preview, and stay clickable', async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Try a sample').click();
+
+  const preview = page.getByRole('region', { name: 'Preview' });
+  const markers = page.getByTestId('modification-marker');
+
+  await expect(markers).toHaveCount(3);
+  await expect(page.locator('[data-marker-for="aside:1"]')).toHaveText('Hidden from AI');
+  await expect(page.locator('[data-marker-for="main:1>figure:1>image:1"]')).toHaveText('Context');
+  await expect(page.locator('[data-marker-for="main:1>section:1>paragraph:1>link:2"]')).toHaveText('Forwarded');
+
+  // The marker lets the click through, so the image underneath gets selected.
+  const chart = preview.getByRole('img', { name: 'Customer growth' });
+  await chart.click();
+  await expect(chart).toHaveAttribute('data-selected', 'true');
+});

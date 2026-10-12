@@ -1,7 +1,9 @@
 import { useState, type ReactNode } from 'react';
 import { nodeText, type PageNode } from '@ax/core';
 import { Button } from '@/components/ui/button';
+import { useNodeModifications } from '@/state/derived';
 import { Breadcrumb } from './Breadcrumb';
+import { describeModification } from './modificationLabels';
 import { NODE_LABELS } from './nodeLabels';
 
 const MODIFICATION_CONTROLS = ['Hide from AI', 'Context for AI', 'Forward this link'];
@@ -33,7 +35,7 @@ export function ElementDetails({ path, node }: { path: PageNode[]; node: PageNod
       )}
 
       <DetailRow label="Changes on this element">
-        <p className="text-sm text-muted-foreground">No changes on this element.</p>
+        <ElementChanges node={node} />
       </DetailRow>
 
       {/* Disabled until 03 and 04 make them work. */}
@@ -54,6 +56,21 @@ function DetailRow({ label, children }: { label: string; children: ReactNode }) 
       <h3 className="mb-1 text-xs font-medium text-muted-foreground">{label}</h3>
       {children}
     </div>
+  );
+}
+
+function ElementChanges({ node }: { node: PageNode }) {
+  const nodeModifications = useNodeModifications(node);
+  if (nodeModifications.length === 0) return <p className="text-sm text-muted-foreground">No changes on this element.</p>;
+
+  return (
+    <ul className="flex flex-col gap-1">
+      {nodeModifications.map((modification) => (
+        <li key={modification.id} className="text-sm break-words">
+          {describeModification(modification)}
+        </li>
+      ))}
+    </ul>
   );
 }
 
