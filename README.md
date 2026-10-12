@@ -48,17 +48,15 @@ Open [http://localhost:5173](http://localhost:5173) and either enter any public 
 
 ### Environment configuration (optional)
 
-Everything has working defaults, so a fresh clone runs without any setup. To change the API settings, copy `apps/api/.env.example` to `apps/api/.env`:
+Everything has working defaults, so a fresh clone runs without any setup. To change a setting, copy the `.env.example` in the listed app folder to `.env` in the same folder:
 
 
-| Variable     | Default                 | What it does                                                |
-| ------------ | ----------------------- | ----------------------------------------------------------- |
-| `API_PORT`   | `3001`                  | Port the API listens on                                     |
-| `WEB_ORIGIN` | `http://localhost:5173` | The only origin allowed to call the API (CORS)              |
-| `DB_PATH`    | `./data/ax.db`          | SQLite file for saved configurations (created on first run) |
-
-
-If you change `API_PORT`, tell the web app where the API is: copy `apps/web/.env.example` to `apps/web/.env` and set `VITE_API_URL` to match (default `http://localhost:3001`).
+| Variable       | File            | Default                 | What it does                                                |
+| -------------- | --------------- | ----------------------- | ----------------------------------------------------------- |
+| `API_PORT`     | `apps/api/.env` | `3001`                  | Port the API listens on                                     |
+| `WEB_ORIGIN`   | `apps/api/.env` | `http://localhost:5173` | The only origin allowed to call the API (CORS)              |
+| `DB_PATH`      | `apps/api/.env` | `./data/ax.db`          | SQLite file for saved configurations (created on first run) |
+| `VITE_API_URL` | `apps/web/.env` | `http://localhost:3001` | Where the web app calls the API. Must match `API_PORT`      |
 
 ### Tests and checks
 
