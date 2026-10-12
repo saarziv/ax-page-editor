@@ -1,4 +1,5 @@
-import { memo, type ReactNode } from 'react';
+import { createContext, memo, useContext, useState, type ReactNode } from 'react';
+import { ChevronRight } from 'lucide-react';
 import type { PageNode } from '@ax/core';
 import { useEditorStore } from '@/state/store';
 
@@ -9,6 +10,9 @@ const HEADING_SIZES = ['text-3xl', 'text-2xl', 'text-xl', 'text-lg', 'text-base'
 // annotation and forwarded are inserted by markModificationsInTree: a click on one selects the element it belongs to instead.
 const UNSELECTABLE_KINDS = new Set<PageNode['kind']>(['text', 'page', 'annotation', 'forwarded']);
 
+// Forwarded content is another page, read-only here: nothing in it can be selected, hidden, noted or forwarded (K5).
+const InsideForwardedContentContext = createContext(false);
+
 // Draws one page tree node and, through itself, everything below it.
 // The preview is for looking, not using: links, forms, fields and buttons are deliberately inert.
 // Memoized: markModificationsInTree shares every node it didn't change, so a keystroke in a note
@@ -16,8 +20,10 @@ const UNSELECTABLE_KINDS = new Set<PageNode['kind']>(['text', 'page', 'annotatio
 export const PreviewNode = memo(function PreviewNode({ node }: { node: PageNode }) {
   // A boolean, so moving the selection re-renders only the old and the new node.
   const isSelected = useEditorStore((state) => state.selectedId === node.id);
+  const insideForwardedContent = useContext(InsideForwardedContentContext);
   // Preview reads data-node-id to find what was clicked; index.css styles data-selected; HiddenLayer veils data-hidden.
-  const selectable = UNSELECTABLE_KINDS.has(node.kind)
+  // Without data-node-id, a click or hover inside forwarded content lands on the forwarded block around it.
+  const selectable = UNSELECTABLE_KINDS.has(node.kind) || insideForwardedContent
     ? {}
     : { 'data-node-id': node.id, 'data-selected': isSelected ? 'true' : undefined, 'data-hidden': node.hidden ? 'true' : undefined };
   const content = node.text ?? node.children?.map((child) => <PreviewNode key={child.id} node={child} />);
@@ -187,15 +193,47 @@ function ContextCallout({ annotation }: { annotation: PageNode }) {
   );
 }
 
-// Like a note callout: a <span> drawn as a block, and a click on it selects the link it forwards.
+// Like a note callout, a click anywhere on it selects the link it forwards (Preview reads data-callout-for).
+// A <div>, unlike the callout: placement always puts a forward after its paragraph, and its content holds blocks.
 function ForwardedBlock({ forwarded }: { forwarded: PageNode }) {
+  // Collapsed by default, so a long forwarded page doesn't push the rest of the page away (K2). UI only, so local state.
+  const [expanded, setExpanded] = useState(false);
+  const href = forwarded.attrs?.href;
+  const blockClassName = 'my-2 block cursor-pointer rounded-md border border-dashed px-3 py-2 text-sm font-normal not-italic';
+
+  if (forwarded.attrs?.forwardState === 'loading') {
+    return (
+      <div data-callout-for={forwarded.attrs.forId} className={`${blockClassName} bg-muted/40 text-muted-foreground`}>
+        Loading {href}…
+      </div>
+    );
+  }
+  if (forwarded.attrs?.forwardState === 'failed') {
+    return (
+      <div data-callout-for={forwarded.attrs.forId} className={`${blockClassName} bg-muted/40 text-muted-foreground`}>
+        Couldn't forward {href}
+      </div>
+    );
+  }
   return (
-    <span
-      data-callout-for={forwarded.attrs?.forId}
-      className="my-2 block cursor-pointer rounded-md border border-dashed bg-muted/40 px-3 py-2 text-sm font-normal not-italic text-muted-foreground"
-    >
-      Loading {forwarded.attrs?.href}…
-    </span>
+    <div data-callout-for={forwarded.attrs?.forId} className={`${blockClassName} border-violet-200 bg-violet-50/60 dark:border-violet-900 dark:bg-violet-950/30`}>
+      <button
+        type="button"
+        aria-expanded={expanded}
+        onClick={() => setExpanded((wasExpanded) => !wasExpanded)}
+        className="flex w-full items-center gap-1 text-left text-[11px] font-medium text-violet-700 dark:text-violet-300"
+      >
+        <ChevronRight aria-hidden="true" className={`size-3.5 shrink-0 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+        Forwarded from {href}
+      </button>
+      {expanded && (
+        <div className="mt-2 border-t border-violet-200 pt-2 text-foreground dark:border-violet-900">
+          <InsideForwardedContentContext.Provider value={true}>
+            {forwarded.children?.map((child) => <PreviewNode key={child.id} node={child} />)}
+          </InsideForwardedContentContext.Provider>
+        </div>
+      )}
+    </div>
   );
 }
 
