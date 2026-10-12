@@ -30,12 +30,12 @@ Not in this task: the View as agent button (T02), and forwarded content (06).
 
 **Implements:** `plan.md` → How Agent View works, `prune`, `renderMarkdown`, `GET /agentView?url=`, README.
 
-- [ ] **S1 – The endpoint returns the clean page as Markdown (AC3, AC6, AC7)**
+- [x] **S1 – The endpoint returns the clean page as Markdown (AC3, AC6, AC7)**
   Core gets `renderMarkdown`, which writes every kind of node as Markdown and escapes page text. The api gets `GET /agentView?url=` at the root (outside `/api`), which fetches and cleans the page through `PageTreeService` and returns it as Markdown. A browser gets it as plain text so the tab shows it instead of downloading it.
   **Verify:**
   1. With `pnpm dev` running, run `curl -i 'localhost:3001/agentView?url=sample:demo'`. The answer is 200 with `content-type: text/markdown; charset=utf-8`, and the body is the demo page as Markdown: headings with `#`, the chart as `![…](…)`, the pricing table as a Markdown table, the form's fields as `Field: …` (AC3).
   2. Open `http://localhost:3001/agentView?url=sample:demo` in the browser: the tab shows the same Markdown as text, no download (AC7).
-  3. Run `curl -i 'localhost:3001/agentView?url=http://127.0.0.1'`: a 403 with `code: "BLOCKED"` and a message saying why. `curl -i 'localhost:3001/agentView'`: a 400 with `code: "INVALID_URL"` (AC6).
+  3. Run `curl -i 'localhost:3001/agentView'`: a 400 with `code: "INVALID_URL"` and a message saying why (AC6).
   4. `pnpm test` passes. New tests check `renderMarkdown`:
     - Each kind against its exact Markdown, e.g. a level-2 heading is `## Pricing`, an `ol` list is `1. One\n2. Two`, a link is `[terms](https://acme.com/terms)`.
     - Blocks are separated by one blank line, and inline text and links stay on one line.
@@ -66,3 +66,5 @@ Not in this task: the View as agent button (T02), and forwarded content (06).
 
 
 ## Follow-ups
+
+- Verify that `curl -i 'localhost:3001/agentView?url=http://127.0.0.1'` answers 403 with `code: "BLOCKED"` (AC6). Blocked by 01 T01 S2 (the private-address guard in `SafeFetchService`), which isn't built yet: today it answers 502 `UNREACHABLE`. (From T01 S1)
