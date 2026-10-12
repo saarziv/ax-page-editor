@@ -4,7 +4,7 @@ Turn a link into the content it points to, so an agent gets the answer instead o
 
 Applied from the inspector on a selected link (02). This feature replaces the Forward stub from 03.
 
-All ACs are **Key** (must ship).
+All ACs are **Key** (must ship), except S1, which is **Secondary** and a **follow-up**.
 
 ---
 
@@ -48,9 +48,13 @@ Full details in our [terms of service](https://acme.com/terms).
 - **K4.** Given a forwarded page with navigation and a footer, then neither appears in the forwarded content.
 - **K5.** Given forwarded content that contains links, then those links appear as plain links and are never forwarded.
 - **K6.** Given a forwarded page longer than 3,000 tokens, then the content is cut at about 3,000 tokens and ends with "(truncated)".
-- **K7.** Given a forward whose page fails to load, then the preview block shows the reason, Agent View shows the plain link only, and the forward stays in the changes list.
+- **K7.** Given a forward whose page fails to load, then the preview block says it couldn't forward the link, Agent View shows the plain link only, and the forward stays in the changes list.
 - **K8.** Given a saved forward, then the configuration holds only its `href`, and Agent View shows the page's current content.
 - **K9.** Given a link to a page is selected, when the user hovers the Forward to AI switch, then a tooltip says "AI agents get the main content of the linked page, right after this link. Useful because most agents don't follow links."
+
+## Secondary acceptance criteria
+
+- **S1** (follow-up). Given a forward whose page fails to load, then the preview block also shows the plain-language reason (e.g. "This address can't be opened for security reasons.").
 
 ## Out of scope
 

@@ -64,7 +64,7 @@ It takes a third argument, the fetched forwards by `href`: `ReadonlyMap<string, 
 - **Which forwards:** the ones steps 1 and 2 left `active`. A forward inside a hidden element is `inactive`, as for any modification (D18).
 - **Placement:** the same `notePlacementFor` as context notes (03): after the link, or after its paragraph, list item or table when the link sits inside one. When a note and a forward land on the same spot, the note comes first, because it frames what follows.
 - **The node:** `{ id: 'forward:<modificationId>', kind: 'forwarded', tag: 'section', attrs: { forId, href, forwardState } }`, where `forwardState` is `loading`, `loaded` or `failed`. A failed one also carries `errorCode`, the `FetchError` code, so the preview can say why. Only a loaded one has children.
-- **Status:** a failed forward's status is `failed`. Its node is still inserted, so the preview can show the reason in place, but it has no content, so the agent reads only the link (K7).
+- **Status:** a failed forward's status is `failed`. Its node is still inserted, so the preview can show the reason in place (S1), but it has no content, so the agent reads only the link (K7).
 - **One level deep (K5):** the forwarded content's node ids are prefixed with the forward node's id (`forward:m3>main:1>paragraph:2`). Targets are only resolved on the original page, and no saved selector starts with `forward:`, so nothing inside forwarded content can ever be hidden, noted or forwarded. The prefix also stops those ids from colliding with the page's own ids in the preview.
 - **Size limit (K6):** see `truncateTree` below.
 

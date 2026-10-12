@@ -5,10 +5,9 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 ## Roadmap
 
 - [x] T01 – Forward to AI switch · Covers: K1, K9, and the "only its `href`" part of K8
-- [ ] T02 – Forwarded block in the preview · Covers: K2, K4, K5, and the "stays in the changes list" part of K7
+- [x] T02 – Forwarded block in the preview · Covers: K2, K4, K5, and the preview and changes-list parts of K7
 - [x] T03 – Forwarded content for agents · Covers: K3, K6, the Agent View part of K7, and the "current content" part of K8
-
-**Not covered yet:** the "preview block shows the reason" part of K7. A failed block says only "Couldn't forward <href>" (see Follow-ups).
+- Follow-ups (below) · Covers: S1
 
 ---
 
@@ -69,7 +68,7 @@ S1 places the block, S2 builds the endpoint, and S3 connects them.
 
 **Implements:** `plan.md` → `mainContent`, `markModificationsInTree` step 4 (without the size limit), `POST /api/forward`, `useForwardedPages`, Forwarded block in the preview.
 
-- [ ] **S1 – A "Loading…" block appears where the forward goes**
+- [x] **S1 – A "Loading…" block appears where the forward goes**
   `markModificationsInTree` gets its third argument, the fetched forwards by `href`, and step 4 inserts one `forwarded` node per active forward, in the spot a note on that link would go. The editor doesn't fetch yet, so it passes an empty map and every forward shows as a muted "Loading <href>…" block. Core already handles all three states (`loading`, `loaded` and `failed`), because the map is just an input and tests can supply it. Clicking the block selects the link, as clicking a note does.
   **Verify:**
   1. Open the demo, select "terms of service" and turn Forward to AI on. "Loading https://www.iana.org/help/example-domains…" appears below the whole "Read our terms of service…" paragraph, not in the middle of the sentence.
@@ -165,5 +164,5 @@ S1 writes the block, S2 handles failed forwards, and S3 adds the size limit.
 
 ## Follow-ups
 
-- A failed forward says why (K7, was T02 S4): the web gets the plain-language message for each fetch error code from 01's edge cases (01 T04 S4 reuses them for page loads), the failed block shows it under "Couldn't forward <href>", and the demo footer gets a last line linking a plain-text page (RFC 2606) as a forward that always fails.
+- A failed forward says why (S1, was T02 S4): the web gets the plain-language message for each fetch error code from 01's edge cases (01 T04 S4 reuses them for page loads), the failed block shows it under "Couldn't forward <href>", and the demo footer gets a last line linking a plain-text page (RFC 2606) as a forward that always fails.
 - `modificationStatusSchema` still has `overBudget`, left from the rejected page-wide budget (D10). Nothing sets it, so it can be removed.
