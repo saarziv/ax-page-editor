@@ -1,0 +1,38 @@
+{
+  "name": "ax-page-editor",
+  "private": true,
+  "packageManager": "pnpm@10.20.0",
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "predev": "pnpm --filter @ax/core build",
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "pretest": "pnpm --filter @ax/core build",
+    "test": "pnpm -r test",
+    "pretypecheck": "pnpm --filter @ax/core build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:headed": "SLOW_MO=800 playwright test --headed",
+    "e2e:debug": "playwright test --debug"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "better-sqlite3",
+      "esbuild"
+    ]
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.0",
+    "eslint": "^10.12.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.1"
+  }
+}
