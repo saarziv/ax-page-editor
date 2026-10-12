@@ -157,7 +157,7 @@ export const PreviewNode = memo(function PreviewNode({ node }: { node: PageNode 
     case 'annotation':
       return <ContextCallout annotation={node} />;
 
-    // Inserted by markModificationsInTree; 04 defines how it looks.
+    // Inserted by markModificationsInTree; 05 defines how it looks.
     case 'forwarded':
       return null;
 

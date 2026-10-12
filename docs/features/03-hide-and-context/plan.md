@@ -51,7 +51,7 @@ It lives in core, next to `resolve`. That way, the code that creates a target an
 
 ### `markModificationsInTree`, steps 1 and 2
 
-`markModificationsInTree(root, modifications)` takes the page and the list of modifications. It returns the marked page, plus a status for each modification (contract in global plan §3.4). This feature builds its first three steps. 04 adds step 4 and the `forwards` argument.
+`markModificationsInTree(root, modifications)` takes the page and the list of modifications. It returns the marked page, plus a status for each modification (contract in global plan §3.4). This feature builds its first three steps. 05 adds step 4 and the `forwards` argument.
 
 1. **Find each element.** `markModificationsInTree` looks up each modification's element with `resolve`. If the element can't be found, the modification gets the status `unmatched`, and nothing is applied. Otherwise its status is `active`.
 2. **Hide.** For each hide that was found, `markModificationsInTree` sets `hidden: true` on that element's node. The node and everything inside it stay in the tree. This lets the preview still draw it, so the publisher can click it and turn Hide off. A modification whose element sits inside a hidden element gets the status `inactive` and isn't applied, because the agent never reads that part. Example: with the section hidden, a hide on the image inside it is `inactive`, and only the section is flagged.
@@ -91,7 +91,7 @@ In the inspector, the disabled "Hide from AI" button becomes a row with the labe
 
 The switch's state is never stored. It's on when the selected element has a hide in `modificationsDraft`. The inspector already knows this from `useNodeModifications` (02). So when the publisher clicks an element that's already hidden, the switch shows on (K3) without extra code.
 
-"Forward this link" stays a disabled button until 04.
+"Forward this link" stays a disabled button until 05.
 
 ### Store: `toggleHide(target)`
 

@@ -16,7 +16,7 @@ export const useEditorStore = create<EditorState>()((set) => ({
   url: null,
   modificationsDraft: [],
   selectedId: null,
-  // Node ids and modifications belong to one page, so opening another page clears both (loading saved configs comes in 05).
+  // Node ids and modifications belong to one page, so opening another page clears both (loading saved configs comes in 04).
   setUrl: (url) => set({ url, selectedId: null, modificationsDraft: [] }),
   select: (id) => set({ selectedId: id }),
   // A switch, not an "add": the first call hides the element, the next one un-hides it.

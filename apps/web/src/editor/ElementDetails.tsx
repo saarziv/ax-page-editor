@@ -42,7 +42,7 @@ export function ElementDetails({ path, node }: { path: PageNode[]; node: PageNod
       <div className="flex flex-col gap-3 border-t pt-4">
         <HideSwitch node={node} />
         <ContextBox node={node} />
-        {/* Disabled until 04 makes it work. */}
+        {/* Disabled until 05 makes it work. */}
         <Button variant="outline" disabled>
           Forward this link
         </Button>

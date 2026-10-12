@@ -1,7 +1,7 @@
 import { useEditorStore } from '@/state/store';
 import { MODIFICATION_LABELS } from './modificationLabels';
 
-// A simple flat list; 05 groups it by status and marks the ones that no longer match the page.
+// A simple flat list; 04 groups it by status and marks the ones that no longer match the page.
 export function PageChanges() {
   const modificationsDraft = useEditorStore((state) => state.modificationsDraft);
 

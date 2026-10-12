@@ -34,7 +34,7 @@ export function StartScreen() {
           <Button variant="link" className="px-0" onClick={() => setUrl(DEMO_URL)}>
             Try a sample
           </Button>
-          {/* Recent row stays hidden: GET /api/configs returns [] until 05. */}
+          {/* Recent row stays hidden: GET /api/configs returns [] until 04. */}
         </CardContent>
       </Card>
     </main>

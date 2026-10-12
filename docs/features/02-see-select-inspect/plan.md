@@ -30,7 +30,7 @@ Two small, pure tree helpers in `packages/core/src/tree.ts`. They're in core bec
 
 Example: in `<p data-node-id="…paragraph:3">Read our <span data-node-id="…link:1">terms of service</span> …</p>`, a click on "terms" finds the span first and selects the link. A click on "Read our" finds the paragraph.
 
-**What's selectable:** every kind that `clean` produces except `text` and `page`. A `text` node is a piece of a sentence, so a click on it selects its parent, which is what a publisher means. `page` is the whole document. `annotation` and `forwarded` come with 03 and 04.
+**What's selectable:** every kind that `clean` produces except `text` and `page`. A `text` node is a piece of a sentence, so a click on it selects its parent, which is what a publisher means. `page` is the whole document. `annotation` and `forwarded` come with 03 and 05.
 
 **The highlight:** a selected node gets `data-selected="true"`, styled as a 2px primary-colored `outline` with an offset and a very light tint. An outline, unlike a border, takes no space, so the page doesn't shift when the selection moves. The same attribute is what the e2e test checks. Selectable nodes get `cursor-pointer`.
 
@@ -48,7 +48,7 @@ Example: in `<p data-node-id="…paragraph:3">Read our <span data-node-id="…li
   - **Text:** `nodeText(node)`. Text over about 200 characters is clamped to four lines with a "Show more" / "Show less" toggle. For images, the description `attrs.alt`, or "No description" when missing. For fields, `attrs.label`.
   - for links, the destination `attrs.href`, as plain text (not a link, so nothing leaves the editor)
   - "Changes on this element": the element's modifications, see Modification markers
-  - a divider, then the three modification buttons, still disabled. 03 and 04 make them work.
+  - a divider, then the three modification buttons, still disabled. 03 and 05 make them work.
 
 **Plain-language labels** live in `apps/web/src/editor/nodeLabels.ts` as a `Record<NodeKind, string>` ("Link", "Heading", "Image", "List item", "Form field", "Navigation", …). They're words for the screen, so they stay in the web app. Typing the map as a `Record` over every kind means TypeScript flags a missing label when a kind is added. The later hover task reuses the same map.
 
@@ -110,7 +110,7 @@ Example: the mock's hide targets `{ selector: 'aside:1', text: 'We use cookies t
 
 **Per-element changes (K8):** a hook `useNodeModifications(node)` in `apps/web/src/state/derived.ts` returns the draft modifications whose target matches that node. It reads the store with `useShallow`, so a component re-renders only when its own list changes. `ElementDetails` shows one line per modification in plain words: "Hidden from AI", "Context: <note>", "Forwarded: <href>". With none, it keeps "No changes on this element." The words for each type live in `modificationLabels.ts`, next to `nodeLabels.ts`.
 
-**Page changes list (B3):** `PageChanges` lists every draft modification as one line, its type and its target snippet, e.g. "Hidden from AI · We use cookies to improve…". It reads the snippet from the modification itself, so it needs no tree. Statuses and grouping (including "not found on this page") come in 05.
+**Page changes list (B3):** `PageChanges` lists every draft modification as one line, its type and its target snippet, e.g. "Hidden from AI · We use cookies to improve…". It reads the snippet from the modification itself, so it needs no tree. Statuses and grouping (including "not found on this page") come in 04.
 
 **Preview markers (B1, B2):** one more overlay in the same positioned box as the hover overlay, for the same reason: a badge can't go inside an `<img>` or a `<tr>`. For each draft modification that `resolve`s, `ModificationLayer.tsx` finds the element by `[data-node-id]` (with `CSS.escape`, since ids contain `>` and `:`) and draws one box over its rect: a dashed amber outline with a faint amber tint, and the badges ("Hidden from AI", "Context", "Forwarded") above its top-right corner. An element with two modifications gets one box with two badges.
 - **Different from hover and selection:** both of those use the theme's primary color, solid or faint, with the chip on the left. The marker is dashed, amber and badged on the right, so all three can show on one element at once (B2).

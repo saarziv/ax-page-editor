@@ -25,7 +25,7 @@ Applied from the inspector on a selected link (see the See, select & inspect spe
 **Size limits**
 
 - **Per link: 3,000 tokens.** Longer forwarded content is truncated to the limit and ends with a visible "(truncated)" marker.
-- **Per page: 10,000 tokens** across all forwards. Forwards are added in page order (top to bottom) until the budget is used. A forward that doesn't fit is **not added**: its link stays a plain link, and the forward is flagged as **over budget** in the changes list (see the Save & review changes spec) and in the Agent View report. The modification is kept.
+- **Per page: 10,000 tokens** across all forwards. Forwards are added in page order (top to bottom) until the budget is used. A forward that doesn't fit is **not added**: its link stays a plain link, and the forward is flagged as **over budget** in the changes list (see the Save & load configs spec) and in the Agent View report. The modification is kept.
 - The inspector shows the remaining page budget next to the Forward control.
 - Tokens are estimated (about 4 characters per token).
 
