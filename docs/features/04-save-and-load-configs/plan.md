@@ -2,7 +2,7 @@
 
 How we build the Save & load configs spec. Shared architecture, core contracts and conventions are in the global `plan.md`.
 
-This plan covers saving (T01) and the Saved pages list (T02). Restoring changes into the editor, the unsaved indicator and the review list are added here when their tasks start.
+This plan covers saving (T01), the Saved pages list (T02), and the unsaved indicator with the review list (T03). Restoring changes into the editor, and the "Needs attention" group, are added here when their task starts.
 
 ---
 
@@ -36,6 +36,19 @@ Example: on the demo page, the publisher hides the cookie banner and clicks Save
 4. **Clicking a row opens that page**, the same way as typing its URL. (Restoring its changes into the editor is a later task.)
 
 Example: after saving the demo with one hide, the list is `[{ url: 'sample:demo', updatedAt: '2026-10-12T09:00:00.000Z', modificationCount: 1 }]`, and the row reads "sample:demo · 1 change · saved just now".
+
+## How reviewing and removing works
+
+1. **The list shows every change.** With nothing selected, "Changes on this page" in the inspector lists every entry of `modificationsDraft`, in the order they were made. Each row says the type in plain words, the element's text snippet, and for a context change, the note.
+2. **Remove drops one entry.** Each row has a Remove button that calls `removeModification(id)`. The entry leaves `modificationsDraft`, so the preview and the list redraw by themselves (global plan §6.1, step 2).
+3. **The top bar notices.** The draft now differs from the last save, so the dirty flag turns on and "Unsaved changes" appears next to Save. Saving stores the list without that entry.
+
+Example: the demo is saved with a hide on the cookie banner and a note on the chart. The publisher clicks Remove on "Hidden from AI · We use cookies…".
+- `modificationsDraft` goes from `[a1 (hide), b2 (context)]` to `[b2 (context)]`.
+- The banner is no longer drawn faded, the list shows one row, and the top bar shows "Unsaved changes".
+- After Save, the stored row's `modifications` holds only `b2`, and the Saved pages row says "1 change".
+
+**Why Remove works by id, not by target:** the list already holds the exact entry, and ids are unique within a configuration (Core, below), so removing by id can never take a different change with it.
 
 ## Core
 
@@ -78,6 +91,18 @@ The controller talks to a `ConfigRepository` with two methods: `save(config)` an
 - **Success:** a "Saved" toast, gone after about 3 seconds. The mutation also refreshes the Saved pages query, so the start screen is up to date.
 - **Failure (T01 S2):** a "Your changes couldn't be saved. Try again." toast that stays until the next save or until it's closed. The draft is still dirty, so Save stays enabled for the retry. Three cases count as a failure, with one message for all of them: the server can't be reached (`fetch` rejects), it answers with an error status, or it doesn't answer within 10 seconds (an `AbortController` aborted by a timer). Without the timeout, a server that hangs would leave the button disabled forever.
 
+### Unsaved indicator (T03)
+
+- The top bar shows "Unsaved changes" next to Save whenever `hasUnsavedChanges` is true, the same dirty flag that enables Save. It's derived, never stored, so the button and the text can't disagree.
+- **The comparison includes ids.** Turning a hide off and on again creates a new id, so it counts as an unsaved change even though the page looks the same. That's accepted: the next save simply stores the new id, and comparing without ids would need a second, looser equality for a rare case.
+
+### Changes list and Remove (T03)
+
+- `PageChanges` keeps reading `modificationsDraft`. Each row shows `MODIFICATION_LABELS[type]`, then the target's text snippet, and for context, the note on its own line. Long text is cut to one line, with the full text in a tooltip.
+- Each row has a Remove button (an ✕ icon) labelled for screen readers with what it removes, for example "Remove Hidden from AI: We use cookies…", so the buttons can be told apart.
+- **`removeModification(id)`** is a new store action that drops the entry with that id. It doesn't touch `savedJson`, so the change shows as unsaved until the next save.
+- Changes inside a hidden element are listed like any other (spec, Out of scope). The grouping by status, with "Needs attention", comes with the restore task, because only a loaded configuration can have changes that no longer match.
+
 ### Saved pages list (T02)
 
 - A `useSavedPages()` query calls `GET /api/configs` and parses the answer with `savedPageSummarySchema`.
@@ -89,5 +114,5 @@ The controller talks to a `ConfigRepository` with two methods: `save(config)` an
 
 - **Core:** `configSchema` and `saveConfigRequestSchema` reject an unknown type, a missing field, a 301-character note and a repeated id, and accept a valid list.
 - **API:** the repository and controller run against an in-memory database. Saving stores a full configuration under the normalized URL; saving the same URL twice leaves one row with the second content; the list is newest first with the right counts.
-- **Web:** `formatSavedAgo` for each range, and singular vs plural counts.
-- **E2E:** saving the demo shows "Saved"; after a reload, the demo appears in the Saved pages list and clicking it opens the demo. These tests run against the dev's api (`reuseExistingServer`), so they save `sample:demo` into the dev database, replacing any demo configuration saved by hand. That's acceptable for a demo page; a separate test database is a follow-up if it gets in the way.
+- **Web:** `formatSavedAgo` for each range, and singular vs plural counts. `removeModification` drops only the entry with that id, and the dirty flag turns on after a remove and off once that draft is saved.
+- **E2E:** removing a change from the list un-fades the element and shows "Unsaved changes"; saving the demo shows "Saved"; after a reload, the demo appears in the Saved pages list and clicking it opens the demo. These tests run against the dev's api (`reuseExistingServer`), so they save `sample:demo` into the dev database, replacing any demo configuration saved by hand. That's acceptable for a demo page; a separate test database is a follow-up if it gets in the way.

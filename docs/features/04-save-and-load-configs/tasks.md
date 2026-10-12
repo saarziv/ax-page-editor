@@ -6,12 +6,8 @@ Workflow, step format and deviation rules: see `CLAUDE.md` (SDD guidelines).
 
 - [x] T01 – Save the configuration · Covers: AC1, AC2, AC4, AC5
 - [x] T02 – Show saved pages on the start screen · Covers: AC9, and the first half of AC10 (clicking a row opens the page)
-
-**Not in a task yet** (tasks to be added later):
-
-- AC3 – the "Unsaved changes" indicator.
-- AC6, AC7, AC8 – the review list with Remove buttons, and the "Needs attention" group.
-- AC10 (second half), AC11, AC12, AC13 – restoring a page's saved changes when it opens, by any URL, flagging the ones that no longer match, and the error with Retry when they can't be loaded.
+- [ ] T03 – Review and remove changes · Covers: AC3, AC6, and the first half of AC7 (removed from the list and the preview, "Unsaved changes" appears, and the next save drops it)
+- [ ] T04 – Restore saved changes when a page opens · Covers: the second half of AC7 (a removed change stays gone after reopening), AC8, the second half of AC10, AC11, AC12, AC13
 
 ---
 
@@ -107,6 +103,52 @@ Not in this task: the opened page doesn't get its saved changes back yet. That's
     - With `GET /api/configs` blocked (Playwright `page.route`), the start screen shows "Saved pages couldn't be loaded." and "Try a sample" still opens the demo.
 
 **Done when:** after saving pages, the start screen lists them newest first with their change counts and times, and clicking a row opens that page. `pnpm test`, `typecheck` and `e2e` pass.
+
+---
+
+
+
+## T03 – Review and remove changes
+
+**Goal:** the publisher sees every change on the page in one list, removes the ones they don't want, and always knows when there's something left to save.
+
+The flow (`plan.md` → How reviewing and removing works):
+
+1. With nothing selected, "Changes on this page" lists every change: its type in plain words, the element's text snippet, and for a context change, the note.
+2. Each row has a Remove button. Clicking it drops that change from `modificationsDraft`, so it disappears from the list and the preview at once.
+3. Whenever the draft differs from the last save, the top bar shows "Unsaved changes" next to Save. Saving clears it, and stores the list without the removed change.
+
+For example, with the banner hidden and a note on the chart, removing the hide un-fades the banner, leaves one row in the list, and shows "Unsaved changes". After Save, the stored configuration holds only the note.
+
+S1 adds the indicator, because S2's Verify relies on seeing it. S2 builds the list and Remove.
+
+Not in this task: the "Needs attention" group (AC8). Only a configuration loaded back into the editor can hold a change that no longer matches the page, so it comes with T04, which restores configurations.
+
+**Implements:** `plan.md` → Unsaved indicator, Changes list and Remove.
+
+- [ ] **S1 – "Unsaved changes" in the top bar (AC3)**
+  The top bar shows "Unsaved changes" next to Save whenever the draft differs from the last save. It reads the same dirty flag that already enables Save, so the text and the button always agree.
+  **Verify:**
+  1. With `pnpm dev` running, click "Try a sample": no "Unsaved changes", and Save is disabled.
+  2. Hide the cookie banner: "Unsaved changes" appears and Save is enabled (AC3).
+  3. Click Save: the "Saved" toast appears, and both "Unsaved changes" and the enabled Save are gone (AC3).
+  4. Turn the banner's Hide off: "Unsaved changes" is back, because the page now differs from what was saved.
+  5. `pnpm e2e` passes. The save test from T01 also checks that "Unsaved changes" appears after the hide and is gone after the save.
+
+- [ ] **S2 – Each change in the list, with a Remove button (AC6, AC7 first half)**
+  Each row of "Changes on this page" shows the type, the element's snippet and, for context, the note, plus a Remove button. Remove calls a new store action, `removeModification(id)`, which drops just that entry. The last save is left as it was, so the removal shows as unsaved until the publisher saves.
+  **Verify:**
+  1. Open the demo, hide the cookie banner and add a note to the chart. Press Escape so nothing is selected. The list shows two rows: "Hidden from AI · We use cookies…", and "Context · Customer growth" with the note under it. Each has a Remove button (AC6).
+  2. Click Save. Then click Remove on the hide: the banner is no longer drawn faded, the list shows one row, and "Unsaved changes" appears (AC7).
+  3. Click Save, then run `sqlite3 apps/api/data/ax.db "select config from page_configs where url = 'sample:demo'"`: the configuration holds only the context note (AC7).
+  4. Remove the note and save. Go back to the start screen: the `sample:demo` row says "0 changes".
+  5. `pnpm test` passes. New tests check the store:
+    - With a hide and a context in the draft, `removeModification` on the hide's id leaves only the context.
+    - An unknown id leaves the draft unchanged.
+    - After a save, removing a change turns the dirty flag on.
+  6. `pnpm e2e` passes. A new test hides the banner, saves, removes the hide from the list, and sees the banner un-faded, the list empty ("No changes yet.") and "Unsaved changes".
+
+**Done when:** every change on the page is listed with its details and can be removed, the preview follows at once, "Unsaved changes" shows exactly when the page differs from the last save, and saving after a remove stores the list without it. `pnpm test`, `typecheck` and `e2e` pass.
 
 ---
 
