@@ -1,9 +1,12 @@
 export const CORE_VERSION = '0.0.0';
 export { clean } from './clean/index.js';
-export { markModificationsInTree, type Marked } from './markModificationsInTree.js';
+export { markModificationsInTree, type Forwarded, type Marked } from './markModificationsInTree.js';
+export { mainContent } from './mainContent.js';
+export { truncateTree } from './truncateTree.js';
 export { prune } from './prune.js';
 export { renderMarkdown } from './renderMarkdown.js';
 export { matchesTarget, resolve, targetFor, targetSnippet } from './target.js';
+export { NOT_A_PAGE_REASON, forwardBlockReason } from './forward.js';
 export { findNodePath, isContainerKind, nodeText } from './tree.js';
 export { InvalidUrlError, normalizeUrl } from './url.js';
 export { CONTEXT_NOTE_MAX_LENGTH, configSchema, fetchErrorCodeSchema, modificationSchema, modificationStatusSchema, nodeKindSchema, pageNodeSchema, pageTreeSchema, saveConfigRequestSchema, savedPageSummarySchema, targetSchema } from './schemas.js';

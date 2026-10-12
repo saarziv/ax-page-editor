@@ -28,3 +28,8 @@ export function nodeText(node: PageNode): string {
 function collectText(node: PageNode): string {
   return (node.text ?? '') + (node.children ?? []).map(collectText).join('');
 }
+
+/** A node's own `text` as a single text child, for when something must be placed before or after it. */
+export function textAsChildren(node: PageNode): PageNode[] {
+  return node.text === undefined ? [] : [{ id: `${node.id}>text:1`, kind: 'text', tag: '#text', text: node.text }];
+}

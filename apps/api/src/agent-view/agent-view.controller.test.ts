@@ -4,17 +4,25 @@ import type { Modification } from '@ax/core';
 import { ConfigRepository, createConfigTable } from '../config/config.repository.js';
 import { FetchError } from '../fetch/fetch-error.js';
 import type { SafeFetchService } from '../fetch/safe-fetch.service.js';
+import { ForwardService } from '../forward/forward.service.js';
 import { PageTreeService } from '../page/page-tree.service.js';
 import { AgentViewController, type HeaderSettableResponse } from './agent-view.controller.js';
 import { AgentViewService } from './agent-view.service.js';
 
-// Serves one small live page, and blocks every other address the way SafeFetchService blocks a private one.
+// Serves a few small live pages, which a test can change, and blocks every other address the way
+// SafeFetchService blocks a private one. `fetchedUrls` records each fetch, to show nothing is cached.
 const pricingPageHtml = '<main><h1>Pricing</h1><p>Plans start at $9.</p></main>';
+const termsUrl = 'https://www.iana.org/help/example-domains';
+let livePagesByUrl: Map<string, string>;
+let fetchedUrls: string[];
 const fakeSafeFetch = {
-  fetchHtml: (url: string) =>
-    url === 'https://acme.com/pricing'
-      ? Promise.resolve({ finalUrl: url, html: pricingPageHtml })
-      : Promise.reject(new FetchError('BLOCKED', `${url} points to a private address`)),
+  fetchHtml: (url: string) => {
+    fetchedUrls.push(url);
+    const html = livePagesByUrl.get(url);
+    return html === undefined
+      ? Promise.reject(new FetchError('BLOCKED', `${url} points to a private address`))
+      : Promise.resolve({ finalUrl: url, html });
+  },
 } as unknown as SafeFetchService;
 
 // Targets as the editor saves them for the demo page (samples/demo.html after clean).
@@ -30,14 +38,27 @@ const chartNote: Modification = {
   note: 'Customer growth from 1,200 to 8,500. # hi [x](y)',
 };
 
+const forwardTerms: Modification = {
+  id: 'm4',
+  type: 'forward',
+  target: { selector: 'main:1>section:1>paragraph:1>link:1', text: 'terms of service' },
+  href: termsUrl,
+};
+
 let configRepository: ConfigRepository;
 let controller: AgentViewController;
 
 beforeEach(() => {
+  livePagesByUrl = new Map([
+    ['https://acme.com/pricing', pricingPageHtml],
+    [termsUrl, '<header><nav>Domains</nav></header><main><h1>Example Domains</h1><p>As described in RFC 2606.</p></main><footer>Root Zone Registry</footer>'],
+  ]);
+  fetchedUrls = [];
   const database = new Database(':memory:');
   createConfigTable(database);
   configRepository = new ConfigRepository(database);
-  controller = new AgentViewController(new AgentViewService(new PageTreeService(fakeSafeFetch), configRepository));
+  const pageTreeService = new PageTreeService(fakeSafeFetch);
+  controller = new AgentViewController(new AgentViewService(pageTreeService, new ForwardService(pageTreeService), configRepository));
 });
 
 function saveConfiguration(url: string, modifications: Modification[]): void {
@@ -107,6 +128,59 @@ describe('AgentViewController', () => {
     const markdown = await controller.getAgentView('https://acme.com/pricing/?utm_source=x', undefined, recordingResponse());
 
     expect(markdown).toBe('Plans start at $9.\n');
+  });
+
+  it('writes a forward\'s main content after the link\'s paragraph as a quoted block', async () => {
+    saveConfiguration('sample:demo', [forwardTerms]);
+
+    const markdown = await controller.getAgentView('sample:demo', undefined, recordingResponse());
+
+    expect(markdown).toMatch(
+      /Read our \[terms of service\]\(https:\/\/www\.iana\.org\/help\/example-domains\)[^\n]*\n\n> \*\*Forwarded content from https:\/\/www\.iana\.org\/help\/example-domains:\*\*\n>\n> # Example Domains\n>\n> As described in RFC 2606\.\n/,
+    );
+    expect(markdown).not.toMatch(/^> Domains$|Root Zone Registry/m);
+  });
+
+  it('fetches a forward again on every request, so the agent reads the page\'s current content', async () => {
+    saveConfiguration('sample:demo', [forwardTerms]);
+    await controller.getAgentView('sample:demo', undefined, recordingResponse());
+    livePagesByUrl.set(termsUrl, '<main><p>Terms updated in 2026.</p></main>');
+
+    const markdown = await controller.getAgentView('sample:demo', undefined, recordingResponse());
+
+    expect(markdown).toContain('> Terms updated in 2026.');
+    expect(markdown).not.toContain('Example Domains');
+    expect(fetchedUrls.filter((url) => url === termsUrl)).toHaveLength(2);
+  });
+
+  it('fetches a page forwarded from two links only once per request', async () => {
+    const forwardTermsAgain: Modification = { ...forwardTerms, id: 'm5', target: { selector: 'main:1>section:1>paragraph:1>link:2', text: 'guide to web analytics' } };
+    saveConfiguration('sample:demo', [forwardTerms, forwardTermsAgain]);
+
+    await controller.getAgentView('sample:demo', undefined, recordingResponse());
+
+    expect(fetchedUrls.filter((url) => url === termsUrl)).toHaveLength(1);
+  });
+
+  it('leaves just the link when a forward\'s page fails to load, and still writes the rest of the page', async () => {
+    const forwardBlockedPage: Modification = { ...forwardTerms, href: 'http://127.0.0.1/terms' };
+    saveConfiguration('sample:demo', [forwardBlockedPage, chartNote]);
+
+    const markdown = await controller.getAgentView('sample:demo', undefined, recordingResponse());
+
+    expect(markdown).toContain('Read our [terms of service](https://www.iana.org/help/example-domains)');
+    expect(markdown).not.toContain('Forwarded content');
+    expect(markdown).toContain('> **Context:** Customer growth');
+  });
+
+  it('still fails the request when a forward fails for a reason other than the fetch', async () => {
+    saveConfiguration('sample:demo', [forwardTerms]);
+    const brokenForwardService = { getForwardedPage: () => Promise.reject(new TypeError('a bug')) } as unknown as ForwardService;
+    const brokenController = new AgentViewController(new AgentViewService(new PageTreeService(fakeSafeFetch), brokenForwardService, configRepository));
+
+    const thrown = await catchError(brokenController.getAgentView('sample:demo', undefined, recordingResponse()));
+
+    expect(thrown).toBeInstanceOf(TypeError);
   });
 
   it('turns a missing url into a 400 INVALID_URL', async () => {

@@ -14,6 +14,7 @@ interface EditorState {
   loadSavedModifications: (pageUrl: string, savedModifications: Modification[]) => void;
   select: (id: string | null) => void;
   toggleHide: (target: Target) => void;
+  toggleForward: (target: Target, href: string) => void;
   setContext: (target: Target, note: string) => void;
   removeModification: (modificationId: string) => void;
   markSaved: (savedModifications: Modification[]) => void;
@@ -47,6 +48,18 @@ export const useEditorStore = create<EditorState>()((set) => ({
 
       const newHide: Modification = { id: crypto.randomUUID(), type: 'hide', target };
       return { modificationsDraft: [...modificationsDraft, newHide] };
+    }),
+  // Same switch as toggleHide, so a link can never get two forwards. Only the href is stored, never the page content (K8).
+  toggleForward: (target, href) =>
+    set(({ modificationsDraft }) => {
+      const isAlreadyForwarded = modificationsDraft.some((modification) => isForwardOf(modification, target));
+
+      if (isAlreadyForwarded) {
+        return { modificationsDraft: modificationsDraft.filter((modification) => !isForwardOf(modification, target)) };
+      }
+
+      const newForward: Modification = { id: crypto.randomUUID(), type: 'forward', target, href };
+      return { modificationsDraft: [...modificationsDraft, newForward] };
     }),
   // Called on every keystroke: adds the note, then replaces it in place, and clearing the box removes it.
   // So an element can never get two notes (K10). The note is kept as typed, not trimmed, so a space being typed isn't eaten.
@@ -91,6 +104,11 @@ function isHideOf(modification: Modification, target: Target): boolean {
 /** True when this modification is a context note on exactly this target. */
 function isContextOf(modification: Modification, target: Target): boolean {
   return modification.type === 'context' && isSameTarget(modification.target, target);
+}
+
+/** True when this modification is a forward of exactly this target. */
+function isForwardOf(modification: Modification, target: Target): boolean {
+  return modification.type === 'forward' && isSameTarget(modification.target, target);
 }
 
 function isSameTarget(first: Target, second: Target): boolean {

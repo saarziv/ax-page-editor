@@ -27,7 +27,9 @@ test('clicking an element selects it and shows it in the inspector', async ({ pa
   await expect(contextBox).toBeEditable();
   await expect(contextBox).toHaveValue('');
   await expect(contextBox).toHaveAttribute('placeholder', 'What happens when someone clicks this?');
-  await expect(inspector.getByRole('button', { name: 'Forward this link' })).toBeDisabled();
+  const forwardSwitch = inspector.getByRole('switch', { name: 'Forward to AI' });
+  await expect(forwardSwitch).toBeEnabled();
+  await expect(forwardSwitch).not.toBeChecked();
 
   // The selection moves to the next element clicked.
   const heading = preview.getByRole('heading', { name: 'Analytics that scale with you' });
@@ -240,7 +242,8 @@ test('a long note stops at 300 characters, and the box scrolls instead of pushin
   const inspector = page.getByRole('complementary', { name: 'Inspector' });
   const contextBox = inspector.getByRole('textbox', { name: 'Context for AI' });
 
-  await page.getByRole('region', { name: 'Preview' }).getByRole('img', { name: 'Customer growth' }).click();
+  // A link, so the Forward switch sits below the box and shows whether the box pushes it away.
+  await page.getByRole('region', { name: 'Preview' }).getByText('terms of service', { exact: true }).click();
   await contextBox.fill('word '.repeat(50));
   await expect(inspector.getByText('250 / 300')).toBeVisible();
 
@@ -257,8 +260,8 @@ test('a long note stops at 300 characters, and the box scrolls instead of pushin
   expect(boxRect && inspectorRect && boxRect.width < inspectorRect.width).toBe(true);
   await inspector.getByRole('switch', { name: 'Hide from AI' }).click();
   await expect(inspector.getByRole('switch', { name: 'Hide from AI' })).toBeChecked();
-  await inspector.getByRole('button', { name: 'Forward this link' }).scrollIntoViewIfNeeded();
-  await expect(inspector.getByRole('button', { name: 'Forward this link' })).toBeInViewport();
+  await inspector.getByRole('switch', { name: 'Forward to AI' }).scrollIntoViewIfNeeded();
+  await expect(inspector.getByRole('switch', { name: 'Forward to AI' })).toBeInViewport();
 });
 
 // Global flow 1, in the preview: hide the banner, explain the chart.

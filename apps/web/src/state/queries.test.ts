@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchConfig, REQUEST_TIMEOUT_MS, saveConfig } from './queries';
+import { fetchConfig, fetchForwardedPage, ForwardFetchError, REQUEST_TIMEOUT_MS, saveConfig } from './queries';
 
 const saveRequest = { url: 'sample:demo', modifications: [] };
 
@@ -74,5 +74,47 @@ describe('fetchConfig', () => {
 
     await expect(fetchConfig('https://acme.com/pricing')).resolves.toEqual(savedConfig);
     expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/api/configs/https%3A%2F%2Facme.com%2Fpricing', expect.anything());
+  });
+});
+
+describe('fetchForwardedPage', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  async function forwardFailureCode(): Promise<unknown> {
+    try {
+      await fetchForwardedPage('https://acme.com/terms');
+    } catch (error) {
+      return error instanceof ForwardFetchError ? error.code : error;
+    }
+    throw new Error('Expected fetchForwardedPage to fail');
+  }
+
+  it("keeps the api's code when the forward fails", async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{"code":"BLOCKED","message":"private address"}', { status: 403 })));
+
+    await expect(forwardFailureCode()).resolves.toBe('BLOCKED');
+  });
+
+  it('reads a failure without a code as UNREACHABLE', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('<h1>Bad gateway</h1>', { status: 502 })));
+    await expect(forwardFailureCode()).resolves.toBe('UNREACHABLE');
+
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{"code":"SOMETHING_ELSE"}', { status: 500 })));
+    await expect(forwardFailureCode()).resolves.toBe('UNREACHABLE');
+  });
+
+  it('reads our api being down as UNREACHABLE', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Promise.reject(new TypeError('Failed to fetch'))));
+
+    await expect(forwardFailureCode()).resolves.toBe('UNREACHABLE');
+  });
+
+  it('asks for the href and returns the forwarded page', async () => {
+    const forwardedPage = { url: 'https://acme.com/terms', title: 'Terms', root: { id: 'main:1', kind: 'main', tag: 'main', children: [] } };
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(forwardedPage), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchForwardedPage('https://acme.com/terms')).resolves.toEqual(forwardedPage);
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3001/api/forward', expect.objectContaining({ body: '{"url":"https://acme.com/terms"}' }));
   });
 });

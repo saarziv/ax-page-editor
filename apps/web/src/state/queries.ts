@@ -1,5 +1,18 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { configSchema, pageTreeSchema, savedPageSummarySchema, type Config, type PageTree, type SaveConfigRequest, type SavedPageSummary } from '@ax/core';
+import { useCallback, useMemo } from 'react';
+import { useMutation, useQueries, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
+import {
+  configSchema,
+  fetchErrorCodeSchema,
+  pageTreeSchema,
+  savedPageSummarySchema,
+  type Config,
+  type FetchErrorCode,
+  type Forwarded,
+  type Modification,
+  type PageTree,
+  type SaveConfigRequest,
+  type SavedPageSummary,
+} from '@ax/core';
 
 export const API_ORIGIN = 'http://localhost:3001';
 const API_URL = `${API_ORIGIN}/api`;
@@ -17,6 +30,44 @@ async function fetchPageTree(url: string): Promise<PageTree> {
     body: JSON.stringify({ url }),
   });
   if (!response.ok) throw new Error(`POST ${API_URL}/page-tree for ${url} failed with ${response.status}`);
+  return pageTreeSchema.parse(await response.json());
+}
+
+/** Why a forwarded page couldn't be fetched, as the api's FetchError code, so the preview can say why. */
+export class ForwardFetchError extends Error {
+  constructor(
+    readonly code: FetchErrorCode,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+// The api answers a FetchError as `{ code, message }`. Any other body (a proxy's HTML page, nothing at all) has no code.
+async function fetchErrorCodeOf(response: Response): Promise<FetchErrorCode | null> {
+  const responseBody: unknown = await response.json().catch(() => null);
+  const code = typeof responseBody === 'object' && responseBody !== null && 'code' in responseBody ? responseBody.code : null;
+  const parsedCode = fetchErrorCodeSchema.safeParse(code);
+  return parsedCode.success ? parsedCode.data : null;
+}
+
+/** The linked page's main content, or a ForwardFetchError. Anything that isn't the api's own `{ code }` means our api is down or failing: UNREACHABLE. */
+export async function fetchForwardedPage(href: string): Promise<PageTree> {
+  const description = `POST ${API_URL}/forward for ${href}`;
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/forward`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ url: href }),
+    });
+  } catch (error) {
+    throw new ForwardFetchError('UNREACHABLE', `${description} failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  if (!response.ok) {
+    const code = (await fetchErrorCodeOf(response)) ?? 'UNREACHABLE';
+    throw new ForwardFetchError(code, `${description} failed with ${response.status}`);
+  }
   return pageTreeSchema.parse(await response.json());
 }
 
@@ -76,6 +127,39 @@ export function usePageTree(url: string) {
     // The editor mounts the preview only once the tree has loaded or failed, and a failed query refetches
     // whenever a component mounts it, so the default would loop between the error and the loading state.
     retryOnMount: false,
+  });
+}
+
+function forwardedFromQuery(href: string, forwardQuery: UseQueryResult<PageTree> | undefined): Forwarded {
+  if (forwardQuery?.data) return { href, tree: forwardQuery.data };
+  if (forwardQuery?.isError) return { href, error: forwardQuery.error instanceof ForwardFetchError ? forwardQuery.error.code : 'UNREACHABLE' };
+  return { href };
+}
+
+/**
+ * Every forwarded page in the draft, by `href`, fetched once per session (P11): a note edit or turning a forward
+ * off and on again reuses what was fetched. Missing or without `tree` and `error` means still loading.
+ */
+export function useForwardedPages(modificationsDraft: Modification[]): ReadonlyMap<string, Forwarded> {
+  // A string key, so the hrefs list (and so combine) keeps its identity while the set of forwards is unchanged.
+  // Otherwise every keystroke in a note would build a new map and recompute the marked page twice.
+  const forwardedHrefsKey = [...new Set(modificationsDraft.flatMap((modification) => (modification.type === 'forward' ? [modification.href] : [])))].join('\n');
+  const forwardedHrefs = useMemo(() => (forwardedHrefsKey === '' ? [] : forwardedHrefsKey.split('\n')), [forwardedHrefsKey]);
+  const combineForwardedPages = useCallback(
+    (forwardQueries: UseQueryResult<PageTree>[]) => new Map(forwardedHrefs.map((href, index) => [href, forwardedFromQuery(href, forwardQueries[index])])),
+    [forwardedHrefs],
+  );
+  return useQueries({
+    queries: forwardedHrefs.map((href) => ({
+      queryKey: ['forward', href],
+      queryFn: () => fetchForwardedPage(href),
+      staleTime: Infinity,
+      // Kept for the whole session even while the forward is off, so turning it back on never refetches.
+      gcTime: Infinity,
+      // A blocked or non-HTML link won't change on a retry, so it fails fast.
+      retry: false,
+    })),
+    combine: combineForwardedPages,
   });
 }
 

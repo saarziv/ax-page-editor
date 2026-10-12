@@ -44,7 +44,7 @@ function renderBlock(node: PageNode): string[] {
     case 'annotation':
       return [renderNote(node)];
     case 'forwarded':
-      return [];
+      return renderForwarded(node);
     default:
       // Containers (page, main, section, …) add no text of their own. A row, cell or item found
       // outside its table or list is written the same way, so its content is never lost.
@@ -104,10 +104,11 @@ function renderList(list: PageNode): string[] {
   const blocksByItem: string[][] = [];
   for (const child of list.children ?? []) {
     const previousItemBlocks = blocksByItem.at(-1);
-    if (child.kind !== 'annotation') blocksByItem.push(renderContentBlocks(child));
-    // A note on an item comes right after it, so it's written inside that item, under its text.
-    else if (previousItemBlocks) previousItemBlocks.push(renderNote(child));
-    else notesBeforeList.push(renderNote(child));
+    const isNoteOrForward = child.kind === 'annotation' || child.kind === 'forwarded';
+    if (!isNoteOrForward) blocksByItem.push(renderContentBlocks(child));
+    // A note or forward on an item comes right after it, so it's written inside that item, under its text.
+    else if (previousItemBlocks) previousItemBlocks.push(...renderBlock(child));
+    else notesBeforeList.push(...renderBlock(child));
   }
 
   const items = blocksByItem.map((itemBlocks, index) => {
@@ -152,6 +153,17 @@ function renderNote(annotation: PageNode): string {
   const note = escapeText(annotation.text ?? '');
   const about = annotation.attrs?.about;
   return quoteLines(about === undefined ? `**Context:** ${note}` : `**Context** (on "${escapeText(about)}"): ${note}`);
+}
+
+/**
+ * A loaded forward as a blockquote headed by its source. A loading or failed one writes nothing,
+ * so the agent reads just the link (K7).
+ */
+function renderForwarded(forwarded: PageNode): string[] {
+  if (forwarded.attrs?.forwardState !== 'loaded') return [];
+  // The href is written as is: the schema only accepts absolute http(s) URLs, and escaping would corrupt it (a_b → a\_b).
+  const heading = `**Forwarded content from ${forwarded.attrs.href ?? ''}:**`;
+  return [quoteLines([heading, ...renderContentBlocks(forwarded)].join('\n\n'))];
 }
 
 function quoteLines(markdown: string): string {

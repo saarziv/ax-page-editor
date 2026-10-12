@@ -86,8 +86,42 @@ describe('renderMarkdown', () => {
       expect(markdown).toBe('Menu\n\n# Hi\n');
     });
 
-    it('writes nothing for a forwarded node yet', () => {
-      expect(renderMarkdown(page(node('paragraph', { text: 'Before' }), node('forwarded'), node('paragraph', { text: 'After' })))).toBe('Before\n\nAfter\n');
+  });
+
+  describe('forwards', () => {
+    const forwarded = (href: string, forwardState: 'loading' | 'loaded' | 'failed', ...children: PageNode[]): PageNode =>
+      node('forwarded', { tag: 'section', attrs: { forId: 'x', href, forwardState }, ...(forwardState === 'loaded' && { children }) });
+    const termsContent = [node('heading', { text: 'Example Domains', attrs: { level: 1 } }), node('paragraph', { text: 'As described in RFC 2606.' })];
+
+    it('writes a loaded forward as a quoted block headed by its source, right after the link\'s paragraph', () => {
+      const paragraph = node('paragraph', { children: [text('Read our '), link('terms', 'https://acme.com/terms'), text('.')] });
+      expect(renderMarkdown(page(paragraph, forwarded('https://acme.com/terms', 'loaded', ...termsContent)))).toBe(
+        'Read our [terms](https://acme.com/terms).\n\n' +
+          '> **Forwarded content from https://acme.com/terms:**\n>\n> # Example Domains\n>\n> As described in RFC 2606.\n',
+      );
+    });
+
+    it('escapes the forwarded content like page text, and writes the href as is', () => {
+      expect(renderMarkdown(page(forwarded('https://acme.com/a_b', 'loaded', node('paragraph', { text: '*sale* [x](y)' }))))).toBe(
+        '> **Forwarded content from https://acme.com/a_b:**\n>\n> \\*sale\\* \\[x\\](y)\n',
+      );
+    });
+
+    it('writes nothing for a loading or failed forward', () => {
+      for (const forwardState of ['loading', 'failed'] as const) {
+        const markdown = renderMarkdown(page(node('paragraph', { text: 'Before' }), forwarded('https://acme.com/terms', forwardState), node('paragraph', { text: 'After' })));
+        expect(markdown).toBe('Before\n\nAfter\n');
+      }
+    });
+
+    it('writes a forward after a list item inside that item, indented under its text', () => {
+      const list = node('list', {
+        tag: 'ul',
+        children: [listItem(link('Home', 'https://acme.com/home')), forwarded('https://acme.com/home', 'loaded', node('paragraph', { text: 'Welcome.' })), listItem(text('Blog'))],
+      });
+      expect(renderMarkdown(page(list))).toBe(
+        '- [Home](https://acme.com/home)\n  > **Forwarded content from https://acme.com/home:**\n  >\n  > Welcome.\n- Blog\n',
+      );
     });
   });
 
@@ -134,6 +168,12 @@ describe('renderMarkdown', () => {
     it('writes an item\'s note inside that item, under its text', () => {
       const list = node('list', { tag: 'ol', children: [listItem(text('Home')), note('The landing page.'), listItem(text('Blog'))] });
       expect(renderMarkdown(page(list))).toBe('1. Home\n   > **Context:** The landing page.\n2. Blog\n');
+    });
+
+    it('writes nothing for a loading forward after an item, and adds no empty item', () => {
+      const loadingForward = node('forwarded', { tag: 'section', attrs: { href: 'https://acme.com/home', forwardState: 'loading' } });
+      const list = node('list', { tag: 'ul', children: [listItem(link('Home', 'https://acme.com/home')), loadingForward, listItem(text('Blog'))] });
+      expect(renderMarkdown(page(list))).toBe('- [Home](https://acme.com/home)\n- Blog\n');
     });
 
     it('writes a table\'s note just before the table', () => {

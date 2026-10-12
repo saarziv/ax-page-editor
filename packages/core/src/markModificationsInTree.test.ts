@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { markModificationsInTree } from './markModificationsInTree.js';
+import { markModificationsInTree, type Forwarded } from './markModificationsInTree.js';
 import { targetFor } from './target.js';
 import { findNodePath } from './tree.js';
-import type { Modification, PageNode } from './schemas.js';
+import type { Modification, PageNode, PageTree } from './schemas.js';
 
 const bannerSnippet = 'We use cookies to improve your experience. By continuing you';
 
@@ -251,5 +251,131 @@ describe('markModificationsInTree, step 3: context notes', () => {
     expect(contextPage).toEqual(pageBefore);
     // Only the figure and its ancestors are copied; the section is shared.
     expect(nodeAt(marked.tree, plansSection.id)).toBe(plansSection);
+  });
+});
+
+// Step 4: forwards land where a note on the link would, with the fetched page as their content.
+const termsHref = 'https://x.com/terms';
+const termsPage: PageTree = {
+  url: termsHref,
+  title: 'Terms',
+  root: {
+    id: 'main:1',
+    kind: 'main',
+    tag: 'main',
+    children: [
+      { id: 'main:1>heading:1', kind: 'heading', tag: 'h1', text: 'Terms', attrs: { level: 1 } },
+      {
+        id: 'main:1>paragraph:1',
+        kind: 'paragraph',
+        tag: 'p',
+        children: [{ id: 'main:1>paragraph:1>link:1', kind: 'link', tag: 'a', text: 'refunds', attrs: { href: 'https://x.com/refunds' } }],
+      },
+    ],
+  },
+};
+
+function forwardModification(id: string, node: PageNode): Modification {
+  return { id, type: 'forward', target: targetFor(node), href: node.attrs?.href ?? '' };
+}
+
+describe('markModificationsInTree, step 4: forwards', () => {
+  it('puts a forward on a link inside a sentence after its paragraph, after a note on the same link', () => {
+    const marked = markModificationsInTree(contextPage, [
+      forwardModification('f1', termsLink),
+      contextModification('c1', termsLink, 'Monthly plans.'),
+    ]);
+
+    expect(childIds(marked.tree, plansSection.id)).toEqual([plansHeading.id, priceTable.id, termsParagraph.id, 'context:c1', 'forward:f1']);
+    expect(nodeAt(marked.tree, termsParagraph.id)).toBe(termsParagraph);
+  });
+
+  it('inserts a loading forward when its page has not arrived', () => {
+    const marked = markModificationsInTree(contextPage, [forwardModification('f1', termsLink)]);
+
+    expect(marked.status).toEqual({ f1: 'active' });
+    expect(nodeAt(marked.tree, 'forward:f1')).toEqual({
+      id: 'forward:f1',
+      kind: 'forwarded',
+      tag: 'section',
+      attrs: { forId: termsLink.id, href: termsHref, forwardState: 'loading' },
+    });
+  });
+
+  it('inserts a loaded forward with the page content as its children', () => {
+    const forwards = new Map<string, Forwarded>([[termsHref, { href: termsHref, tree: termsPage }]]);
+
+    const marked = markModificationsInTree(contextPage, [forwardModification('f1', termsLink)], forwards);
+
+    const forwardNode = nodeAt(marked.tree, 'forward:f1');
+    expect(marked.status).toEqual({ f1: 'active' });
+    expect(forwardNode?.attrs?.forwardState).toBe('loaded');
+    expect(forwardNode?.children?.map((child) => child.id)).toEqual(['forward:f1>main:1>heading:1', 'forward:f1>main:1>paragraph:1']);
+    expect(nodeAt(marked.tree, 'forward:f1>main:1>paragraph:1>link:1')?.text).toBe('refunds');
+  });
+
+  it('inserts a failed forward with its error code and no content, and marks it failed', () => {
+    const forwards = new Map<string, Forwarded>([[termsHref, { href: termsHref, error: 'NOT_HTML' }]]);
+
+    const marked = markModificationsInTree(contextPage, [forwardModification('f1', termsLink)], forwards);
+
+    expect(marked.status).toEqual({ f1: 'failed' });
+    expect(nodeAt(marked.tree, 'forward:f1')).toEqual({
+      id: 'forward:f1',
+      kind: 'forwarded',
+      tag: 'section',
+      attrs: { forId: termsLink.id, href: termsHref, forwardState: 'failed', errorCode: 'NOT_HTML' },
+    });
+  });
+
+  // K5: forwarded content is never a target, so nothing inside it can be forwarded again.
+  it('never resolves a target inside forwarded content', () => {
+    const forwards = new Map<string, Forwarded>([[termsHref, { href: termsHref, tree: termsPage }]]);
+    const nestedForward: Modification = {
+      id: 'f2',
+      type: 'forward',
+      target: { selector: 'forward:f1>main:1>paragraph:1>link:1', text: 'refunds' },
+      href: 'https://x.com/refunds',
+    };
+
+    const marked = markModificationsInTree(contextPage, [forwardModification('f1', termsLink), nestedForward], forwards);
+
+    expect(marked.status).toEqual({ f1: 'active', f2: 'unmatched' });
+  });
+
+  // K6: cut here, so the preview and Agent View, which both draw this tree, end at the same word.
+  it('cuts a long loaded forward to about 3,000 tokens, ending with "(truncated)"', () => {
+    const longText = 'word '.repeat(5_000); // 25,000 characters
+    const longPage: PageTree = {
+      ...termsPage,
+      root: { id: 'main:1', kind: 'main', tag: 'main', children: [{ id: 'main:1>paragraph:1', kind: 'paragraph', tag: 'p', text: longText }] },
+    };
+    const forwards = new Map<string, Forwarded>([[termsHref, { href: termsHref, tree: longPage }]]);
+
+    const marked = markModificationsInTree(contextPage, [forwardModification('f1', termsLink)], forwards);
+
+    const content = nodeAt(marked.tree, 'forward:f1')?.children ?? [];
+    expect(content.map((child) => child.id)).toEqual(['forward:f1>main:1>paragraph:1', 'forward:f1>main:1>truncated']);
+    expect(content[0]?.text?.length).toBeLessThanOrEqual(12_000);
+    expect(content[0]?.text?.length).toBeGreaterThan(11_990);
+    expect(content[1]?.text).toBe('(truncated)');
+  });
+
+  it('keeps a short loaded forward whole, with no "(truncated)"', () => {
+    const forwards = new Map<string, Forwarded>([[termsHref, { href: termsHref, tree: termsPage }]]);
+
+    const marked = markModificationsInTree(contextPage, [forwardModification('f1', termsLink)], forwards);
+
+    expect(nodeAt(marked.tree, 'forward:f1')?.children?.at(-1)?.id).toBe('forward:f1>main:1>paragraph:1');
+  });
+
+  it('makes a forward inside a hidden element inactive and does not insert it', () => {
+    const marked = markModificationsInTree(contextPage, [
+      hideModification('hideSection', plansSection.id, targetFor(plansSection).text),
+      forwardModification('f1', termsLink),
+    ]);
+
+    expect(marked.status).toEqual({ hideSection: 'active', f1: 'inactive' });
+    expect(nodeAt(marked.tree, 'forward:f1')).toBeUndefined();
   });
 });

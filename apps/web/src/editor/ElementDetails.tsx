@@ -1,19 +1,19 @@
 import { useId, useState, type ReactNode } from 'react';
 import { nodeText, targetFor, type PageNode } from '@ax/core';
-import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useNodeModifications } from '@/state/derived';
 import { useEditorStore } from '@/state/store';
 import { Breadcrumb } from './Breadcrumb';
 import { ContextBox } from './ContextBox';
+import { ForwardSwitch } from './ForwardSwitch';
 import { describeModification } from './modificationLabels';
 import { NODE_LABELS } from './nodeLabels';
 
 // Past this, the text is clamped to four lines with a toggle, so a long paragraph doesn't push everything else away.
 const LONG_TEXT_LENGTH = 200;
 
-/** `path` runs from the root down to the selected node, which is its last item. */
-export function ElementDetails({ path, node }: { path: PageNode[]; node: PageNode }) {
+/** `path` runs from the root down to the selected node, which is its last item. `pageUrl` is the loaded page's normalized url. */
+export function ElementDetails({ path, node, pageUrl }: { path: PageNode[]; node: PageNode; pageUrl: string }) {
   return (
     <section aria-label="Selected element" className="flex flex-col gap-4">
       <Breadcrumb path={path} />
@@ -42,10 +42,7 @@ export function ElementDetails({ path, node }: { path: PageNode[]; node: PageNod
       <div className="flex flex-col gap-3 border-t pt-4">
         <HideSwitch node={node} />
         <ContextBox node={node} />
-        {/* Disabled until 06 makes it work. */}
-        <Button variant="outline" disabled>
-          Forward this link
-        </Button>
+        {node.kind === 'link' && <ForwardSwitch link={node} pageUrl={pageUrl} />}
       </div>
     </section>
   );
