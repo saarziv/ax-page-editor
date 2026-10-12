@@ -99,7 +99,7 @@ A public endpoint returns the **live** page with its saved configuration applied
 
 ### 6.6 Forward a link
 
-For a selected link, the server fetches the page it points to and inserts its main content right after the link, so an agent gets the answer instead of a pointer. Forwarding is one level deep, always fetched live, and bounded by per-link and per-page size limits so forwarded content can't drown the page.
+For a selected link, the server fetches the page it points to and inserts its main content right after the link, so an agent gets the answer instead of a pointer. Forwarding is one level deep, always fetched live, and capped in size per link so one long page can't drown the main content.
 
 ---
 

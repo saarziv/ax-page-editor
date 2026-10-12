@@ -15,8 +15,8 @@ How we build the Forward a link spec. Shared architecture, core contracts and co
 ### `markModificationsInTree` step 4: Forward
 - Walk forwards in document order.
 - Truncate each to 3,000 tokens, ending with a "(truncated)" marker.
-- Add them up to the 10,000-token page budget. Any that don't fit become `overBudget`; failed ones become `failed`. Both leave the plain link.
-- Fitting ones are inserted as a `forwarded` node right after the link, with the forwarded tree's main content.
+- Failed ones become `failed` and leave the plain link.
+- The rest are inserted as a `forwarded` node with the forwarded tree's main content, placed by the same rule as context notes (03): right after the link, or after the enclosing paragraph when the link is inside a sentence.
 - Depth 1: links inside a `forwarded` node are never forwarded.
 
 ### `mainContent(tree)`
@@ -28,7 +28,6 @@ Use `main`, else the largest `article`, else `root`. Strip `nav`, `header`, `foo
 
 ### Forwardability
 - Not forwardable: `#anchor`, `mailto:`, `tel:`, `javascript:` → "This link doesn't lead to a page."
-- Same page as the current URL (after `normalizeUrl`) → "This link points to the current page."
 - Relative links are already resolved to absolute by `clean`.
 
 ## API
@@ -42,15 +41,15 @@ Use `main`, else the largest `article`, else `root`. Strip `nav`, `header`, `foo
 ## Web
 
 - **`useForward(href)`:** one query per forward modification, cached by href for the editing session, so the preview isn't refetched on every edit (P11). Agent View still fetches live.
-- **Inspector:** Forward button (links only) with disabled reasons and the remaining page budget.
-- **Preview:** a collapsible forwarded block under the link with source and approximate size, and an error state with the reason when the forward fails.
+- **Inspector:** Forward to AI switch (links only), disabled with its reason for links that don't lead to a page.
+- **Preview:** a collapsed forwarded block labeled with its source that expands on click, and an error state with the reason when the forward fails.
 - **Store action:** `toggleForward(selector, href)`: adds or removes the one `forward` modification; only allowed on links.
 
 ## Tests
 
 - `markModificationsInTree`:
   - forward insertion and the depth-1 rule
-  - per-link truncation and page budget order (earlier links win; later ones `overBudget`)
+  - per-link truncation
   - failed forward leaves the link, status `failed`
 - `mainContent`: `main` preferred, `article` fallback, chrome stripped.
 - Forwardability rules.

@@ -55,6 +55,7 @@ How each kind is written:
 
 **The tricky parts:**
 - **A note at the start of a list or table.** 03 places a container's note as its first child, but Markdown can't put a blockquote inside a list before the first item, or inside a table. So when a list's or table's first child is an annotation, the renderer writes it just before the list or table. The agent reads it in the same spot.
+- **A note on a list item.** A list item isn't a container, so 03 places its note right after the item, as the list's next child. The renderer writes it inside that item, indented under its text (`1. Home` then `   > **Context:** …`), so the numbering isn't broken.
 - **A note inside a table cell.** A cell is one line, so a note there (after a link in the cell) is written inline as `(Context: <note>)`.
 
 ## API

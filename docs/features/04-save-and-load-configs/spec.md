@@ -123,7 +123,7 @@ Start screen                              Editor
 
 ## Out of scope
 
-- Forward a link, and its over-budget and failed statuses in the list: 06.
+- Forward a link, and its failed status in the list: 06.
 - Agent View and the View as agent button: 05.
 - Warning before leaving a page with unsaved changes.
 - Deleting a saved configuration from the start screen.

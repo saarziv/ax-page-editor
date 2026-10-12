@@ -42,7 +42,7 @@ Not in this task: the View as agent button (T02), and forwarded content (06).
     - Page text `# hi [x](y) <b>` comes out escaped, as literal characters.
     - The api answers `text/plain` when `Accept` asks for `text/html`, and `text/markdown` otherwise.
 
-- [ ] **S2 – Apply the saved configuration (AC1, AC2, AC4, AC5)**
+- [x] **S2 – Apply the saved configuration (AC1, AC2, AC4, AC5)**
   Core gets `prune`, and `renderMarkdown` learns to write notes as `> **Context:** …`, including the tricky spots (start of a list or table, inside a cell). The endpoint now loads the saved configuration and runs it through `markModificationsInTree` and `prune` before writing Markdown, so the agent gets exactly what the preview showed.
   **Verify:**
   1. In the editor, open the demo, hide the cookie banner, add the note `Customer growth from 1,200 to 8,500. # hi [x](y)` to the chart, and Save.
@@ -52,6 +52,7 @@ Not in this task: the View as agent button (T02), and forwarded content (06).
     - `prune`: a hidden element and everything inside it is gone, the input tree is unchanged, and with nothing hidden the output equals the page.
     - Notes: after a leaf, first in a section, at the start of a list (written before the list), inside a cell (`(Context: …)`), and the `(on "terms")` label.
     - The api, on the demo page: with a saved configuration the banner text is absent and the note is present; with none saved the clean page comes back; a modification whose `target.text` no longer matches is skipped while the others still apply (AC4).
+  - A note on a list item is written inside that item → `plan.md` §renderMarkdown (tricky parts)
 
 - [ ] **S3 – Explain Agent View in the README (AC8)**
   A short README section on what the endpoint returns, why it exists (it's the downstream consumer that proves a saved configuration works without the editor), and a `curl` example against the demo page.

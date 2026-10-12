@@ -30,7 +30,7 @@ function renderBlock(node: PageNode): string[] {
     case 'image':
       return nonEmpty(renderInline(node));
     case 'list':
-      return nonEmpty(renderList(node));
+      return renderList(node);
     case 'table':
       return renderTable(node);
     case 'quote':
@@ -42,6 +42,7 @@ function renderBlock(node: PageNode): string[] {
     case 'button':
       return [labelled('Button', renderLine(node))];
     case 'annotation':
+      return [renderNote(node)];
     case 'forwarded':
       return [];
     default:
@@ -51,8 +52,11 @@ function renderBlock(node: PageNode): string[] {
   }
 }
 
-/** A node's content as blocks: each run of inline children becomes one line, each other child its own blocks. */
-function renderContentBlocks(node: PageNode): string[] {
+/**
+ * A node's content as blocks: each run of inline children becomes one line, each other child its own blocks.
+ * `notesInline` is for places Markdown allows only one line (a cell), where a note can't be a blockquote.
+ */
+function renderContentBlocks(node: PageNode, notesInline = false): string[] {
   if (!node.children) return nonEmpty(escapeText(node.text ?? ''));
 
   const blocks: string[] = [];
@@ -64,6 +68,8 @@ function renderContentBlocks(node: PageNode): string[] {
   for (const child of node.children) {
     if (INLINE_KINDS.has(child.kind)) {
       inlineRun += renderInline(child);
+    } else if (notesInline && child.kind === 'annotation') {
+      inlineRun += ` (Context: ${escapeText(child.text ?? '')})`;
     } else {
       endInlineRun();
       blocks.push(...renderBlock(child));
@@ -75,7 +81,7 @@ function renderContentBlocks(node: PageNode): string[] {
 
 /** A node's content squeezed onto one line, for places Markdown allows only one: headings, cells, link text. */
 function renderLine(node: PageNode): string {
-  return renderContentBlocks(node).join(' ').replace(/\s*\n\s*/g, ' ');
+  return renderContentBlocks(node, true).join(' ').replace(/\s*\n\s*/g, ' ');
 }
 
 function renderInline(node: PageNode): string {
@@ -92,19 +98,30 @@ function renderInline(node: PageNode): string {
   }
 }
 
-function renderList(list: PageNode): string {
-  const items = (list.children ?? []).map((item, index) => {
+function renderList(list: PageNode): string[] {
+  // Markdown can't put a blockquote inside a list before its first item, so the list's own note is written just before it.
+  const notesBeforeList: string[] = [];
+  const blocksByItem: string[][] = [];
+  for (const child of list.children ?? []) {
+    const previousItemBlocks = blocksByItem.at(-1);
+    if (child.kind !== 'annotation') blocksByItem.push(renderContentBlocks(child));
+    // A note on an item comes right after it, so it's written inside that item, under its text.
+    else if (previousItemBlocks) previousItemBlocks.push(renderNote(child));
+    else notesBeforeList.push(renderNote(child));
+  }
+
+  const items = blocksByItem.map((itemBlocks, index) => {
     const marker = list.tag === 'ol' ? `${index + 1}. ` : '- ';
-    const itemText = renderContentBlocks(item).join('\n');
-    // Continuation lines line up under the item's text, so a nested list stays inside its item.
-    return marker + itemText.replace(/\n/g, `\n${' '.repeat(marker.length)}`);
+    // Continuation lines line up under the item's text, so a nested list or a note stays inside its item.
+    return marker + itemBlocks.join('\n').replace(/\n/g, `\n${' '.repeat(marker.length)}`);
   });
-  return items.join('\n');
+  return [...notesBeforeList, ...nonEmpty(items.join('\n'))];
 }
 
 function renderTable(table: PageNode): string[] {
   const rows = (table.children ?? []).filter((child) => child.kind === 'row');
-  // A table's content outside its rows (e.g. a caption clean unwrapped) is written before it, so it isn't lost.
+  // A table's content outside its rows (its own note, or a caption clean unwrapped) is written before it:
+  // Markdown has no place for it inside a table.
   const blocksBeforeTable = (table.children ?? []).filter((child) => child.kind !== 'row').flatMap(renderBlock);
   if (rows.length === 0) return blocksBeforeTable;
 
@@ -128,6 +145,13 @@ function renderCode(node: PageNode): string {
 
 function rawText(node: PageNode): string {
   return (node.text ?? '') + (node.children ?? []).map(rawText).join('');
+}
+
+/** `> **Context:** <note>`, or `> **Context** (on "terms"): <note>` when the note was moved away from its element. */
+function renderNote(annotation: PageNode): string {
+  const note = escapeText(annotation.text ?? '');
+  const about = annotation.attrs?.about;
+  return quoteLines(about === undefined ? `**Context:** ${note}` : `**Context** (on "${escapeText(about)}"): ${note}`);
 }
 
 function quoteLines(markdown: string): string {

@@ -112,6 +112,56 @@ describe('renderMarkdown', () => {
     });
   });
 
+  describe('context notes', () => {
+    const note = (value: string, about?: string): PageNode => node('annotation', { tag: 'aside', text: value, attrs: { forId: 'x', ...(about && { about }) } });
+    const image = node('image', { tag: 'img', attrs: { src: 'https://acme.com/growth.png', alt: 'Customer growth' } });
+
+    it('writes a note after a leaf as a blockquote right after it', () => {
+      const figure = node('figure', { children: [image, note('Growth from 1,200 to 8,500.'), node('paragraph', { text: 'Jan to Sep.' })] });
+      expect(renderMarkdown(page(figure))).toBe('![Customer growth](https://acme.com/growth.png)\n\n> **Context:** Growth from 1,200 to 8,500.\n\nJan to Sep.\n');
+    });
+
+    it('writes a section\'s note first, before its content', () => {
+      const section = node('section', { children: [note('Prices exclude VAT.'), node('heading', { text: 'Plans', attrs: { level: 2 } })] });
+      expect(renderMarkdown(page(section))).toBe('> **Context:** Prices exclude VAT.\n\n## Plans\n');
+    });
+
+    it('writes a list\'s note just before the list', () => {
+      const list = node('list', { tag: 'ul', children: [note('Main menu.'), listItem(text('Home')), listItem(text('Blog'))] });
+      expect(renderMarkdown(page(list))).toBe('> **Context:** Main menu.\n\n- Home\n- Blog\n');
+    });
+
+    it('writes an item\'s note inside that item, under its text', () => {
+      const list = node('list', { tag: 'ol', children: [listItem(text('Home')), note('The landing page.'), listItem(text('Blog'))] });
+      expect(renderMarkdown(page(list))).toBe('1. Home\n   > **Context:** The landing page.\n2. Blog\n');
+    });
+
+    it('writes a table\'s note just before the table', () => {
+      const table = node('table', { children: [note('Monthly prices.'), row('Plan', 'Price'), row('Pro', '$49')] });
+      expect(renderMarkdown(page(table))).toBe('> **Context:** Monthly prices.\n\n| Plan | Price |\n| --- | --- |\n| Pro | $49 |\n');
+    });
+
+    it('writes a note inside a cell inline, since a cell is one line', () => {
+      const cellWithNote = node('cell', { tag: 'td', children: [link('Pro', 'https://acme.com/pro'), note('Billed yearly.')] });
+      const table = node('table', { children: [row('Plan'), node('row', { tag: 'tr', children: [cellWithNote] })] });
+      expect(renderMarkdown(page(table))).toBe('| Plan |\n| --- |\n| [Pro](https://acme.com/pro) (Context: Billed yearly.) |\n');
+    });
+
+    it('names the element when the note was moved away from it', () => {
+      expect(renderMarkdown(page(node('paragraph', { text: 'Read our terms.' }), note('Terms changed in 2026.', 'terms')))).toBe(
+        'Read our terms.\n\n> **Context** (on "terms"): Terms changed in 2026.\n',
+      );
+    });
+
+    it('writes a note as literal characters, never as Markdown', () => {
+      expect(renderMarkdown(page(note('Growth. # hi [x](y)', '*terms*')))).toBe('> **Context** (on "\\*terms\\*"): Growth. \\# hi \\[x\\](y)\n');
+    });
+
+    it('keeps every line of a multi-line note inside the blockquote', () => {
+      expect(renderMarkdown(page(note('Line one.\nLine two.')))).toBe('> **Context:** Line one.\n> Line two.\n');
+    });
+  });
+
   describe('escaping', () => {
     it('writes page text as literal characters, never as Markdown', () => {
       expect(renderMarkdown(page(node('paragraph', { text: '# hi [x](y) <b>' })))).toBe('\\# hi \\[x\\](y) \\<b\\>\n');

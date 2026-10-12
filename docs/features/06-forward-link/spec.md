@@ -2,53 +2,56 @@
 
 Turn a link into the content it points to, so an agent gets the answer instead of a pointer. Part of AX Editor: see the global `spec.md` for the problem, users, core concepts, agent output format, configuration format and trust & safety rules.
 
-Applied from the inspector on a selected link (see the See, select & inspect spec).
+Applied from the inspector on a selected link (02). This feature replaces the Forward stub from 03.
+
+All ACs are **Key** (must ship).
 
 ---
 
 ## What & why
 
-**What:** For a selected link, fetch the page it points to (server-side) and include its main content inline, right after the link.
+**What:** For a selected link, the server fetches the page it points to and shows its main content inline, right where the agent reads the link.
 
-**Why:** Agents don't follow links. "See our refund policy" is a dead end to them. Forwarding turns the pointer into the actual answer.
+**Why:** Most agents don't follow links or run JavaScript. "See our refund policy" is a dead end to them. Forwarding turns the pointer into the answer.
+
+**Example:** forwarding `<a href="https://acme.com/terms">terms of service</a>` gives the agent:
+
+```markdown
+Full details in our [terms of service](https://acme.com/terms).
+
+> **Forwarded content from https://acme.com/terms:**
+>
+> 1. Subscriptions renew monthly...
+> 2. Refunds are available within 30 days...
+```
 
 ## Behavior
 
-- "Forward this link" appears **only for links**.
-- On forward, the editor fetches the linked page (same rules as loading a page: no JavaScript, same safety checks), extracts its **main content** (no nav, footer, ads), cleans it, and shows it under the link in the preview as a collapsible block with its source URL and approximate size.
-- In the **agent output**, the content is inserted right after the link, as a labeled section: `Forwarded content from <url>:`, then the content. The link itself is kept.
-- Forwarding goes **one level deep only**: links inside forwarded content are never forwarded.
-- The configuration stores **only the link destination**, never the fetched content, so agents always get current content.
-- The approximate size is shown because every forward adds to what the agent must read; forwarding many long pages dilutes the main content.
-- Within one editing session, a forwarded page may be reused instead of refetched on every edit. Agent View always fetches live (see the Agent View spec).
+- A **Forward to AI** switch in the inspector, **only for links**. It's disabled for links that don't lead to a page (`#anchor`, `mailto:`, `tel:`, `javascript:`), with the reason "This link doesn't lead to a page."
+- Turning it on fetches the linked page the same way a page is loaded: server-side, no JavaScript, same safety checks.
+- Only the page's **main content** is kept: navigation, header, footer and sidebars are dropped.
+- **Placement** follows the context rule (03): right after the link, or after the enclosing paragraph when the link sits inside a sentence. The link itself stays.
+- In the **preview**, the content appears there as a collapsed block labeled "Forwarded from <url>". Clicking it expands it.
+- **One level deep:** links inside forwarded content are never forwarded.
+- **Size limit:** at most about 3,000 tokens per forward (≈ 12,000 characters). Longer content is cut there and ends with "(truncated)". There's no page-wide budget (D10).
+- **Always live:** the configuration stores only the link's `href`, never the content. Agent View fetches it on every request (D9).
+- **If the fetch fails** (timeout, not HTML, blocked address, too large), the preview block shows the plain-language reason, the agent output keeps just the link, and the modification is kept so it can work later.
 
-**Size limits**
+## Key acceptance criteria
 
-- **Per link: 3,000 tokens.** Longer forwarded content is truncated to the limit and ends with a visible "(truncated)" marker.
-- **Per page: 10,000 tokens** across all forwards. Forwards are added in page order (top to bottom) until the budget is used. A forward that doesn't fit is **not added**: its link stays a plain link, and the forward is flagged as **over budget** in the changes list (see the Save & load configs spec). The modification is kept.
-- The inspector shows the remaining page budget next to the Forward control.
-- Tokens are estimated (about 4 characters per token).
+- **K1.** Given a non-link element is selected, then there is no Forward control. Given a `mailto:`, `tel:`, `#anchor` or `javascript:` link, then the control is disabled with "This link doesn't lead to a page."
+- **K2.** Given a link to a public page, when the user turns Forward on, then the preview shows a "Forwarded from <url>" block in place, and it expands to show the page's main content.
+- **K3.** Given a forwarded link, then Agent View shows the link followed by "Forwarded content from <url>:" and the content, placed as in the example.
+- **K4.** Given a forwarded page with navigation and a footer, then neither appears in the forwarded content.
+- **K5.** Given forwarded content that contains links, then those links appear as plain links and are never forwarded.
+- **K6.** Given a forwarded page longer than 3,000 tokens, then the content is cut at about 3,000 tokens and ends with "(truncated)".
+- **K7.** Given a forward whose page fails to load, then the preview block shows the reason, Agent View shows the plain link only, and the forward stays in the changes list.
+- **K8.** Given a saved forward, then the configuration holds only its `href`, and Agent View shows the page's current content.
 
-## Acceptance criteria
+## Out of scope
 
-- Given a link to a public HTML page, when forwarded, then its main content appears under the link in both preview and agent output, labeled with its source.
-- Given a non-link element is selected, then the forward control is not shown.
-- Given forwarded content contains links, then none of them are forwarded.
-- Given a forwarded page longer than 3,000 tokens, then only the first 3,000 tokens are included, followed by "(truncated)".
-- Given forwards that together exceed 10,000 tokens, then the earlier ones (in page order) are included, the later ones are left as plain links, and those are flagged as over budget.
-- Given a forwarded link, then the saved configuration contains only its destination (`href`), never the fetched content.
-- Given a forwarded page with navigation and footer, then only its main content is included.
-- Given a link to `#anchor`, `mailto:`, `tel:` or `javascript:`, then the Forward control is disabled with the reason "This link doesn't lead to a page."
-- Given a link to the current page, then the Forward control is disabled with the reason "This link points to the current page."
-- Given a forward whose target fails to load, then the forward block in the preview shows the plain-language reason, the agent output keeps the link as is, and the modification is kept.
-- Given a relative link, when forwarded, then it is resolved against the page URL and that full URL is fetched and stored.
-- Given a link is selected, then the inspector shows the remaining page budget next to the Forward control.
-
-## Edge cases
-
-| Case                                                                          | Behavior                                                                                                                            |
-| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Link is not forwardable (`#anchor`, `mailto:`, `tel:`, `javascript:`)         | Control disabled with reason: "This link doesn't lead to a page."                                                                   |
-| Link points to the page itself                                                | Disabled: "This link points to the current page."                                                                                   |
-| Target fails (timeout, not HTML, too large, blocked address, JavaScript-only) | Shown in the forward block with the reason. In agent output the link is left as is. The modification is kept, so it can work later. |
-| Relative link                                                                 | Resolved to a full URL before fetching.                                                                                             |
+- A page-wide forward budget (D10).
+- Forwarding only part of a page (a section, a heading, a `#fragment`).
+- Blocking forwards to the current page.
+- Showing the forwarded size or token count.
+- Forwarding inside a hidden element (D18).

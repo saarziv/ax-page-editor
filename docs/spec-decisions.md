@@ -99,13 +99,13 @@ The preview is where the publisher works. The **View as agent** button opens Age
 
 
 
-### D10. Forwarding is one level deep, with per-link and per-page size limits
+### D10. Forwarding is one level deep, with a per-link size limit
 
 - **Why:** Every forward adds to what the agent must read. Unbounded forwarding dilutes the main content and makes cost unpredictable.
   - **Per link: 3,000 tokens.** Longer content is truncated and marked "(truncated)", so one huge page can't dominate but the agent still gets most of the answer.
-  - **Per page: 10,000 tokens.** Filled in page order. Forwards that don't fit are not added: they stay plain links and are flagged as over budget, in the editor and in Agent View's report.
-  - Page order makes the result predictable: the publisher can see which forwards win.
-- **Rejected:** Recursive forwarding, and unlimited size.
+- **Rejected:**
+  - Recursive forwarding, and unlimited size.
+  - A page-wide budget (e.g. 10,000 tokens, filled in page order). It needs an extra status, ordering rules and budget UI, for the rare page with many long forwards. The per-link cap already bounds the common case.
 
 
 

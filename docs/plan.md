@@ -150,7 +150,7 @@ How the two fit into the editor and Agent View, with an example, is in §6.1. Th
 
 ```ts
 type Forwarded = { href: string; tree?: PageTree; error?: ForwardError };
-type Status = 'active' | 'inactive' | 'unmatched' | 'overBudget' | 'failed';
+type Status = 'active' | 'inactive' | 'unmatched' | 'failed';
 type Marked = {
   tree: PageNode;                  // the marked page
   status: Record<ModId, Status>;
@@ -164,7 +164,7 @@ type Marked = {
 | 1. Resolve | Resolve each modification with `resolve`. If unresolved, mark it `unmatched`. | §3.3 |
 | 2. Hide | Flag the node `hidden`; other modifications in or on a hidden subtree become `inactive`. | 03 Hide & add context |
 | 3. Context | Insert `annotation` nodes, placed by kind. | 03 Hide & add context |
-| 4. Forward | Insert `forwarded` nodes within size limits; `overBudget` / `failed` leave the plain link. | 06 Forward a link |
+| 4. Forward | Insert `forwarded` nodes, truncated to the per-link limit; `failed` leaves the plain link. | 06 Forward a link |
 
 - `markModificationsInTree` never changes its input: it copies only the nodes it changes and their ancestors, and shares every other node.
 - Note text is stored and rendered as a plain string, never parsed.
@@ -247,7 +247,7 @@ Details live in the owning feature's plan.
   actions: { setUrl, loadSavedModifications, select, toggleHide, setContext, toggleForward, removeModification, markSaved }
 }
 ```
-Actions enforce the spec rules: one modification per type per element, an empty note removes the context modification, forward only on links, and the page forward budget. Each action is specified in the plan of the feature that uses it.
+Actions enforce the spec rules: one modification per type per element, an empty note removes the context modification, and forward only on links. Each action is specified in the plan of the feature that uses it.
 
 **Derived (memoized, never stored):**
 - `marked = markModificationsInTree(tree, modificationsDraft, forwards)`, from the `useMarkedPage()` hook (03). It drives the preview and the status groups.
@@ -350,7 +350,7 @@ How the publisher's page modifications for agents (hide an element, add context,
 | P6 | `markModificationsInTree` + `prune` in shared core, run on web + api | Parity by construction | Server-rendered preview per edit (latency) |
 | P7 | TanStack Query + Zustand | Server data vs editor state separated; fine-grained re-renders | Context+useReducer, Redux, Jotai |
 | P8 | `sample:` scheme for the bundled demo page | Offline demo without weakening SSRF rules | Serving it from localhost |
-| P9 | Tokens ≈ chars/4 | Good enough for budget UX | Real tokenizer (heavy, model-specific) |
+| P9 | Tokens ≈ chars/4 | Good enough for the per-link forward cap | Real tokenizer (heavy, model-specific) |
 | P10 | SQLite behind a repository | Real DB, no setup, swappable for Postgres JSONB | JSON files |
 | P11 | Session-cached forwards in editor only | Snappy editing; Agent View stays live per spec | Refetch on every edit |
 | P12 | One marked page: preview draws it, agent output prunes it | Every decision made once; the preview just draws a tree | Preview draws the original tree and looks up per element which modifications apply and where notes go |
