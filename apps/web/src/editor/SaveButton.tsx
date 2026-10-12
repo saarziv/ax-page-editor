@@ -1,39 +1,45 @@
-import { useEffect } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { usePageTree, useSaveConfig } from '@/state/queries';
-import { useEditorStore } from '@/state/store';
+import { hasUnsavedChanges, useEditorStore } from '@/state/store';
 
-const SAVED_MESSAGE_MS = 3000;
+const SAVED_TOAST_MS = 3000;
+// One id for both outcomes, so a new save's result replaces the previous toast instead of stacking.
+const SAVE_RESULT_TOAST_ID = 'save-result';
 
 export function SaveButton({ url }: { url: string }) {
   // The tree's url is the normalized one the page was loaded under, not what the publisher typed.
   const pageUrl = usePageTree(url).data?.url;
   const modificationsDraft = useEditorStore((state) => state.modificationsDraft);
+  const isDirty = useEditorStore(hasUnsavedChanges);
+  const markSaved = useEditorStore((state) => state.markSaved);
   const saveConfig = useSaveConfig();
-  const { isSuccess, reset } = saveConfig;
 
-  useEffect(() => {
-    if (!isSuccess) return;
-    const hideSavedMessage = setTimeout(reset, SAVED_MESSAGE_MS);
-    return () => clearTimeout(hideSavedMessage);
-  }, [isSuccess, reset]);
+  function handleSave() {
+    if (!pageUrl) return;
+    saveConfig.mutate(
+      { url: pageUrl, modifications: modificationsDraft },
+      {
+        onSuccess: (_savedConfig, sentRequest) => {
+          markSaved(sentRequest.modifications);
+          toast.success('Saved', { id: SAVE_RESULT_TOAST_ID, duration: SAVED_TOAST_MS });
+        },
+        // The draft is never touched, so every change stays on screen and still unsaved. The toast stays until the next save.
+        onError: () => toast.error("Your changes couldn't be saved. Try again.", { id: SAVE_RESULT_TOAST_ID, duration: Infinity }),
+      },
+    );
+  }
 
   return (
-    <div className="flex items-center gap-2">
-      {isSuccess && (
-        <span role="status" className="text-sm text-muted-foreground">
-          Saved
-        </span>
-      )}
-      <Button
-        type="button"
-        variant="outline"
-        // Disabled while a save runs, so a double click can't send two.
-        disabled={!pageUrl || saveConfig.isPending}
-        onClick={() => pageUrl && saveConfig.mutate({ url: pageUrl, modifications: modificationsDraft })}
-      >
-        Save
-      </Button>
-    </div>
+    <Button
+      type="button"
+      variant="outline"
+      className="cursor-pointer"
+      // Disabled while a save runs, so a double click can't send two.
+      disabled={!pageUrl || !isDirty || saveConfig.isPending}
+      onClick={handleSave}
+    >
+      Save
+    </Button>
   );
 }

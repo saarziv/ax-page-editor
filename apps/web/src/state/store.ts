@@ -5,19 +5,25 @@ import type { Modification, Target } from '@ax/core';
 interface EditorState {
   url: string | null;
   modificationsDraft: Modification[];
+  // The last saved draft as JSON, compared with modificationsDraft to derive the dirty flag.
+  savedJson: string;
   selectedId: string | null;
   setUrl: (url: string | null) => void;
   select: (id: string | null) => void;
   toggleHide: (target: Target) => void;
   setContext: (target: Target, note: string) => void;
+  markSaved: (savedModifications: Modification[]) => void;
 }
+
+const NOTHING_SAVED_JSON = JSON.stringify([]);
 
 export const useEditorStore = create<EditorState>()((set) => ({
   url: null,
   modificationsDraft: [],
+  savedJson: NOTHING_SAVED_JSON,
   selectedId: null,
   // Node ids and modifications belong to one page, so opening another page clears both (loading saved configs comes in 04).
-  setUrl: (url) => set({ url, selectedId: null, modificationsDraft: [] }),
+  setUrl: (url) => set({ url, selectedId: null, modificationsDraft: [], savedJson: NOTHING_SAVED_JSON }),
   select: (id) => set({ selectedId: id }),
   // A switch, not an "add": the first call hides the element, the next one un-hides it.
   // So an element can never get two hides, and the caller never has to check first.
@@ -53,7 +59,14 @@ export const useEditorStore = create<EditorState>()((set) => ({
       const newContext: Modification = { id: crypto.randomUUID(), type: 'context', target, note };
       return { modificationsDraft: [...modificationsDraft, newContext] };
     }),
+  // Takes the modifications that were sent, not the current draft: edits made while the save ran stay unsaved.
+  markSaved: (savedModifications) => set({ savedJson: JSON.stringify(savedModifications) }),
 }));
+
+/** The dirty flag: derived from the draft and the last saved copy, never stored. */
+export function hasUnsavedChanges({ modificationsDraft, savedJson }: Pick<EditorState, 'modificationsDraft' | 'savedJson'>): boolean {
+  return JSON.stringify(modificationsDraft) !== savedJson;
+}
 
 /** True when this modification is a hide on exactly this target (same selector and same text). */
 function isHideOf(modification: Modification, target: Target): boolean {

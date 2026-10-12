@@ -73,9 +73,10 @@ The controller talks to a `ConfigRepository` with two methods: `save(config)` an
 ### Save button (T01)
 
 - A **Save** button at the right of the top bar. It calls a TanStack Query mutation, `useSaveConfig()`, with the loaded page tree's `url` (already normalized) and `modificationsDraft`.
-- While the request runs the button is disabled, so a double click can't send two saves.
-- **Success:** a short "Saved" text next to the button, gone after about 3 seconds. The mutation also refreshes the Saved pages query, so the start screen is up to date.
-- **Failure (T01 S2):** "Your changes couldn't be saved. Try again." next to the button, until the next save. Three cases count as a failure, with one message for all of them: the server can't be reached (`fetch` rejects), it answers with an error status, or it doesn't answer within 10 seconds (`AbortSignal.timeout`). Without the timeout, a server that hangs would leave the button disabled forever.
+- **Enabled only when there's something to save:** when the draft differs from the last saved copy (the dirty flag, global plan §5.1). On success, `markSaved` records the modifications that were *sent*, not the current draft, so an edit made while the save ran still counts as unsaved. Opening another page resets the saved copy to "nothing saved". It's also disabled while a request runs, so a double click can't send two saves.
+- **Results are toasts** (`sonner`, bottom right), not text next to the button. Both outcomes share one toast id, so a new save's result replaces the previous one instead of stacking.
+- **Success:** a "Saved" toast, gone after about 3 seconds. The mutation also refreshes the Saved pages query, so the start screen is up to date.
+- **Failure (T01 S2):** a "Your changes couldn't be saved. Try again." toast that stays until the next save or until it's closed. The draft is still dirty, so Save stays enabled for the retry. Three cases count as a failure, with one message for all of them: the server can't be reached (`fetch` rejects), it answers with an error status, or it doesn't answer within 10 seconds (an `AbortController` aborted by a timer). Without the timeout, a server that hangs would leave the button disabled forever.
 
 ### Saved pages list (T02)
 

@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { Toaster } from 'sonner';
 import { App } from '@/app/App';
 import './index.css';
 
@@ -14,6 +15,7 @@ createRoot(rootElement).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
+      <Toaster position="bottom-right" richColors closeButton />
       {/* Devtools render only in dev; Vite strips them from production builds. */}
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

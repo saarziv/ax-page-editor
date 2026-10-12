@@ -38,21 +38,21 @@ Start screen                              Editor
 
 **Behavior**
 
-- A **Save** button in the editor's top bar.
+- A **Save** button in the editor's top bar. It's enabled only when there are unsaved changes (see below), so there's never a save that does nothing.
 - Saving stores the configuration in the format defined in the global spec (section 8, Configuration): version, normalized URL, last save time and the list of modifications. Nothing else is stored.
 - **One configuration per page URL.** Saving again replaces the stored one, never adds a second.
 - Saving with no changes (for example after removing all of them) stores an empty configuration. The page stays in the Saved pages list, with "0 changes".
 - **Unsaved indicator:** when the changes on screen differ from the last save, the top bar shows "Unsaved changes". After a successful save it's gone. A page with no changes and nothing saved shows no indicator.
-- **Success:** a short "Saved" confirmation.
-- **Failure:** the plain-language message "Your changes couldn't be saved. Try again." All changes stay in the editor, still marked unsaved.
+- **Success:** a small "Saved" toast that disappears after a few seconds. Save is disabled again until the next change.
+- **Failure:** a toast with the plain-language message "Your changes couldn't be saved. Try again." It stays until the next save or until the publisher closes it. All changes stay in the editor, still marked unsaved, and Save stays enabled for the retry.
 - **Validation:** the server checks every configuration before storing it (known modification types only, required fields present, notes at most 300 characters). An invalid one is rejected and nothing is stored.
 
 **Acceptance criteria**
 
-- **AC1** Given changes on a page, when the user clicks Save, then the configuration is stored for that page's URL in the global configuration format, and a "Saved" confirmation appears.
+- **AC1** Given changes on a page, when the user clicks Save, then the configuration is stored for that page's URL in the global configuration format, and a "Saved" toast appears.
 - **AC2** Given a configuration is already stored for a URL, when the user saves again, then it's replaced, not duplicated.
-- **AC3** Given the changes differ from the last save, then the top bar shows "Unsaved changes"; after a successful save, it doesn't.
-- **AC4** Given a save fails, then the user sees "Your changes couldn't be saved. Try again.", and every change stays in the editor, still marked unsaved.
+- **AC3** Given the changes differ from the last save, then the top bar shows "Unsaved changes" and Save is enabled; after a successful save, neither.
+- **AC4** Given a save fails, then the user sees a toast saying "Your changes couldn't be saved. Try again.", and every change stays in the editor, still marked unsaved.
 - **AC5** Given an invalid configuration (unknown type, missing field, note over 300 characters), when it's sent to the server, then it's rejected and nothing is stored.
 
 ## 3. Review & remove changes
@@ -100,7 +100,7 @@ Start screen                              Editor
 
 | Case | What the user sees |
 | --- | --- |
-| Save fails (server down or error) | "Your changes couldn't be saved. Try again." Changes stay, still unsaved. |
+| Save fails (server down or error) | A toast: "Your changes couldn't be saved. Try again." Changes stay, still unsaved. |
 | Saved configuration can't be loaded | "Your saved changes couldn't be loaded." with Retry. No editing until it loads. |
 | Saved pages list can't be loaded | The rest of the start screen works; the list shows "Saved pages couldn't be loaded." |
 | The saved page itself can't be fetched | The same messages as opening any page (01). |

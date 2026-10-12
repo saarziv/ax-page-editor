@@ -23,7 +23,7 @@ The flow (`plan.md` → How saving works):
 1. The Save button in the top bar sends the page URL and `modificationsDraft` to `PUT /api/configs`.
 2. The server validates the request with core's schemas and rejects anything invalid.
 3. The server adds `version` and `updatedAt`, normalizes the URL, and writes one SQLite row per URL, replacing the old one.
-4. The top bar shows "Saved", or a plain-language error if the save didn't go through.
+4. A toast shows "Saved", or a plain-language error if the save didn't go through. Save is enabled only while there are unsaved changes.
 
 S1 builds the whole path for a save that succeeds. S2 makes a failed save visible.
 
@@ -33,10 +33,10 @@ Not in this task: the "Unsaved changes" indicator (AC3), and reading configurati
 
 - [ ] **S1 – Save the configuration to the server (AC1, AC2, AC5)**
 
-  Core gets the configuration schemas. The api gets a `ConfigRepository` backed by SQLite and a `PUT /api/configs` endpoint that stores the configuration under the normalized URL. The top bar gets a Save button that sends the draft and shows "Saved" for a few seconds when it succeeds.
+  Core gets the configuration schemas. The api gets a `ConfigRepository` backed by SQLite and a `PUT /api/configs` endpoint that stores the configuration under the normalized URL. The top bar gets a Save button, enabled only when the draft differs from the last save, that sends the draft and shows a "Saved" toast for a few seconds when it succeeds.
 
   **Verify:**
-  1. With `pnpm dev` running, click "Try a sample", hide the cookie banner and add a note to the chart. Click Save: "Saved" appears next to the button and disappears after a few seconds (AC1).
+  1. With `pnpm dev` running, click "Try a sample": Save is disabled. Hide the cookie banner and add a note to the chart: Save is enabled and shows a pointer cursor. Click Save: a "Saved" toast appears at the bottom right and disappears after a few seconds, and Save is disabled again (AC1).
   2. Run `sqlite3 apps/api/data/ax.db "select url, config from page_configs"`. There's one row, `sample:demo`, whose config has `version: 1`, an `updatedAt`, and the two modifications (AC1).
   3. Clear the chart's note and click Save again. Run the same query: still one row, now with only the hide and a later `updatedAt` (AC2).
   4. Send an unknown modification type: `curl -s -X PUT localhost:3001/api/configs -H 'content-type: application/json' -d '{"url":"sample:demo","modifications":[{"id":"x","type":"blink","target":{"selector":"aside:1","text":"a"}}]}'`. The answer is a 400 with `code: "INVALID_REQUEST"`, and the query from step 2 shows the row unchanged (AC5).
@@ -44,18 +44,22 @@ Not in this task: the "Unsaved changes" indicator (AC3), and reading configurati
      - The schemas reject an unknown type, a missing `target`, a 301-character note and two modifications with the same id, and accept a valid list.
      - Saving through the controller stores a full configuration, with `version: 1` and an `updatedAt`, under the normalized URL: `acme.com/pricing/?utm_source=x` is stored as `https://acme.com/pricing`.
      - Saving the same URL twice leaves one row, holding the second save.
-  6. `pnpm e2e` passes. A new test opens the demo, hides the banner, clicks Save and sees "Saved".
+  6. `pnpm e2e` passes. A new test opens the demo (Save disabled), hides the banner (Save enabled), clicks Save, sees the "Saved" toast, and Save is disabled again.
 
-- [ ] **S2 – A plain error when the save doesn't go through (AC4)**
+- [x] **S2 – A plain error when the save doesn't go through (AC4)**
 
-  If the server can't be reached, answers with an error, or doesn't answer within 10 seconds, the top bar shows "Your changes couldn't be saved. Try again." The draft is never touched by saving, so every change stays on screen. Without the timeout, a hanging server would leave the Save button disabled forever.
+  If the server can't be reached, answers with an error, or doesn't answer within 10 seconds, a toast shows "Your changes couldn't be saved. Try again." and stays until the next save. The draft is never touched by saving, so every change stays on screen. Without the timeout, a hanging server would leave the Save button disabled forever.
 
   **Verify:**
-  1. Open the demo and hide the banner. Stop `pnpm dev` (the page stays open in the browser). Click Save: "Your changes couldn't be saved. Try again." appears, and the banner is still hidden and still listed under "Changes on this page" (AC4).
-  2. Start `pnpm dev` again and click Save: the error is replaced by "Saved".
-  3. `pnpm test` passes. New tests check the save request:
+  1. Open the demo and hide the banner. Stop `pnpm dev` (the page stays open in the browser). Click Save: the toast "Your changes couldn't be saved. Try again." appears, Save stays enabled, and the banner is still hidden and still listed under "Changes on this page" (AC4).
+  2. Start `pnpm dev` again and click Save: the error toast is replaced by "Saved", and Save is disabled.
+  3. `pnpm test` passes. New tests check the save request and the dirty flag:
      - A 500 answer counts as a failed save.
      - A server that never answers counts as a failed save after 10 seconds (with fake timers, so the test doesn't wait).
+     - The dirty flag is false on a fresh page, true after a change, false once that draft is saved, true again if an edit happened while the save ran, and reset when another page opens.
+
+- Timeout uses an `AbortController` with a timer, not `AbortSignal.timeout` (fake timers can't advance it) → plan.md §Save button
+- Save results are toasts, and Save is enabled only with unsaved changes (the dirty flag from global plan §5.1, built early) → spec.md §2 Save, plan.md §Save button, this task's steps
 
 **Done when:** on the demo page, Save stores the configuration in SQLite, saving again replaces it, an invalid configuration is refused, and a failed save shows the plain-language error with all changes still on screen. `pnpm test`, `typecheck` and `e2e` pass.
 
