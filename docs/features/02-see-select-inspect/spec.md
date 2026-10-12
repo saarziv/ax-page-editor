@@ -23,7 +23,7 @@ The two-panel editor from 01 stays: preview on the left, inspector on the right.
 │  Pricing that scales with you          │  Tag: <a>               │
 │                                        │  Main › Section › Link  │
 │  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓      │                         │
-│  ┃ Read our terms               ┃ ←sel │                         │
+│  ┃ Read our terms               ┃ ← selected                     │
 │  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛      │  Text                   │
 │                                        │  "Read our terms"       │
 │  ┌ Hidden from AI ┐                    │  → acme.com/terms       │

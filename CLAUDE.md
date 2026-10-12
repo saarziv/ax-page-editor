@@ -50,7 +50,7 @@ Changes outside the task's scope become follow-ups.
 ```
 apps/web        React + Vite + TS · Tailwind + shadcn/ui · TanStack Query (server data) · Zustand (draft + UI)
 apps/api        NestJS · SafeFetch · snapshot / forward / configs / agentView · SQLite (better-sqlite3)
-packages/core   pure, shared: types, zod schemas, clean, selectors, resolve, transform, renderMarkdown, renderHtml
+packages/core   pure, shared: types, zod schemas, clean, selectors, resolve, mark, prune, renderMarkdown, renderHtml
 ```
 
 Everything is a function of `(page tree, config)`. The editor and Agent View use the **same** core functions.
@@ -71,7 +71,7 @@ Everything is a function of `(page tree, config)`. The editor and Agent View use
 ## Hard rules
 
 - `packages/core` stays pure: no I/O, no Nest, no React, no fetch.
-- The editor and Agent View use the same `clean` and `transform`, so the preview and the agent output can never diverge.
+- The editor and Agent View use the same `clean` and `mark`, so the preview and the agent output can never diverge.
 - Page content is never rendered as HTML in the web app: no `dangerouslySetInnerHTML`, no iframe. Render the tree with React.
 - Every server-side fetch goes through `SafeFetchService`, with no exceptions.
 - Preview, Markdown, the dirty flag and statuses are **derived**, never stored in state.

@@ -11,7 +11,7 @@ Why the spec is the way it is. Each entry: the decision, why, and what was rejec
 
 ### D2. Preview = clean semantic page with the editor's own styling, plus a Markdown view of the literal output
 
-The preview is where the publisher works. The **Page | Markdown** toggle shows the exact Markdown an agent receives (D5). Both draw the same clean tree with the same `clean` and `transform`, so they can differ in looks but never in content.
+The preview is where the publisher works. The **Page | Markdown** toggle shows the exact Markdown an agent receives (D5). Both draw the same clean tree with the same `clean` and `mark`, so they can differ in looks but never in content.
 
 - **Why a clean page, not the site's design:**
   - The assignment asks for the preview "as it would be served to an agent after modification", and agents don't see CSS.
@@ -81,7 +81,7 @@ The preview is where the publisher works. The **Page | Markdown** toggle shows t
 
 
 
-### D8. Context notes are plain text, at most 500 characters, one per element
+### D8. Context notes are plain text, at most 300 characters, one per element
 
 - **Why:** Notes are injected into what agents read, so no markup injection. Short notes keep the focus. One per element avoids stacked, conflicting notes.
 

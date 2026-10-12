@@ -116,7 +116,7 @@ Example: the mock's hide targets `{ selector: 'aside:1', text: 'We use cookies t
 - **Different from hover and selection:** both of those use the theme's primary color, solid or faint, with the chip on the left. The marker is dashed, amber and badged on the right, so all three can show on one element at once (B2).
 - **Pointer-transparent:** the boxes have `pointer-events: none`, so a click still reaches the element and selects it.
 - **Staying in place:** rects are measured after each render and again whenever the content box resizes (a `ResizeObserver`), which covers images finishing loading and window resizes.
-- **Interim:** a resolved modification counts as active. When 03 lands `transform`, the markers switch to `result.status` (global plan §5.1), so a modification inside a hidden element shows as inactive.
+- **Interim:** a resolved modification counts as active. 03 replaces this with the marked page (03 plan → Rendering the preview).
 
 ## Tests
 
