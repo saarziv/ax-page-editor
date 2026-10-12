@@ -6,12 +6,13 @@ How we build the Forward a link spec. Shared architecture, core contracts and co
 
 ## Builds on
 
-- `transform` contract and pipeline (global plan §3.4): this feature owns step 4 (Forward)
+- The modification flow (global plan §6.1): a forward is one more entry in `modificationsDraft`, applied by `markModificationsInTree`
+- `markModificationsInTree` contract and pipeline (global plan §3.4): this feature owns step 4 (Forward)
 - `SafeFetchService` (§4.1), `clean` (§3.2), `estimateTokens` (§3.6), renderers (§3.5), store (§5.1)
 
 ## Core
 
-### Transform step 4: Forward
+### `markModificationsInTree` step 4: Forward
 - Walk forwards in document order.
 - Truncate each to 3,000 tokens, ending with a "(truncated)" marker.
 - Add them up to the 10,000-token page budget. Any that don't fit become `overBudget`; failed ones become `failed`. Both leave the plain link.
@@ -47,7 +48,7 @@ Use `main`, else the largest `article`, else `root`. Strip `nav`, `header`, `foo
 
 ## Tests
 
-- `transform`:
+- `markModificationsInTree`:
   - forward insertion and the depth-1 rule
   - per-link truncation and page budget order (earlier links win; later ones `overBudget`)
   - failed forward leaves the link, status `failed`

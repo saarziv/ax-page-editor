@@ -10,10 +10,10 @@ describe('modificationSchema', () => {
     expect(modificationSchema.safeParse({ id: 'm3', type: 'forward', target, href: 'https://example.com/terms' }).success).toBe(true);
   });
 
-  it('rejects a context note that is empty or over 500 characters', () => {
+  it('rejects a context note that is empty or over 300 characters', () => {
     expect(modificationSchema.safeParse({ id: 'm', type: 'context', target, note: '' }).success).toBe(false);
-    expect(modificationSchema.safeParse({ id: 'm', type: 'context', target, note: 'x'.repeat(501) }).success).toBe(false);
-    expect(modificationSchema.safeParse({ id: 'm', type: 'context', target, note: 'x'.repeat(500) }).success).toBe(true);
+    expect(modificationSchema.safeParse({ id: 'm', type: 'context', target, note: 'x'.repeat(301) }).success).toBe(false);
+    expect(modificationSchema.safeParse({ id: 'm', type: 'context', target, note: 'x'.repeat(300) }).success).toBe(true);
   });
 
   it('rejects a forward href that is relative or not http(s)', () => {

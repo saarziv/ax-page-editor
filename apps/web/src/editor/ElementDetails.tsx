@@ -1,12 +1,13 @@
-import { useState, type ReactNode } from 'react';
-import { nodeText, type PageNode } from '@ax/core';
+import { useId, useState, type ReactNode } from 'react';
+import { nodeText, targetFor, type PageNode } from '@ax/core';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { useNodeModifications } from '@/state/derived';
+import { useEditorStore } from '@/state/store';
 import { Breadcrumb } from './Breadcrumb';
+import { ContextBox } from './ContextBox';
 import { describeModification } from './modificationLabels';
 import { NODE_LABELS } from './nodeLabels';
-
-const MODIFICATION_CONTROLS = ['Hide from AI', 'Context for AI', 'Forward this link'];
 
 // Past this, the text is clamped to four lines with a toggle, so a long paragraph doesn't push everything else away.
 const LONG_TEXT_LENGTH = 200;
@@ -38,13 +39,13 @@ export function ElementDetails({ path, node }: { path: PageNode[]; node: PageNod
         <ElementChanges node={node} />
       </DetailRow>
 
-      {/* Disabled until 03 and 04 make them work. */}
-      <div className="flex flex-col gap-2 border-t pt-4">
-        {MODIFICATION_CONTROLS.map((controlName) => (
-          <Button key={controlName} variant="outline" disabled>
-            {controlName}
-          </Button>
-        ))}
+      <div className="flex flex-col gap-3 border-t pt-4">
+        <HideSwitch node={node} />
+        <ContextBox node={node} />
+        {/* Disabled until 04 makes it work. */}
+        <Button variant="outline" disabled>
+          Forward this link
+        </Button>
       </div>
     </section>
   );
@@ -55,6 +56,22 @@ function DetailRow({ label, children }: { label: string; children: ReactNode }) 
     <div>
       <h3 className="mb-1 text-xs font-medium text-muted-foreground">{label}</h3>
       {children}
+    </div>
+  );
+}
+
+// Its state is read from the draft, never stored, so an already-hidden element shows on when selected.
+function HideSwitch({ node }: { node: PageNode }) {
+  const switchId = useId();
+  const toggleHide = useEditorStore((state) => state.toggleHide);
+  const isHidden = useNodeModifications(node).some((modification) => modification.type === 'hide');
+
+  return (
+    <div className="flex items-center justify-between py-1">
+      <label htmlFor={switchId} className="cursor-pointer text-sm font-medium">
+        Hide from AI
+      </label>
+      <Switch id={switchId} checked={isHidden} onCheckedChange={() => toggleHide(targetFor(node))} className="data-[state=checked]:bg-green-600" />
     </div>
   );
 }

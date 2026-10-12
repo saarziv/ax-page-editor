@@ -6,7 +6,7 @@ export const nodeKindSchema = z.enum([
   'section', 'article', 'nav', 'header', 'footer', 'aside', 'main', 'figure',
   'text',
   'page', // the root only
-  // Inserted by transform, never produced by clean.
+  // Inserted by markModificationsInTree, never produced by clean.
   'annotation', 'forwarded',
 ]);
 
@@ -15,8 +15,14 @@ export type PageNode = {
   kind: z.infer<typeof nodeKindSchema>;
   tag: string;
   text?: string;
-  attrs?: { href?: string; src?: string; alt?: string; level?: number; label?: string; inputType?: string; width?: number; height?: number };
+  attrs?: {
+    href?: string; src?: string; alt?: string; level?: number; label?: string; inputType?: string; width?: number; height?: number;
+    // annotation only: the element the note explains, and its target text when the note sits after an enclosing block.
+    forId?: string; about?: string;
+  };
   children?: PageNode[];
+  // Set by markModificationsInTree on a hidden element, which stays in place so the preview can still draw it.
+  hidden?: true;
 };
 
 // A node contains nodes, so the schema refers to itself: z.lazy delays that reference until first use.
@@ -37,9 +43,12 @@ export const pageNodeSchema: z.ZodType<PageNode> = z.lazy(() =>
         inputType: z.string().optional(),
         width: z.number().optional(),
         height: z.number().optional(),
+        forId: z.string().optional(),
+        about: z.string().optional(),
       })
       .optional(),
     children: z.array(pageNodeSchema).optional(),
+    hidden: z.literal(true).optional(),
   }),
 );
 
@@ -72,10 +81,18 @@ function isAbsoluteHttpUrl(value: string): boolean {
   return protocol === 'http:' || protocol === 'https:';
 }
 
+// Spec D8. Exported so the Context box stops input at the same limit the schema enforces.
+export const CONTEXT_NOTE_MAX_LENGTH = 300;
+
 export const modificationSchema = z.discriminatedUnion('type', [
   z.object({ id: z.string(), type: z.literal('hide'), target: targetSchema }),
-  z.object({ id: z.string(), type: z.literal('context'), target: targetSchema, note: z.string().min(1).max(500) }),
+  z.object({ id: z.string(), type: z.literal('context'), target: targetSchema, note: z.string().min(1).max(CONTEXT_NOTE_MAX_LENGTH) }),
   z.object({ id: z.string(), type: z.literal('forward'), target: targetSchema, href: absoluteHttpUrlSchema }),
 ]);
 
 export type Modification = z.infer<typeof modificationSchema>;
+
+// What markModificationsInTree did with one modification (global plan §3.4).
+export const modificationStatusSchema = z.enum(['active', 'inactive', 'unmatched', 'overBudget', 'failed']);
+
+export type ModificationStatus = z.infer<typeof modificationStatusSchema>;

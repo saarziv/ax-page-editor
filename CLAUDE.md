@@ -48,9 +48,9 @@ Changes outside the task's scope become follow-ups.
 ## Architecture (details in plan.md)
 
 ```
-apps/web        React + Vite + TS · Tailwind + shadcn/ui · TanStack Query (server data) · Zustand (draft + UI)
+apps/web        React + Vite + TS · Tailwind + shadcn/ui · TanStack Query (server data) · Zustand (modificationsDraft + UI)
 apps/api        NestJS · SafeFetch · snapshot / forward / configs / agentView · SQLite (better-sqlite3)
-packages/core   pure, shared: types, zod schemas, clean, selectors, resolve, transform, renderMarkdown, renderHtml
+packages/core   pure, shared: types, zod schemas, clean, selectors, resolve, markModificationsInTree, prune, renderMarkdown, renderHtml
 ```
 
 Everything is a function of `(page tree, config)`. The editor and Agent View use the **same** core functions.
@@ -71,7 +71,7 @@ Everything is a function of `(page tree, config)`. The editor and Agent View use
 ## Hard rules
 
 - `packages/core` stays pure: no I/O, no Nest, no React, no fetch.
-- The editor and Agent View use the same `clean` and `transform`, so the preview and the agent output can never diverge.
+- The editor and Agent View use the same `clean` and `markModificationsInTree`, so the preview and the agent output can never diverge.
 - Page content is never rendered as HTML in the web app: no `dangerouslySetInnerHTML`, no iframe. Render the tree with React.
 - Every server-side fetch goes through `SafeFetchService`, with no exceptions.
 - Preview, Markdown, the dirty flag and statuses are **derived**, never stored in state.
@@ -91,6 +91,7 @@ Everything is a function of `(page tree, config)`. The editor and Agent View use
 - Functions: small and focused, but don't over-fragment.
 - Naming:
   - descriptive (`resolvedTarget`, `forwardBudgetLeft`), never generic (`data`, `result`, `item`)
+  - function and state names say what they act on, not just the verb: `markModificationsInTree`, not `mark`; `modificationsDraft`, not `draft`. A longer name beats one that needs the docs to explain it. This applies when naming things in docs and plans too.
   - camelCase for variables and functions, PascalCase for types, classes and components
 - Errors:
   - Catch where you can handle or translate them (e.g. a fetch failure becomes a `FetchError` code with a user-facing message); otherwise let them propagate.

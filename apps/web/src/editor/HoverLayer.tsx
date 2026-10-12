@@ -19,7 +19,8 @@ export function HoverLayer({ root, children }: { root: PageNode; children: React
 
   function handleMouseOver(event: MouseEvent<HTMLDivElement>) {
     if (!(event.target instanceof Element) || !layerRef.current) return;
-    const hoveredElement = event.target.closest<HTMLElement>('[data-node-id]');
+    // A callout isn't a page element: outlining the element around it would point at the wrong thing.
+    const hoveredElement = event.target.closest<HTMLElement>('[data-node-id], [data-context-for]');
     const hoveredId = hoveredElement?.dataset.nodeId;
     if (!hoveredElement || !hoveredId) return setHoverBox(null);
     if (hoveredId === hoverBox?.nodeId) return;

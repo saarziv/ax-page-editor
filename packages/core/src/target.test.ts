@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { matchesTarget, resolve, targetSnippet } from './target.js';
+import { matchesTarget, resolve, targetFor, targetSnippet } from './target.js';
 import type { PageNode } from './schemas.js';
 
 const bannerText = 'We use cookies to improve your experience. By continuing you agree to our cookie policy.';
@@ -71,5 +71,19 @@ describe('resolve', () => {
 
   it("returns null when the selector isn't in the tree", () => {
     expect(resolve(root, { selector: 'aside:2', text: bannerSnippet })).toBeNull();
+  });
+});
+
+describe('targetFor', () => {
+  it("is the node's id plus its 60-character snippet", () => {
+    expect(targetFor(banner)).toEqual({ selector: 'aside:1', text: bannerSnippet });
+  });
+
+  it("uses the image's alt as the text", () => {
+    expect(targetFor(chart)).toEqual({ selector: 'main:1>figure:1>image:1', text: 'Customer growth' });
+  });
+
+  it('resolves back to the same node', () => {
+    expect(resolve(root, targetFor(chart))).toBe(chart);
   });
 });

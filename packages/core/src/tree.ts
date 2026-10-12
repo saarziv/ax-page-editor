@@ -1,5 +1,14 @@
 import type { PageNode } from './schemas.js';
 
+// Elements that hold other content. A note on one comes first inside it, framing what follows (spec §3, D7).
+const CONTAINER_KINDS: ReadonlySet<PageNode['kind']> = new Set([
+  'section', 'article', 'nav', 'header', 'footer', 'aside', 'main', 'list', 'table', 'form', 'figure',
+]);
+
+export function isContainerKind(kind: PageNode['kind']): boolean {
+  return CONTAINER_KINDS.has(kind);
+}
+
 /** The nodes from the root down to the node with `id` (the node itself last), or null when it isn't in the tree. */
 export function findNodePath(root: PageNode, id: string): PageNode[] | null {
   if (root.id === id) return [root];

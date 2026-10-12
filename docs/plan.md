@@ -1,6 +1,6 @@
 # AX Editor – Plan
 
-How we build what the specs define. This document holds what several features share: architecture, stack and layout, the shared core contracts, cross-cutting conventions, security, testing strategy and technical decisions. Each feature's own technical design lives in its feature `plan.md`, which builds on this one and never restates it.
+How we build what the specs define. This document holds what several features share: architecture, stack and layout, the shared core contracts, cross-cutting conventions, security, testing strategy, technical decisions, and the key flows several features share. Each feature's own technical design lives in its feature `plan.md`, which builds on this one and never restates it.
 
 Where a shared piece is first built by a feature, that's noted as "first built in NN".
 
@@ -13,18 +13,19 @@ Where a shared piece is first built by a feature, that's noted as "first built i
 │ Start screen · Editor · Markdown view    │  HTTP  │ /api/page-tree  /api/forward   /api/configs   │
 │                                          │ ─────► │ /agentView                                     │
 │ TanStack Query (server data)             │        │                                                │
-│ Zustand (draft modifications, UI)        │        │ SafeFetch ─► clean ─► (config) ─► transform    │
-│ derived: preview, markdown (transform)   │        │                         SQLite                 │
+│ Zustand (modificationsDraft, UI)         │        │ SafeFetch ─► clean ─► (config)                 │
+│                                          │        │   ─► markModificationsInTree ─► prune          │
+│ derived: marked page → preview, markdown │        │                         SQLite                 │
 └──────────────────┬───────────────────────┘        └───────────────────────┬────────────────────────┘
                    └──────────── packages/core (shared, pure) ──────────────┘
-                     types · zod schemas · clean · selectors · resolve · transform
+                     types · zod schemas · clean · selectors · resolve · markModificationsInTree · prune
                      renderMarkdown · renderHtml · normalizeUrl · tokens
 ```
 
 **One principle:** everything is a function of `(page tree, configuration)`.
 - The API turns raw HTML into a **page tree** (`clean`).
-- The editor renders the tree as the preview, and runs `transform` + `renderMarkdown` live.
-- Agent View runs the **same** `clean` + `transform` + `renderMarkdown` on the live page.
+- The editor runs `markModificationsInTree` live: the preview draws the marked page, and the Markdown view runs `prune` + `renderMarkdown` on it.
+- Agent View runs the **same** `clean` + `markModificationsInTree` + `prune` + `renderMarkdown` on the live page.
 - Same code on both sides, so the editor's Markdown view equals Agent View by construction.
 
 ## 2. Stack & repo layout
@@ -49,7 +50,7 @@ apps/
 packages/
   core/src/
     types.ts  schemas.ts  clean/  selector.ts  resolve.ts
-    transform.ts  render-markdown.ts  render-html.ts  url.ts  tokens.ts
+    mark-modifications-in-tree.ts  prune.ts  render-markdown.ts  render-html.ts  url.ts  tokens.ts
 samples/            demo.html
 docs/
   spec.md  plan.md  spec-decisions.md          global
@@ -72,15 +73,17 @@ type NodeKind =
   | 'section' | 'article' | 'nav' | 'header' | 'footer' | 'aside' | 'main' | 'figure'
   | 'text'
   | 'page'                        // the root only
-  | 'annotation' | 'forwarded';   // inserted by transform, never produced by clean
+  | 'annotation' | 'forwarded';   // inserted by markModificationsInTree, never produced by clean
 
 type PageNode = {
   id: string;            // = selector; unique within the tree
   kind: NodeKind;
   tag: string;           // original tag, shown in the inspector
   text?: string;         // own text (for text nodes / leaves)
-  attrs?: { href?: string; src?: string; alt?: string; level?: number; label?: string };
+  attrs?: { href?: string; src?: string; alt?: string; level?: number; label?: string;
+            forId?: string; about?: string };   // annotation only (03)
   children?: PageNode[];
+  hidden?: true;         // set by markModificationsInTree on a hidden element; prune removes it
 };
 
 type PageTree = { url: string; title: string; root: PageNode };
@@ -136,33 +139,40 @@ Every consumer must clean identically, or saved selectors break (D11). So these 
 - `target.text` = first 60 chars of the node's normalized text (or `alt` for images).
 - `resolve(tree, target) → node | null`: find by selector, then require that the snippet still matches. Otherwise return `null` (unmatched, see Save & review changes). Never fall back to a guess.
 
-### 3.4 `transform(tree, config, forwards) → Result`
+### 3.4 `markModificationsInTree(root, modifications, forwards) → Marked` and `prune(root)`
 
-The one function that applies a configuration, run by both the editor and Agent View. The contract lives here; the rules of each step live in the feature plan that owns it.
+Applying a configuration is two steps, run by both the editor and Agent View.
+
+- **`markModificationsInTree`** applies every modification once and returns the **marked page**: the original tree, with hidden elements flagged (`hidden: true`, still in place) and `annotation` / `forwarded` nodes inserted where the agent will read them. It also returns a status per modification.
+- **`prune`** removes every flagged subtree. What's left is the **agent tree**, the only tree the renderers see.
+
+How the two fit into the editor and Agent View, with an example, is in §6.1. The contract lives here; the rules of each step live in the feature plan that owns it.
 
 ```ts
 type Forwarded = { href: string; tree?: PageTree; error?: ForwardError };
-type Result = {
-  tree: PageNode;                         // modified tree (hidden removed, annotations inserted)
-  status: Record<ModId, 'active' | 'inactive' | 'unmatched' | 'overBudget' | 'failed'>;
+type Status = 'active' | 'inactive' | 'unmatched' | 'overBudget' | 'failed';
+type Marked = {
+  tree: PageNode;                  // the marked page
+  status: Record<ModId, Status>;
 };
 ```
 
-Pipeline, in this order:
+`markModificationsInTree` runs these steps, in this order:
 
 | Step | What | Rules in |
 |---|---|---|
 | 1. Resolve | Resolve each modification with `resolve`. If unresolved, mark it `unmatched`. | §3.3 |
-| 2. Hide | Remove subtrees; nested modifications become `inactive`. | 03 Hide & add context |
+| 2. Hide | Flag the node `hidden`; other modifications in or on a hidden subtree become `inactive`. | 03 Hide & add context |
 | 3. Context | Insert `annotation` nodes, placed by kind. | 03 Hide & add context |
 | 4. Forward | Insert `forwarded` nodes within size limits; `overBudget` / `failed` leave the plain link. | 04 Forward a link |
 
+- `markModificationsInTree` never changes its input: it copies only the nodes it changes and their ancestors, and shares every other node.
 - Note text is stored and rendered as a plain string, never parsed.
 - The editor uses `status` to group the changes list (Save & review changes). Agent View uses it to report what was skipped.
 
 ### 3.5 Renderers
 
-Both first built in 02. The formats for `annotation` and `forwarded` nodes are defined in 03 and 04.
+Both first built in 02. They render the agent tree (`prune` output), so they never see a hidden node. The formats for `annotation` and `forwarded` nodes are defined in 06 and 04.
 
 - **`renderMarkdown(tree)`:** our own tree-to-Markdown walker (headings, lists, tables, links, images). We own the tree, so we don't render HTML and then run it through Turndown. Deterministic, and no extraction guessing.
 - **`renderHtml(tree)`:** semantic HTML, everything text-escaped.
@@ -180,7 +190,7 @@ Both first built in 02. The formats for `annotation` and `forwarded` nodes are d
 type Target = { selector: string; text: string };
 type Modification =
   | { id: string; type: 'hide';    target: Target }
-  | { id: string; type: 'context'; target: Target; note: string }   // 1..500 chars
+  | { id: string; type: 'context'; target: Target; note: string }   // 1..300 chars
   | { id: string; type: 'forward'; target: Target; href: string };  // absolute http(s)
 type Config = { version: 1; url: string; updatedAt: string; modifications: Modification[] };
 ```
@@ -229,7 +239,7 @@ Details live in the owning feature's plan.
 ```ts
 {
   url: string | null;
-  draft: Modification[];          // the only editable source of truth
+  modificationsDraft: Modification[];          // the only editable source of truth
   savedJson: string;              // last saved draft, for the dirty flag
   selectedId: string | null;
   view: 'page' | 'markdown';
@@ -239,34 +249,98 @@ Details live in the owning feature's plan.
 Actions enforce the spec rules: one modification per type per element, an empty note removes the context modification, forward only on links, and the page forward budget. Each action is specified in the plan of the feature that uses it.
 
 **Derived (memoized, never stored):**
-- `result = transform(tree, draft, forwards)` drives the preview markers, the status groups and Markdown.
-- `markdown = renderMarkdown(result.tree)`, plus the token count
-- `dirty = JSON(draft) !== savedJson`
-- `modsBySelector` lets each preview node subscribe to only its own modifications.
+- `marked = markModificationsInTree(tree, modificationsDraft, forwards)`, from the `useMarkedPage()` hook (03). It drives the preview and the status groups.
+- `markdown = renderMarkdown(prune(marked.tree))`, plus the token count, computed in the Markdown view only (06).
+- `dirty = JSON(modificationsDraft) !== savedJson`
 
-### 5.2 Preview vs Markdown
-The preview renders the **original** tree with markers, so hidden nodes stay clickable. The Markdown renders the **transformed** tree. Both come from the same `transform` result.
+## 6. Key shared architectures
 
-## 6. Security (global spec, Trust & safety)
+### 6.1 Modification options architecture
+
+How the publisher's page modifications for agents (hide an element, add context, forward a link) are created, edited, shown in the preview, turned into Markdown and saved.
+
+**Why we need it.** A publisher's change shows up in four places: the preview, the Markdown view, the saved configuration and Agent View. If each of them worked out on its own what's hidden and where a note goes, they would drift apart. The preview could show a note above the chart while the agent gets it below, and the publisher would be approving something the agent never reads.
+
+**What it solves.** One flow, used by every feature that adds a modification (03 hide and context, 04 forward, 05 save, 06 Agent View):
+- the publisher's changes live in exactly one place,
+- every decision about them is made exactly once,
+- the preview, the Markdown and Agent View only draw the result, so they always agree,
+- saving is just sending that one list.
+
+**The intent and the idea.** Store only what the publisher chose, a short list of changes, and compute everything else from it. One core function, `markModificationsInTree`, applies the list to the page and produces a **marked page**: the same page, with hidden elements flagged and notes inserted where the agent will read them. The preview draws the marked page as it is. The Markdown first removes the flagged parts. The server only stores the list.
+
+```
+ Inspector (click Hide, type a note)
+        │ toggleHide(target) · setContext(target, note) · toggleForward(…)
+        ▼
+ ┌─ Zustand store ────────────┐   save: PUT /api/configs    ┌─ API ───────────┐
+ │ modificationsDraft:        │ ──────────────────────────► │ SQLite, one     │
+ │   Modification[]           │                             │ config per URL  │
+ │ savedJson (last saved)     │ ◄────────────────────────── │                 │
+ └─────────────┬──────────────┘   load: GET /api/configs    └───────┬─────────┘
+               │                                                    │ same chain
+ page tree ──► markModificationsInTree(page, modificationsDraft)    ▼
+ (TanStack Query)   │ useMarkedPage (03)                      Agent View (06)
+                    ▼
+               marked page
+              ┌─────┴──────────────────────┐
+              ▼                            ▼
+          Preview                   prune → renderMarkdown
+   draws all of it:                  Markdown view (06):
+   hidden = faded, notes = boxes     hidden parts gone, notes as text
+```
+
+**The flow, step by step.** Example: on the demo page, the publisher hides the cookie banner, then adds a note to the chart.
+
+1. **Add or edit.** Each control calls one store action, which adds, replaces or removes one entry in `modificationsDraft`. An element has at most one modification of each type, so editing a note replaces its text, and clearing it removes the entry. After the two clicks:
+   ```ts
+   modificationsDraft = [
+     { id: 'a1', type: 'hide',    target: { selector: 'aside:1', text: 'We use cookies…' } },
+     { id: 'b2', type: 'context', target: { selector: 'main:1>figure:1>image:1', text: 'Customer growth' },
+       note: 'Customer growth from 1,200 to 8,500, Jan to Sep 2026.' },
+   ]
+   ```
+   A target is a path in the clean page plus a text snippet (§3.3), never a DOM element, so it still works when the page is loaded again later.
+2. **Compute the marked page.** `useMarkedPage()` runs `markModificationsInTree(page, modificationsDraft)` each time `modificationsDraft` or the page changes, and never on selection or hover. `markModificationsInTree` makes every decision once (§3.4): the banner gets `hidden: true` but stays in place, and the note becomes an `annotation` node right after the image.
+   ```
+   page
+    ├─ aside (hidden: true)
+    └─ main
+        └─ figure
+            ├─ image
+            └─ annotation "Customer growth from…"
+   ```
+3. **Draw the preview.** The preview draws the marked page as it is. The banner is drawn faded with a "Hidden from AI" label and stays clickable, so the publisher can turn Hide off. The annotation is drawn as a "Context for AI" box under the chart.
+4. **Compute the Markdown.** The Markdown view runs `prune` on the same marked page, which drops the banner, then `renderMarkdown` on what's left:
+   ```markdown
+   ![Customer growth](growth.png)
+
+   > **Context:** Customer growth from 1,200 to 8,500, Jan to Sep 2026.
+   ```
+   The preview and the Markdown come from the same marked page, so they can't disagree about what's hidden or where a note sits.
+5. **Save and load (05).** Save sends `modificationsDraft` wrapped as a `Config` (§3.7): `{ version: 1, url, updatedAt, modifications: modificationsDraft }`. The API validates it and stores one configuration per URL. Opening the page again loads it back into `modificationsDraft`, and steps 2–4 follow by themselves. "Unsaved changes" is `modificationsDraft` compared with the last saved copy, never a stored flag.
+6. **Serve agents (06).** Agent View loads the saved configuration and runs the same chain on the live page: `renderMarkdown(prune(markModificationsInTree(page, config)))`.
+
+## 7. Security (global spec, Trust & safety)
 
 | Concern | Measure |
 |---|---|
 | Page code running | Never rendered as HTML. The tree is rendered via React (auto-escaped). Scripts and handlers are dropped in `clean`. |
 | SSRF | SafeFetch: DNS-resolved IP checks on every hop, limits, HTML only. |
-| Note injection | Notes are plain strings, escaped in every renderer, and capped at 500. |
+| Note injection | Notes are plain strings, escaped in every renderer, and capped at 300. |
 | Bad configs | zod validation on PUT and on read. |
 | Navigation out of the editor | Preview links don't navigate. "Open original" uses `rel="noopener noreferrer"`. |
 | CORS | The API only allows `WEB_ORIGIN`. |
 
-## 7. Testing strategy
+## 8. Testing strategy
 
 - **Core (Vitest):** the bulk of the tests, mapped to spec ACs. Every shared core function is tested where it's first built; each feature plan lists its own tests.
 - **API (Vitest):** safety checks (SafeFetch), validation, and Agent View on the demo page.
 - **E2E (Playwright, 2 flows):**
-  1. Open the demo page, hide the cookie banner, add context to the chart: the Markdown view reflects both. (Lands with 03.)
+  1. Open the demo page, hide the cookie banner, add context to the chart: the preview shows both (lands with 03), and the Markdown view reflects both (lands with 06).
   2. Save, reload: the modifications are restored, and Agent View returns the same Markdown. (Lands with 06.)
 
-## 8. Technical decisions
+## 9. Technical decisions
 
 | # | Decision | Why | Rejected |
 |---|---|---|---|
@@ -275,9 +349,10 @@ The preview renders the **original** tree with markers, so hidden nodes stay cli
 | P3 | Selectors over the clean tree (`kind:nth`) | Survive wrapper changes on live sites | Raw-DOM CSS selectors |
 | P4 | Strict snippet check, no fuzzy fallback | Never misapply (Save & review changes) | Fuzzy text search (future) |
 | P5 | Main content by heuristic (`main`/`article`, minus chrome) | Simple, deterministic, no extra deps | Mozilla Readability (better on messy pages, future) |
-| P6 | `transform` in shared core, run on web + api | Parity by construction | Server-rendered preview per edit (latency) |
+| P6 | `markModificationsInTree` + `prune` in shared core, run on web + api | Parity by construction | Server-rendered preview per edit (latency) |
 | P7 | TanStack Query + Zustand | Server data vs editor state separated; fine-grained re-renders | Context+useReducer, Redux, Jotai |
 | P8 | `sample:` scheme for the bundled demo page | Offline demo without weakening SSRF rules | Serving it from localhost |
 | P9 | Tokens ≈ chars/4 | Good enough for budget UX | Real tokenizer (heavy, model-specific) |
 | P10 | SQLite behind a repository | Real DB, no setup, swappable for Postgres JSONB | JSON files |
 | P11 | Session-cached forwards in editor only | Snappy editing; Agent View stays live per spec | Refetch on every edit |
+| P12 | One marked page: preview draws it, agent output prunes it | Every decision made once; the preview just draws a tree | Preview draws the original tree and looks up per element which modifications apply and where notes go |

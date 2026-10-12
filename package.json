@@ -11,6 +11,7 @@
     "build": "pnpm -r build",
     "pretest": "pnpm --filter @ax/core build",
     "test": "pnpm -r test",
+    "test:all": "pnpm test && pnpm e2e",
     "pretypecheck": "pnpm --filter @ax/core build",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",

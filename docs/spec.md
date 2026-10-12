@@ -174,7 +174,7 @@ Each modification:
 **Rules**
 
 - At most one modification of each type per element.
-- Forward only on links. Context notes are plain text, max 500 characters.
+- Forward only on links. Context notes are plain text, max 300 characters.
 - Modifications inside a hidden element are kept but not applied.
 
 **Deliberately not stored:** rendered output (derivable), fetched forward content (would go stale), anything about the editor UI (colors, selection, panel state). A consumer should be able to implement the transform from this document and this spec alone.
