@@ -208,4 +208,5 @@ Not in this task (follow-ups): a Retry button on the load error (AC13), and the 
 - AC13: add a Retry button to the load error that refetches the configuration (plan.md §Restoring on open).
 - AC8, AC12: list saved changes that no longer match under "Needs attention" with a Remove button (plan.md §Needs attention).
 - The e2e hover test (`select-inspect.spec.ts` "hovering an element outlines it…") failed once in a full parallel run and passed on re-run; make it stable.
+- Bug: a saved change can land on the wrong element. When new content is added above an element, its position (`selector`) can now point at a different element with the same text, like "Read more", "Learn more" or "Buy now". The text check still passes, so the change is applied to the wrong element and marked `active`. This breaks the rule "never apply a change you can't confidently resolve" (D11, global `plan.md` §3.3). Example: hide the Pricing card's "Read more" link, then a new card is added first. The new card's link gets hidden instead. Suggested fix: the target also stores the nearest preceding heading and, for links, the `href`, and `resolve` requires them to match.
 

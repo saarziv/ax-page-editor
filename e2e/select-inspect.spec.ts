@@ -325,3 +325,25 @@ test('a note on a link comes after its paragraph, and the note is shown as typed
   await expect(paragraph.getByRole('note')).toHaveCount(0);
   await expect(paragraph.locator('xpath=following-sibling::*[1]')).toHaveAttribute('role', 'note');
 });
+
+test('clicking a change scrolls the preview to its element, without selecting it (S5)', async ({ page }) => {
+  // A short window, so the page is taller than the preview and the chart can be scrolled out of view.
+  await page.setViewportSize({ width: 1280, height: 400 });
+  await page.goto('/');
+  await page.getByText('Try a sample').click();
+
+  const preview = page.getByRole('region', { name: 'Preview' });
+  const pageChanges = page.getByRole('region', { name: 'Changes on this page' });
+  const chart = preview.getByRole('img', { name: 'Customer growth' });
+
+  await chart.click();
+  await page.getByRole('switch', { name: 'Hide from AI' }).click();
+  await page.keyboard.press('Escape');
+  await preview.evaluate((section) => section.scrollTo(0, section.scrollHeight));
+  await expect(chart).not.toBeInViewport();
+
+  await pageChanges.getByRole('button', { name: 'Show Hidden from AI: Customer growth in the preview' }).click();
+  await expect(chart).toBeInViewport();
+  await expect(page.getByText('Click an element in the preview to inspect it.')).toBeVisible();
+  await expect(preview.locator('[data-selected="true"]')).toHaveCount(0);
+});

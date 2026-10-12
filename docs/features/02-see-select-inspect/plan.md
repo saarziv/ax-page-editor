@@ -121,4 +121,4 @@ Example: the mock's hide targets `{ selector: 'aside:1', text: 'We use cookies t
 ## Tests
 
 - **Core unit tests** for `findNodePath`, `nodeText`, `targetSnippet`, `matchesTarget` and `resolve` (cases in `tasks.md`).
-- **E2E:** a new `e2e/select-inspect.spec.ts`. The 01 test that checked the disabled buttons is updated to the new empty state. T02 adds tests there for Esc and empty-space deselect, the breadcrumb and the hover overlay. T03 updates the demo's empty-list check to the mock, and adds tests for the markers, the per-element list and the page list. The web app has no unit test setup. These components only display what core computes, so e2e covers them.
+- **E2E:** a new `e2e/select-inspect.spec.ts`. The 01 test that checked the disabled buttons is updated to the new empty state. T02 adds tests there for Esc and empty-space deselect, the breadcrumb and the hover overlay. T03 updates the demo's empty-list check to the mock, and adds tests for the markers, the per-element list and the page list. These components only display what core computes, so e2e covers them rather than unit tests.

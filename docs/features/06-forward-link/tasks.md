@@ -164,5 +164,5 @@ S1 writes the block, S2 handles failed forwards, and S3 adds the size limit.
 
 ## Follow-ups
 
-- A failed forward says why (S1, was T02 S4): the web gets the plain-language message for each fetch error code from 01's edge cases (01 T04 S4 reuses them for page loads), the failed block shows it under "Couldn't forward <href>", and the demo footer gets a last line linking a plain-text page (RFC 2606) as a forward that always fails.
+- A failed forward says why (S1, was T02 S4): the web gets the plain-language message for each fetch error code from 01's edge cases (the 01 error-messages follow-up reuses them for page loads), the failed block shows it under "Couldn't forward <href>", and the demo footer gets a last line linking a plain-text page (RFC 2606) as a forward that always fails.
 - `modificationStatusSchema` still has `overBudget`, left from the rejected page-wide budget (D10). Nothing sets it, so it can be removed.

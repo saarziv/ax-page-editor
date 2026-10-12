@@ -50,7 +50,7 @@ Start screen                              Editor
 - **AC3** Given `example.com/page/?utm_source=x`, when opened, then it normalizes to `example.com/page`.
 - **AC4** Given a page is loading, then the preview shows a spinner, not the previous page.
 - **AC5** Given the editor is open, when the user enters another URL in the top bar and opens it, then that page replaces the current one.
-- **AC6** Given any failure in the table below, then the user sees that plain-language message on screen (not a toast), and no error code.
+- **AC6** Given any failure in the table below (except the private-address row, a follow-up), then the user sees that plain-language message on screen (not a toast), and no error code.
 - **AC7** Given "Try a sample" is clicked, then the demo page opens without any network fetch.
 
 ## Edge cases
@@ -58,7 +58,7 @@ Start screen                              Editor
 | Case                                | What the user sees                                         |
 | ----------------------------------- | ---------------------------------------------------------- |
 | Invalid URL / not http(s)           | "That doesn't look like a web address."                    |
-| Private or local address            | "This address can't be opened for security reasons."       |
+| Private or local address (follow-up: not refused yet) | "This address can't be opened for security reasons." |
 | Not an HTML page (PDF, image, JSON) | "This link isn't a web page."                              |
 | Too large                           | "This page is too large to load."                          |
 | Timeout / unreachable / the site answers with an error (404, 500…) | "The site didn't respond." with a Retry button |

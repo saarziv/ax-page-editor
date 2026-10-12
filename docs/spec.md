@@ -199,7 +199,7 @@ Each modification:
 - **No page code runs.** Scripts, event handlers and embedded objects are removed before anything is shown. Page text is always displayed as text.
 - **The server only fetches public web pages.** Private, local and internal addresses are refused (on the original URL and after redirects). Fetches have a time limit and a size limit, and only HTML is accepted. This applies to page loads, forwards and Agent View alike.
 - **User input is treated as plain text.** Context notes can't inject markup into the agent output. Length is limited.
-- **Configurations are validated on save:** known types only, required fields present, forward only on links.
+- **Configurations are validated on save:** known types only, required fields present, notes at most 300 characters, and a forward's link must be a full web address (`https://…`). The editor only offers Forward on links.
 - **Cloaking risk.** Showing agents different content than humans is a recognized concern for search engines. Context and forward only **add** information; hide removes it and could be misused to misrepresent a page. This is noted for publishers in the README.
 
 ## 10. Decisions log
@@ -213,5 +213,7 @@ The reasoning behind each product decision, with the alternatives rejected, live
 - **Structured data (JSON-LD)** for exact facts like prices and plans.
 - **Agent detection and serving** in production (described in `spec-decisions.md` D14).
 - **More robust targeting** that survives larger page redesigns.
+- **Show changes inside a hidden element as inactive** in the editor.
+- **"Open original"** link to compare with the real page.
 - **Semantic HTML from Agent View**, and a report of skipped modifications in its response.
 - Undo/redo history, mobile layout, accounts and teams, publishing workflow, rendering JavaScript-built pages.

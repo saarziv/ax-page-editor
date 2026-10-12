@@ -221,7 +221,7 @@ function ForwardedBlock({ forwarded }: { forwarded: PageNode }) {
         type="button"
         aria-expanded={expanded}
         onClick={() => setExpanded((wasExpanded) => !wasExpanded)}
-        className="flex w-full items-center gap-1 text-left text-[11px] font-medium text-violet-700 dark:text-violet-300"
+        className="flex w-full cursor-pointer items-center gap-1 text-left text-[11px] font-medium text-violet-700 dark:text-violet-300"
       >
         <ChevronRight aria-hidden="true" className={`size-3.5 shrink-0 transition-transform ${expanded ? 'rotate-90' : ''}`} />
         Forwarded from {href}

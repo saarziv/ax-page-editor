@@ -1,22 +1,34 @@
 import { X } from 'lucide-react';
-import type { Modification } from '@ax/core';
+import { resolve, type Modification, type PageNode } from '@ax/core';
 import { Button } from '@/components/ui/button';
+import { usePageTree } from '@/state/queries';
 import { useEditorStore } from '@/state/store';
 import { MODIFICATION_LABELS } from './modificationLabels';
 
 // A simple flat list; the restore task groups it by status and adds "Needs attention" for changes that no longer match.
-export function PageChanges() {
+export function PageChanges({ url }: { url: string }) {
   const modificationsDraft = useEditorStore((state) => state.modificationsDraft);
+  // Same query as the preview, so the tree comes from the cache with no second request.
+  const pageRoot = usePageTree(url).data?.root;
 
   return (
-    <section aria-label="Changes on this page" className="mt-auto border-t pt-4">
-      <h2 className="text-sm font-medium">Changes on this page</h2>
+    <section aria-label="Changes on this page" className="mt-auto flex min-h-72 flex-col gap-2 border-t pt-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-medium">Changes on this page</h2>
+        {modificationsDraft.length > 0 && (
+          <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
+            {modificationsDraft.length}
+          </span>
+        )}
+      </div>
       {modificationsDraft.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No changes yet.</p>
+        <p className="flex flex-1 items-center justify-center rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+          No changes yet.
+        </p>
       ) : (
-        <ul className="mt-1 flex flex-col gap-1">
+        <ul className="flex flex-col divide-y rounded-lg border bg-background">
           {modificationsDraft.map((modification) => (
-            <PageChangeRow key={modification.id} modification={modification} />
+            <PageChangeRow key={modification.id} modification={modification} pageRoot={pageRoot} />
           ))}
         </ul>
       )}
@@ -24,24 +36,53 @@ export function PageChanges() {
   );
 }
 
-function PageChangeRow({ modification }: { modification: Modification }) {
+// The same hues as the markers in the preview (sky note callout, violet forwarded block), so a row is easy to match to its marker.
+const TYPE_DOT_COLORS: Record<Modification['type'], string> = {
+  hide: 'bg-slate-400',
+  context: 'bg-sky-500',
+  forward: 'bg-violet-500',
+};
+
+// Scrolls only, never selects: selecting swaps the inspector to the element's details, and the list would disappear.
+function scrollPreviewToNode(nodeId: string) {
+  document.querySelector(`[data-node-id="${CSS.escape(nodeId)}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+
+function PageChangeRow({ modification, pageRoot }: { modification: Modification; pageRoot: PageNode | undefined }) {
   const removeModification = useEditorStore((state) => state.removeModification);
   const label = MODIFICATION_LABELS[modification.type];
   const snippet = modification.target.text;
+  // The same resolve the preview uses, so a change that can't be confidently found has nothing to scroll to.
+  const resolvedNodeId = pageRoot ? resolve(pageRoot, modification.target)?.id : undefined;
+  const rowText = (
+    <>
+      <p className="truncate" title={snippet}>
+        <span className="font-medium">{label}</span>
+        <span className="text-muted-foreground"> · {snippet}</span>
+      </p>
+      {modification.type === 'context' && (
+        <p className="truncate text-muted-foreground" title={modification.note}>
+          {modification.note}
+        </p>
+      )}
+    </>
+  );
 
   return (
-    <li className="flex items-start gap-1 text-sm">
-      <div className="min-w-0 flex-1">
-        <p className="truncate" title={snippet}>
-          <span className="font-medium">{label}</span>
-          <span className="text-muted-foreground"> · {snippet}</span>
-        </p>
-        {modification.type === 'context' && (
-          <p className="truncate text-muted-foreground" title={modification.note}>
-            {modification.note}
-          </p>
-        )}
-      </div>
+    <li className="flex items-start gap-2 px-3 py-2 text-sm">
+      <span className={`mt-1.5 size-2 shrink-0 rounded-full ${TYPE_DOT_COLORS[modification.type]}`} aria-hidden />
+      {resolvedNodeId ? (
+        <button
+          type="button"
+          className="min-w-0 flex-1 cursor-pointer text-left hover:underline"
+          aria-label={`Show ${label}: ${snippet} in the preview`}
+          onClick={() => scrollPreviewToNode(resolvedNodeId)}
+        >
+          {rowText}
+        </button>
+      ) : (
+        <div className="min-w-0 flex-1">{rowText}</div>
+      )}
       <Button
         type="button"
         variant="ghost"
